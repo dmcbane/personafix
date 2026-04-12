@@ -227,6 +227,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_books_returns_entries() {
         let books = parse_books(&sr5_data_dir().join("books.xml")).unwrap();
         assert!(!books.is_empty(), "should parse at least one book");
@@ -235,6 +236,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_metatypes_has_human_with_correct_ranges() {
         let metatypes = parse_metatypes(&sr5_data_dir().join("metatypes.xml")).unwrap();
         assert!(!metatypes.is_empty());
@@ -246,6 +248,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_metatypes_has_all_core_five() {
         let metatypes = parse_metatypes(&sr5_data_dir().join("metatypes.xml")).unwrap();
         let names: Vec<&str> = metatypes.iter().map(|m| m.name.as_str()).collect();
@@ -255,6 +258,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_skills_returns_entries() {
         let skills = parse_skills(&sr5_data_dir().join("skills.xml")).unwrap();
         assert!(!skills.is_empty());
@@ -265,6 +269,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_qualities_returns_positive_and_negative() {
         let qualities = parse_qualities(&sr5_data_dir().join("qualities.xml")).unwrap();
         assert!(!qualities.is_empty());
@@ -275,18 +280,21 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_weapons_returns_entries() {
         let weapons = parse_weapons(&sr5_data_dir().join("weapons.xml")).unwrap();
         assert!(!weapons.is_empty());
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_armor_returns_entries() {
         let armor = parse_armor(&sr5_data_dir().join("armor.xml")).unwrap();
         assert!(!armor.is_empty());
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_cyberware_returns_entries() {
         let cyberware =
             parse_cyberware(&sr5_data_dir().join("cyberware.xml"), "Cyberware").unwrap();
@@ -295,6 +303,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_bioware_returns_entries() {
         let bioware = parse_cyberware(&sr5_data_dir().join("bioware.xml"), "Bioware").unwrap();
         assert!(!bioware.is_empty());
@@ -302,6 +311,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_spells_returns_entries_with_types() {
         let spells = parse_spells(&sr5_data_dir().join("spells.xml")).unwrap();
         assert!(!spells.is_empty());
@@ -312,6 +322,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_full_succeeds() {
         let data = parse_sr5(&sr5_data_dir()).unwrap();
         assert_eq!(data.edition, "SR5");

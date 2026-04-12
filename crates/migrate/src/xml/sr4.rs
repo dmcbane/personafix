@@ -257,6 +257,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr4_books_returns_entries() {
         let books = parse_books(&sr4_data_dir().join("books.xml")).unwrap();
         assert!(!books.is_empty());
@@ -265,6 +266,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr4_metatypes_has_human() {
         let metatypes = parse_metatypes(&sr4_data_dir().join("metatypes.xml")).unwrap();
         let human = metatypes.iter().find(|m| m.name == "Human").unwrap();
@@ -275,18 +277,21 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr4_skills_returns_entries() {
         let skills = parse_skills(&sr4_data_dir().join("skills.xml")).unwrap();
         assert!(!skills.is_empty());
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr4_weapons_returns_entries() {
         let weapons = parse_weapons(&sr4_data_dir().join("weapons.xml")).unwrap();
         assert!(!weapons.is_empty());
     }
 
     #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr4_full_succeeds() {
         let data = parse_sr4(&sr4_data_dir()).unwrap();
         assert_eq!(data.edition, "SR4");

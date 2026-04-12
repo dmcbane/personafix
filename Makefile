@@ -1,4 +1,4 @@
-.PHONY: dev build test lint fmt clean install migrate help
+.PHONY: dev build test test-all test-core test-desktop test-migrate lint fmt clean install migrate help
 
 DESKTOP_DIR = apps/desktop
 
@@ -15,14 +15,20 @@ dev: ## Launch the desktop app in development mode
 build: ## Build production desktop installers (AppImage, deb, dmg, msi)
 	cd $(DESKTOP_DIR) && npm run tauri build
 
-test: ## Run all Rust tests
+test: ## Run all Rust tests (excludes migration tests that need vendor/ data)
 	cargo test
+
+test-all: ## Run ALL tests including migration tests (requires vendor/ repos)
+	cargo test -- --include-ignored
 
 test-core: ## Run core crate tests only
 	cargo test -p personafix-core
 
 test-desktop: ## Run desktop IPC command tests only
 	cargo test -p personafix-desktop
+
+test-migrate: ## Run migration XML parser tests (requires vendor/ repos)
+	cargo test -p personafix-migrate -- --ignored
 
 lint: ## Run clippy and TypeScript type checking
 	cargo clippy -- -D warnings
