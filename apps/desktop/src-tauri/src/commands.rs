@@ -7,9 +7,10 @@ use tauri::State;
 use personafix_core::ledger::events::LedgerEvent;
 use personafix_core::ledger::projection;
 use personafix_core::model::{
-    attributes::{Attributes, Metatype},
-    character::{CharacterBase, CharacterSummary, ComputedCharacter},
+    attributes::{Attributes, Metatype, RacialLimits},
+    character::{CharacterBase, CharacterDraft, CharacterSummary, ComputedCharacter},
     edition::Edition,
+    validation::ValidationError,
 };
 use personafix_core::rules::{sr4::SR4Rules, sr5::SR5Rules, traits::CharacterRules};
 
@@ -191,13 +192,33 @@ pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCha
     let edition = parse_edition(&edition_str)?;
     let metatype = parse_metatype(&metatype_str)?;
 
-    let (attributes_json,): (String,) =
-        sqlx::query_as("SELECT attributes_json FROM character_base WHERE character_id = ?")
-            .bind(id)
-            .fetch_one(pool)
-            .await?;
-
-    let attributes: Attributes = serde_json::from_str(&attributes_json)?;
+    // Load all JSON columns from character_base
+    #[allow(clippy::type_complexity)]
+    let row: (
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        Option<String>,
+    ) = sqlx::query_as(
+        "SELECT attributes_json, skills_json, skill_groups_json, qualities_json, \
+             augmentations_json, spells_json, adept_powers_json, complex_forms_json, \
+             contacts_json, weapons_json, armor_json, gear_json, vehicles_json, \
+             priority_selection_json \
+             FROM character_base WHERE character_id = ?",
+    )
+    .bind(id)
+    .fetch_one(pool)
+    .await?;
 
     let base = CharacterBase {
         id: id.to_string(),
@@ -205,20 +226,20 @@ pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCha
         name,
         edition,
         metatype,
-        attributes,
-        skills: vec![],
-        skill_groups: vec![],
-        qualities: vec![],
-        augmentations: vec![],
-        spells: vec![],
-        adept_powers: vec![],
-        complex_forms: vec![],
-        contacts: vec![],
-        weapons: vec![],
-        armor: vec![],
-        gear: vec![],
-        vehicles: vec![],
-        priority_selection: None,
+        attributes: serde_json::from_str(&row.0)?,
+        skills: serde_json::from_str(&row.1)?,
+        skill_groups: serde_json::from_str(&row.2)?,
+        qualities: serde_json::from_str(&row.3)?,
+        augmentations: serde_json::from_str(&row.4)?,
+        spells: serde_json::from_str(&row.5)?,
+        adept_powers: serde_json::from_str(&row.6)?,
+        complex_forms: serde_json::from_str(&row.7)?,
+        contacts: serde_json::from_str(&row.8)?,
+        weapons: serde_json::from_str(&row.9)?,
+        armor: serde_json::from_str(&row.10)?,
+        gear: serde_json::from_str(&row.11)?,
+        vehicles: serde_json::from_str(&row.12)?,
+        priority_selection: row.13.as_deref().and_then(|s| serde_json::from_str(s).ok()),
     };
 
     let ledger_rows: Vec<(String,)> =
@@ -286,6 +307,73 @@ pub async fn get_ledger_db(
         .collect();
 
     Ok(events)
+}
+
+/// Get racial attribute limits for a metatype in a given edition.
+pub fn get_racial_limits_for(edition: &Edition, metatype: &Metatype) -> RacialLimits {
+    let rules = rules_for_edition(edition);
+    rules.racial_limits(*metatype)
+}
+
+/// Validate a character draft using the appropriate edition's rules.
+pub fn validate_draft_with_rules(draft: &CharacterDraft) -> Vec<ValidationError> {
+    let rules = rules_for_edition(&draft.edition);
+    rules.validate_creation(draft)
+}
+
+/// Save a finalized character base to the database (overwriting any existing base).
+pub async fn save_character_base_db(
+    pool: &SqlitePool,
+    base: &CharacterBase,
+) -> Result<(), AppError> {
+    let metatype_str = format!("{:?}", base.metatype);
+    let attributes_json = serde_json::to_string(&base.attributes)?;
+    let skills_json = serde_json::to_string(&base.skills)?;
+    let skill_groups_json = serde_json::to_string(&base.skill_groups)?;
+    let qualities_json = serde_json::to_string(&base.qualities)?;
+    let augmentations_json = serde_json::to_string(&base.augmentations)?;
+    let spells_json = serde_json::to_string(&base.spells)?;
+    let adept_powers_json = serde_json::to_string(&base.adept_powers)?;
+    let complex_forms_json = serde_json::to_string(&base.complex_forms)?;
+    let contacts_json = serde_json::to_string(&base.contacts)?;
+    let weapons_json = serde_json::to_string(&base.weapons)?;
+    let armor_json = serde_json::to_string(&base.armor)?;
+    let gear_json = serde_json::to_string(&base.gear)?;
+    let vehicles_json = serde_json::to_string(&base.vehicles)?;
+    let priority_json = base
+        .priority_selection
+        .as_ref()
+        .map(serde_json::to_string)
+        .transpose()?;
+
+    sqlx::query(
+        "UPDATE character_base SET \
+         metatype = ?, attributes_json = ?, skills_json = ?, skill_groups_json = ?, \
+         qualities_json = ?, augmentations_json = ?, spells_json = ?, adept_powers_json = ?, \
+         complex_forms_json = ?, contacts_json = ?, weapons_json = ?, armor_json = ?, \
+         gear_json = ?, vehicles_json = ?, priority_selection_json = ? \
+         WHERE character_id = ?",
+    )
+    .bind(&metatype_str)
+    .bind(&attributes_json)
+    .bind(&skills_json)
+    .bind(&skill_groups_json)
+    .bind(&qualities_json)
+    .bind(&augmentations_json)
+    .bind(&spells_json)
+    .bind(&adept_powers_json)
+    .bind(&complex_forms_json)
+    .bind(&contacts_json)
+    .bind(&weapons_json)
+    .bind(&armor_json)
+    .bind(&gear_json)
+    .bind(&vehicles_json)
+    .bind(&priority_json)
+    .bind(&base.id)
+    .execute(pool)
+    .await?;
+
+    Ok(())
 }
 
 // ============================================================
@@ -398,6 +486,28 @@ pub async fn get_ledger(
 ) -> Result<Vec<LedgerEvent>, AppError> {
     let pool = get_pool(&state).await?;
     get_ledger_db(&pool, &character_id).await
+}
+
+#[tauri::command]
+pub fn get_racial_limits(edition: String, metatype: String) -> Result<RacialLimits, AppError> {
+    let edition_enum = parse_edition(&edition)?;
+    let metatype_enum = parse_metatype(&metatype)?;
+    Ok(get_racial_limits_for(&edition_enum, &metatype_enum))
+}
+
+#[tauri::command]
+pub fn validate_draft(draft: CharacterDraft) -> Vec<ValidationError> {
+    validate_draft_with_rules(&draft)
+}
+
+#[tauri::command]
+pub async fn save_character_base(
+    base: CharacterBase,
+    state: State<'_, AppState>,
+) -> Result<ComputedCharacter, AppError> {
+    let pool = get_pool(&state).await?;
+    save_character_base_db(&pool, &base).await?;
+    get_character_db(&pool, &base.id).await
 }
 
 // ============================================================
@@ -720,5 +830,177 @@ mod tests {
 
         let events = get_ledger_db(&pool, "ch1").await.unwrap();
         assert_eq!(events.len(), 7);
+    }
+
+    // -- Tests for new builder commands --
+
+    #[test]
+    fn test_get_racial_limits_sr4_human() {
+        let limits = get_racial_limits_for(&Edition::SR4, &Metatype::Human);
+        assert_eq!(limits.body, (1, 6));
+        assert_eq!(limits.edge, (2, 7));
+    }
+
+    #[test]
+    fn test_get_racial_limits_sr5_ork() {
+        let limits = get_racial_limits_for(&Edition::SR5, &Metatype::Ork);
+        assert_eq!(limits.body, (4, 9));
+        assert_eq!(limits.strength, (3, 8));
+    }
+
+    #[test]
+    fn test_validate_draft_legal_sr4() {
+        let draft = CharacterDraft {
+            name: "Test".to_string(),
+            edition: Edition::SR4,
+            metatype: Metatype::Human,
+            attributes: Attributes {
+                body: 3,
+                agility: 3,
+                reaction: 3,
+                strength: 3,
+                willpower: 3,
+                logic: 3,
+                intuition: 3,
+                charisma: 3,
+                edge: 3,
+                essence: 600,
+                magic: None,
+                resonance: None,
+            },
+            skills: vec![],
+            skill_groups: vec![],
+            qualities: vec![],
+            augmentations: vec![],
+            spells: vec![],
+            adept_powers: vec![],
+            complex_forms: vec![],
+            contacts: vec![],
+            weapons: vec![],
+            armor: vec![],
+            gear: vec![],
+            vehicles: vec![],
+            priority_selection: None,
+            creation_points_spent: 0,
+            nuyen_spent: 0,
+        };
+        let errors = validate_draft_with_rules(&draft);
+        let real_errors: Vec<_> = errors
+            .iter()
+            .filter(|e| e.severity == personafix_core::model::validation::ValidationSeverity::Error)
+            .collect();
+        assert!(
+            real_errors.is_empty(),
+            "Expected no errors, got: {real_errors:?}"
+        );
+    }
+
+    #[test]
+    fn test_validate_draft_catches_attribute_over_max() {
+        let draft = CharacterDraft {
+            name: "Test".to_string(),
+            edition: Edition::SR4,
+            metatype: Metatype::Human,
+            attributes: Attributes {
+                body: 8, // Over max of 6
+                agility: 1,
+                reaction: 1,
+                strength: 1,
+                willpower: 1,
+                logic: 1,
+                intuition: 1,
+                charisma: 1,
+                edge: 2,
+                essence: 600,
+                magic: None,
+                resonance: None,
+            },
+            skills: vec![],
+            skill_groups: vec![],
+            qualities: vec![],
+            augmentations: vec![],
+            spells: vec![],
+            adept_powers: vec![],
+            complex_forms: vec![],
+            contacts: vec![],
+            weapons: vec![],
+            armor: vec![],
+            gear: vec![],
+            vehicles: vec![],
+            priority_selection: None,
+            creation_points_spent: 0,
+            nuyen_spent: 0,
+        };
+        let errors = validate_draft_with_rules(&draft);
+        assert!(errors.iter().any(|e| e.field == "attributes.body"));
+    }
+
+    #[tokio::test]
+    async fn test_save_character_base_persists_skills() {
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_character_db(
+            &pool,
+            "ch1",
+            "c1",
+            &Edition::SR4,
+            "Runner",
+            &Metatype::Human,
+        )
+        .await
+        .unwrap();
+
+        // Build a base with skills
+        use personafix_core::model::skills::Skill;
+        let base = CharacterBase {
+            id: "ch1".to_string(),
+            campaign_id: "c1".to_string(),
+            name: "Runner".to_string(),
+            edition: Edition::SR4,
+            metatype: Metatype::Human,
+            attributes: Attributes {
+                body: 4,
+                agility: 5,
+                reaction: 3,
+                strength: 3,
+                willpower: 3,
+                logic: 2,
+                intuition: 4,
+                charisma: 2,
+                edge: 3,
+                essence: 600,
+                magic: None,
+                resonance: None,
+            },
+            skills: vec![Skill {
+                id: "pistols".to_string(),
+                name: "Pistols".to_string(),
+                linked_attribute: "AGI".to_string(),
+                group: None,
+                rating: 5,
+                specializations: vec![],
+            }],
+            skill_groups: vec![],
+            qualities: vec![],
+            augmentations: vec![],
+            spells: vec![],
+            adept_powers: vec![],
+            complex_forms: vec![],
+            contacts: vec![],
+            weapons: vec![],
+            armor: vec![],
+            gear: vec![],
+            vehicles: vec![],
+            priority_selection: None,
+        };
+
+        save_character_base_db(&pool, &base).await.unwrap();
+
+        // Retrieve and verify
+        let computed = get_character_db(&pool, "ch1").await.unwrap();
+        assert_eq!(computed.computed_attributes.body, 4);
+        assert_eq!(computed.computed_attributes.agility, 5);
+        assert_eq!(computed.physical_condition_monitor, 10); // 8 + ceil(4/2)
+        assert_eq!(computed.initiative, 7); // REA 3 + INT 4
     }
 }

@@ -17,6 +17,9 @@ pub fn run() {
             commands::get_character,
             commands::apply_event,
             commands::get_ledger,
+            commands::get_racial_limits,
+            commands::validate_draft,
+            commands::save_character_base,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

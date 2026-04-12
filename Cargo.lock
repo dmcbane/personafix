@@ -2566,7 +2566,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "personafix-core"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2576,7 +2576,7 @@ dependencies = [
 
 [[package]]
 name = "personafix-data"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "personafix-core",
  "serde",
@@ -2588,7 +2588,7 @@ dependencies = [
 
 [[package]]
 name = "personafix-desktop"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "dirs",
  "personafix-core",
@@ -2606,7 +2606,7 @@ dependencies = [
 
 [[package]]
 name = "personafix-migrate"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "clap",
  "personafix-core",
