@@ -6,6 +6,7 @@ import {
   type MetatypeKey,
 } from "./store/characterStore";
 import BuilderShell from "./components/BuilderShell";
+import SavedCharacterView from "./components/SavedCharacterView";
 
 interface Campaign {
   id: string;
@@ -17,6 +18,7 @@ const METATYPES: MetatypeKey[] = ["Human", "Elf", "Dwarf", "Ork", "Troll"];
 
 function App() {
   const draft = useCharacterStore((s) => s.draft);
+  const savedCharacter = useCharacterStore((s) => s.savedCharacter);
   const startNewCharacter = useCharacterStore((s) => s.startNewCharacter);
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
@@ -26,9 +28,14 @@ function App() {
   const [metatype, setMetatype] = useState<MetatypeKey>("Human");
   const [error, setError] = useState<string | null>(null);
 
-  // If we have a draft in progress, show the builder
-  if (draft) {
-    return <BuilderShell />;
+  // Show saved character sheet
+  if (savedCharacter) {
+    return <SavedCharacterView />;
+  }
+
+  // Show builder if draft in progress
+  if (draft && campaign) {
+    return <BuilderShell campaignId={campaign.id} />;
   }
 
   const handleCreateCampaign = async () => {

@@ -57,6 +57,16 @@ export interface ValidationError {
   message: string;
 }
 
+export type PriorityLevel = "A" | "B" | "C" | "D" | "E";
+
+export interface PrioritySelection {
+  metatype: PriorityLevel;
+  attributes: PriorityLevel;
+  magic_or_resonance: PriorityLevel;
+  skills: PriorityLevel;
+  resources: PriorityLevel;
+}
+
 export interface CharacterDraft {
   name: string;
   edition: "SR4" | "SR5";
@@ -74,18 +84,30 @@ export interface CharacterDraft {
   armor: unknown[];
   gear: unknown[];
   vehicles: unknown[];
-  priority_selection: unknown | null;
+  priority_selection: PrioritySelection | null;
   creation_points_spent: number;
   nuyen_spent: number;
 }
 
+export interface ComputedCharacter {
+  base: {
+    id: string;
+    name: string;
+    edition: string;
+    metatype: string;
+  };
+  computed_attributes: Attributes;
+  physical_condition_monitor: number;
+  stun_condition_monitor: number;
+  initiative: number;
+  initiative_dice: number;
+  total_karma_earned: number;
+  total_karma_spent: number;
+  nuyen: number;
+}
+
 export type Edition = "SR4" | "SR5";
-export type MetatypeKey =
-  | "Human"
-  | "Elf"
-  | "Dwarf"
-  | "Ork"
-  | "Troll";
+export type MetatypeKey = "Human" | "Elf" | "Dwarf" | "Ork" | "Troll";
 
 export const ATTRIBUTE_NAMES = [
   "body",
@@ -101,11 +123,69 @@ export const ATTRIBUTE_NAMES = [
 
 export type AttributeName = (typeof ATTRIBUTE_NAMES)[number];
 
+export const PRIORITY_LEVELS: PriorityLevel[] = ["A", "B", "C", "D", "E"];
+
+export type PriorityCategory =
+  | "metatype"
+  | "attributes"
+  | "magic_or_resonance"
+  | "skills"
+  | "resources";
+
+export const PRIORITY_CATEGORIES: {
+  key: PriorityCategory;
+  label: string;
+}[] = [
+  { key: "metatype", label: "Metatype" },
+  { key: "attributes", label: "Attributes" },
+  { key: "magic_or_resonance", label: "Magic/Resonance" },
+  { key: "skills", label: "Skills" },
+  { key: "resources", label: "Resources" },
+];
+
+// Priority table data for display
+export const PRIORITY_TABLE: Record<
+  PriorityCategory,
+  Record<PriorityLevel, string>
+> = {
+  metatype: {
+    A: "Any (13 special)",
+    B: "Any (11 special)",
+    C: "Any (9 special)",
+    D: "Human/Elf (0)",
+    E: "Human (0)",
+  },
+  attributes: { A: "24", B: "20", C: "16", D: "14", E: "12" },
+  magic_or_resonance: {
+    A: "Magician (6)",
+    B: "Adept (6)",
+    C: "Magician (3)",
+    D: "Adept (2)",
+    E: "Mundane",
+  },
+  skills: {
+    A: "46/10",
+    B: "36/5",
+    C: "28/2",
+    D: "22/0",
+    E: "18/0",
+  },
+  resources: {
+    A: "450,000¥",
+    B: "275,000¥",
+    C: "140,000¥",
+    D: "50,000¥",
+    E: "6,000¥",
+  },
+};
+
 interface CharacterState {
   // Current draft being built
   draft: CharacterDraft | null;
   racialLimits: RacialLimits | null;
   validationErrors: ValidationError[];
+  // Saved character (after finalization)
+  savedCharacter: ComputedCharacter | null;
 
   // Actions
   startNewCharacter: (
@@ -119,13 +199,17 @@ interface CharacterState {
   updateSkillRating: (skillId: string, rating: number) => void;
   addQuality: (quality: Quality) => void;
   removeQuality: (qualityId: string) => void;
+  setPriority: (category: PriorityCategory, level: PriorityLevel) => void;
   validate: () => Promise<void>;
+  saveCharacter: (campaignId: string) => Promise<void>;
+  reset: () => void;
 }
 
 export const useCharacterStore = create<CharacterState>((set, get) => ({
   draft: null,
   racialLimits: null,
   validationErrors: [],
+  savedCharacter: null,
 
   startNewCharacter: async (edition, metatype, name) => {
     const limits = await invoke<RacialLimits>("get_racial_limits", {
@@ -163,18 +247,31 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       armor: [],
       gear: [],
       vehicles: [],
-      priority_selection: null,
+      priority_selection:
+        edition === "SR5"
+          ? {
+              metatype: "A",
+              attributes: "B",
+              magic_or_resonance: "C",
+              skills: "D",
+              resources: "E",
+            }
+          : null,
       creation_points_spent: 0,
       nuyen_spent: 0,
     };
 
-    set({ draft, racialLimits: limits, validationErrors: [] });
+    set({
+      draft,
+      racialLimits: limits,
+      validationErrors: [],
+      savedCharacter: null,
+    });
   },
 
   setAttribute: (attr, value) => {
     const { draft } = get();
     if (!draft) return;
-
     set({
       draft: {
         ...draft,
@@ -232,6 +329,20 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
     });
   },
 
+  setPriority: (category, level) => {
+    const { draft } = get();
+    if (!draft || !draft.priority_selection) return;
+    set({
+      draft: {
+        ...draft,
+        priority_selection: {
+          ...draft.priority_selection,
+          [category]: level,
+        },
+      },
+    });
+  },
+
   validate: async () => {
     const { draft } = get();
     if (!draft) return;
@@ -239,5 +350,56 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       draft,
     });
     set({ validationErrors: errors });
+  },
+
+  saveCharacter: async (campaignId) => {
+    const { draft } = get();
+    if (!draft) return;
+
+    // Create character in DB, then save the full base
+    const summary = await invoke<{ id: string }>("create_character", {
+      campaignId,
+      edition: draft.edition,
+      name: draft.name,
+      metatype: draft.metatype,
+    });
+
+    // Build CharacterBase from draft
+    const base = {
+      id: summary.id,
+      campaign_id: campaignId,
+      name: draft.name,
+      edition: draft.edition,
+      metatype: draft.metatype,
+      attributes: draft.attributes,
+      skills: draft.skills,
+      skill_groups: draft.skill_groups,
+      qualities: draft.qualities,
+      augmentations: draft.augmentations,
+      spells: draft.spells,
+      adept_powers: draft.adept_powers,
+      complex_forms: draft.complex_forms,
+      contacts: draft.contacts,
+      weapons: draft.weapons,
+      armor: draft.armor,
+      gear: draft.gear,
+      vehicles: draft.vehicles,
+      priority_selection: draft.priority_selection,
+    };
+
+    const computed = await invoke<ComputedCharacter>(
+      "save_character_base",
+      { base },
+    );
+    set({ savedCharacter: computed, draft: null });
+  },
+
+  reset: () => {
+    set({
+      draft: null,
+      racialLimits: null,
+      validationErrors: [],
+      savedCharacter: null,
+    });
   },
 }));

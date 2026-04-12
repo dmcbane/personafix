@@ -1003,4 +1003,185 @@ mod tests {
         assert_eq!(computed.physical_condition_monitor, 10); // 8 + ceil(4/2)
         assert_eq!(computed.initiative, 7); // REA 3 + INT 4
     }
+
+    #[tokio::test]
+    async fn test_save_full_character_with_qualities_round_trips() {
+        use personafix_core::model::qualities::{Quality, QualityType};
+        use personafix_core::model::skills::Skill;
+
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_character_db(
+            &pool,
+            "ch1",
+            "c1",
+            &Edition::SR4,
+            "Street Sam",
+            &Metatype::Human,
+        )
+        .await
+        .unwrap();
+
+        let base = CharacterBase {
+            id: "ch1".to_string(),
+            campaign_id: "c1".to_string(),
+            name: "Street Sam".to_string(),
+            edition: Edition::SR4,
+            metatype: Metatype::Human,
+            attributes: Attributes {
+                body: 5,
+                agility: 5,
+                reaction: 4,
+                strength: 4,
+                willpower: 3,
+                logic: 2,
+                intuition: 4,
+                charisma: 2,
+                edge: 3,
+                essence: 600,
+                magic: None,
+                resonance: None,
+            },
+            skills: vec![
+                Skill {
+                    id: "pistols".to_string(),
+                    name: "Pistols".to_string(),
+                    linked_attribute: "AGI".to_string(),
+                    group: None,
+                    rating: 5,
+                    specializations: vec![],
+                },
+                Skill {
+                    id: "dodge".to_string(),
+                    name: "Dodge".to_string(),
+                    linked_attribute: "REA".to_string(),
+                    group: None,
+                    rating: 4,
+                    specializations: vec![],
+                },
+            ],
+            skill_groups: vec![],
+            qualities: vec![
+                Quality {
+                    id: "ambidextrous".to_string(),
+                    name: "Ambidextrous".to_string(),
+                    quality_type: QualityType::Positive,
+                    cost: 5,
+                    source: "SR4".to_string(),
+                    page: "90".to_string(),
+                    improvements: vec![],
+                    incompatible_with: vec![],
+                },
+                Quality {
+                    id: "sinner".to_string(),
+                    name: "SINner".to_string(),
+                    quality_type: QualityType::Negative,
+                    cost: 5,
+                    source: "SR4".to_string(),
+                    page: "91".to_string(),
+                    improvements: vec![],
+                    incompatible_with: vec![],
+                },
+            ],
+            augmentations: vec![],
+            spells: vec![],
+            adept_powers: vec![],
+            complex_forms: vec![],
+            contacts: vec![],
+            weapons: vec![],
+            armor: vec![],
+            gear: vec![],
+            vehicles: vec![],
+            priority_selection: None,
+        };
+
+        save_character_base_db(&pool, &base).await.unwrap();
+
+        // Read back and verify everything persisted
+        let computed = get_character_db(&pool, "ch1").await.unwrap();
+        assert_eq!(computed.base.skills.len(), 2);
+        assert_eq!(computed.base.skills[0].name, "Pistols");
+        assert_eq!(computed.base.skills[0].rating, 5);
+        assert_eq!(computed.base.skills[1].name, "Dodge");
+        assert_eq!(computed.base.qualities.len(), 2);
+        assert_eq!(computed.base.qualities[0].name, "Ambidextrous");
+        assert_eq!(
+            computed.base.qualities[1].quality_type,
+            QualityType::Negative
+        );
+        assert_eq!(computed.computed_attributes.body, 5);
+        assert_eq!(computed.physical_condition_monitor, 11); // 8 + ceil(5/2)
+    }
+
+    #[tokio::test]
+    async fn test_save_sr5_character_with_priority_selection() {
+        use personafix_core::model::priority::{PriorityLevel, PrioritySelection};
+        use personafix_core::model::skills::Skill;
+
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_character_db(&pool, "ch1", "c1", &Edition::SR5, "Adept", &Metatype::Human)
+            .await
+            .unwrap();
+
+        let base = CharacterBase {
+            id: "ch1".to_string(),
+            campaign_id: "c1".to_string(),
+            name: "Adept".to_string(),
+            edition: Edition::SR5,
+            metatype: Metatype::Human,
+            attributes: Attributes {
+                body: 4,
+                agility: 5,
+                reaction: 4,
+                strength: 3,
+                willpower: 3,
+                logic: 2,
+                intuition: 5,
+                charisma: 3,
+                edge: 3,
+                essence: 600,
+                magic: Some(6),
+                resonance: None,
+            },
+            skills: vec![Skill {
+                id: "unarmed".to_string(),
+                name: "Unarmed Combat".to_string(),
+                linked_attribute: "AGI".to_string(),
+                group: None,
+                rating: 6,
+                specializations: vec![],
+            }],
+            skill_groups: vec![],
+            qualities: vec![],
+            augmentations: vec![],
+            spells: vec![],
+            adept_powers: vec![],
+            complex_forms: vec![],
+            contacts: vec![],
+            weapons: vec![],
+            armor: vec![],
+            gear: vec![],
+            vehicles: vec![],
+            priority_selection: Some(PrioritySelection {
+                metatype: PriorityLevel::D,
+                attributes: PriorityLevel::A,
+                magic_or_resonance: PriorityLevel::B,
+                skills: PriorityLevel::C,
+                resources: PriorityLevel::E,
+            }),
+        };
+
+        save_character_base_db(&pool, &base).await.unwrap();
+
+        // Read back — priority selection should persist
+        let computed = get_character_db(&pool, "ch1").await.unwrap();
+        let priority = computed.base.priority_selection.unwrap();
+        assert_eq!(priority.metatype, PriorityLevel::D);
+        assert_eq!(priority.attributes, PriorityLevel::A);
+        assert_eq!(priority.magic_or_resonance, PriorityLevel::B);
+        assert_eq!(priority.skills, PriorityLevel::C);
+        assert_eq!(priority.resources, PriorityLevel::E);
+        assert_eq!(computed.computed_attributes.magic, Some(6));
+    }
 }
