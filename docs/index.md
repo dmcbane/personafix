@@ -3,9 +3,17 @@ layout: default
 title: personafix
 ---
 
-![personafix — Shadowrun Character Management](logo.png)
+<div class="hero">
+  <img src="logo.png" alt="personafix — Shadowrun Character Management">
+  <p class="hero-tagline">A cross-platform character creation and career management tool for Shadowrun 4th and 5th Edition.</p>
+</div>
 
-A cross-platform Shadowrun character creation and career management tool for SR4 and SR5.
+<div class="nav-bar">
+  <a href="https://github.com/dmcbane/personafix/releases">Downloads</a>
+  <a href="https://github.com/dmcbane/personafix">Source Code</a>
+  <a href="https://github.com/dmcbane/personafix/blob/main/CONTRIBUTING.md">Contribute</a>
+  <a href="https://github.com/dmcbane/personafix/blob/main/CHANGELOG.md">Changelog</a>
+</div>
 
 ## What is personafix?
 
@@ -26,19 +34,19 @@ Releases are available on the [GitHub Releases page](https://github.com/dmcbane/
 ## Features
 
 ### Character Creation
-- **SR4 Build Points**: 400 BP budget with real-time validation of attribute bounds, skill caps, quality limits, and resource allocation
-- **SR5 Priority System**: interactive priority table (A-E) for Metatype, Attributes, Magic/Resonance, Skills, and Resources with smart swap
-- **All 5 core metatypes**: Human, Elf, Dwarf, Ork, Troll with edition-accurate racial attribute limits
+- **SR4 Build Points** — 400 BP budget with real-time validation of attribute bounds, skill caps, quality limits, and resource allocation
+- **SR5 Priority System** — interactive priority table (A-E) for Metatype, Attributes, Magic/Resonance, Skills, and Resources with smart swap
+- **All 5 core metatypes** — Human, Elf, Dwarf, Ork, Troll with edition-accurate racial attribute limits
 
 ### Career Tracking
-- **Append-only ledger**: every karma gain, nuyen transaction, skill improvement, and gear purchase is recorded as an event
-- **Full history**: view your character's complete career timeline
-- **Undo-safe**: the current character sheet is always re-projected from the creation base plus all events
+- **Append-only ledger** — every karma gain, nuyen transaction, skill improvement, and gear purchase is recorded as an event
+- **Full history** — view your character's complete career timeline
+- **Undo-safe** — the current character sheet is always re-projected from the creation base plus all events
 
 ### Portable Data
-- **One file per campaign**: `.srx` is just a SQLite database
-- **No cloud required**: fully offline, no account needed
-- **Import game data**: migrates SR4 and SR5 data from ChummerGenSR4 and Chummer5a XML files
+- **One file per campaign** — `.srx` is just a SQLite database
+- **No cloud required** — fully offline, no account needed
+- **Import game data** — migrates SR4 and SR5 data from ChummerGenSR4 and Chummer5a XML files
 
 ## Getting Started
 
@@ -51,18 +59,22 @@ Releases are available on the [GitHub Releases page](https://github.com/dmcbane/
 
 ## For Developers
 
-personafix is open source and welcomes contributions. See the [GitHub repository](https://github.com/dmcbane/personafix) for source code, the [contributing guide](https://github.com/dmcbane/personafix/blob/main/CONTRIBUTING.md) for setup instructions, and [CLAUDE.md](https://github.com/dmcbane/personafix/blob/main/CLAUDE.md) for architecture details.
-
 ### Tech Stack
-- **Rules engine**: Rust (pure, no I/O — compiles to native + WASM)
-- **Desktop shell**: [Tauri 2.x](https://tauri.app/)
-- **Frontend**: React 19 + TypeScript + Tailwind CSS + Zustand
-- **Database**: SQLite (one file per campaign)
-- **CI/CD**: GitHub Actions (builds for Linux, macOS, Windows)
+- **Rules engine** — Rust (pure, no I/O — compiles to native + WASM)
+- **Desktop shell** — [Tauri 2.x](https://tauri.app/)
+- **Frontend** — React 19 + TypeScript + Tailwind CSS + Zustand
+- **Database** — SQLite (one file per campaign)
+- **CI/CD** — GitHub Actions (builds for Linux, macOS, Windows)
 
-## License
+### Quick Start
 
-Dual-licensed under [MIT](https://github.com/dmcbane/personafix/blob/main/LICENSE-MIT) and [Apache 2.0](https://github.com/dmcbane/personafix/blob/main/LICENSE-APACHE).
+```sh
+git clone https://github.com/dmcbane/personafix.git
+cd personafix
+make install    # Install Node dependencies
+make dev        # Launch the desktop app
+make test       # Run all 153+ tests
+```
 
 ## Disclaimer
 
