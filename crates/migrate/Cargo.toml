@@ -1,0 +1,17 @@
+[package]
+name = "personafix-migrate"
+description = "One-time XML → SQLite migration tool for Chummer SR4/SR5 game data"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+personafix-core = { workspace = true }
+personafix-data = { workspace = true }
+quick-xml = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }

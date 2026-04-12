@@ -1,0 +1,12 @@
+pub mod attributes;
+pub mod augmentations;
+pub mod character;
+pub mod contacts;
+pub mod edition;
+pub mod gear;
+pub mod improvements;
+pub mod magic;
+pub mod priority;
+pub mod qualities;
+pub mod skills;
+pub mod validation;
