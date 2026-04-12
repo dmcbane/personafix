@@ -2,6 +2,10 @@
 
 [![CI](https://github.com/dmcbane/personafix/actions/workflows/ci.yml/badge.svg)](https://github.com/dmcbane/personafix/actions/workflows/ci.yml)
 
+<p align="center">
+  <img src="docs/logo.png" alt="personafix — Shadowrun Character Management" width="600">
+</p>
+
 A cross-platform Shadowrun character creation and career management tool supporting both SR4 and SR5 editions.
 
 **[Project Homepage](https://dmcbane.github.io/personafix/)** | **[Downloads](https://github.com/dmcbane/personafix/releases)** | **[Changelog](CHANGELOG.md)**

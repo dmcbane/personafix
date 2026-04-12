@@ -63,6 +63,11 @@ function App() {
     <div className="min-h-screen flex items-center justify-center p-8">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
+          <img
+            src="/icon.png"
+            alt="personafix"
+            className="w-24 h-24 mx-auto mb-4 rounded-2xl"
+          />
           <h1 className="text-4xl font-bold mb-2">personafix</h1>
           <p className="text-gray-400">Shadowrun Character Manager</p>
         </div>

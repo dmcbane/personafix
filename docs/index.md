@@ -3,7 +3,7 @@ layout: default
 title: personafix
 ---
 
-# personafix
+![personafix — Shadowrun Character Management](logo.png)
 
 A cross-platform Shadowrun character creation and career management tool for SR4 and SR5.
 
