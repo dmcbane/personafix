@@ -7,6 +7,10 @@ target
 packages/types/*.ts
 crates/core/bindings/
 
+# Node.js
+node_modules/
+dist/
+
 # Chummer XML data sources (cloned for migration, not distributed)
 vendor/
 

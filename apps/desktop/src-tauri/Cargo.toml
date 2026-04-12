@@ -1,0 +1,23 @@
+[package]
+name = "personafix-desktop"
+description = "Shadowrun character manager desktop application"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+personafix-core = { workspace = true }
+personafix-data = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+uuid = { version = "1", features = ["v4"] }
+dirs = "6"
