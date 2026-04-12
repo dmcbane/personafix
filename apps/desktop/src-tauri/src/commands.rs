@@ -24,7 +24,7 @@ pub struct Campaign {
     pub name: String,
 }
 
-// -- Helper to get the pool or return an error --
+// -- Helpers --
 
 async fn get_pool(state: &State<'_, AppState>) -> Result<SqlitePool, AppError> {
     let guard = state.campaign_pool.read().await;
@@ -41,7 +41,7 @@ fn rules_for_edition(edition: &Edition) -> Box<dyn CharacterRules> {
     }
 }
 
-fn parse_edition(s: &str) -> Result<Edition, AppError> {
+pub fn parse_edition(s: &str) -> Result<Edition, AppError> {
     match s {
         "SR4" => Ok(Edition::SR4),
         "SR5" => Ok(Edition::SR5),
@@ -49,7 +49,7 @@ fn parse_edition(s: &str) -> Result<Edition, AppError> {
     }
 }
 
-fn parse_metatype(s: &str) -> Result<Metatype, AppError> {
+pub fn parse_metatype(s: &str) -> Result<Metatype, AppError> {
     match s {
         "Human" => Ok(Metatype::Human),
         "Elf" => Ok(Metatype::Elf),
@@ -60,79 +60,41 @@ fn parse_metatype(s: &str) -> Result<Metatype, AppError> {
     }
 }
 
-// -- IPC Commands --
+// ============================================================
+// Core logic functions — testable without Tauri runtime
+// ============================================================
 
-#[tauri::command]
-pub async fn create_campaign(
-    name: String,
-    state: State<'_, AppState>,
+/// Create a new campaign database at the given path, run migrations, insert record.
+pub async fn create_campaign_db(
+    pool: &SqlitePool,
+    id: &str,
+    name: &str,
 ) -> Result<Campaign, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
-
-    // Create the campaign database file in a default location
-    let db_dir = dirs::data_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("personafix")
-        .join("campaigns");
-    std::fs::create_dir_all(&db_dir).map_err(|e| AppError {
-        kind: "io".to_string(),
-        message: e.to_string(),
-    })?;
-
-    let db_path = db_dir.join(format!("{id}.srx"));
-    let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
-    let pool = SqlitePool::connect(&db_url).await?;
-
-    // Run migrations
-    let migrations = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../crates/data/migrations");
+    let migrations =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../crates/data/migrations");
     let migrator = sqlx::migrate::Migrator::new(migrations).await?;
-    migrator.run(&pool).await?;
+    migrator.run(pool).await?;
 
-    // Insert campaign record
     sqlx::query("INSERT INTO campaigns (id, name) VALUES (?, ?)")
-        .bind(&id)
-        .bind(&name)
-        .execute(&pool)
+        .bind(id)
+        .bind(name)
+        .execute(pool)
         .await?;
-
-    // Set as active campaign
-    *state.campaign_pool.write().await = Some(pool);
-    *state.campaign_path.write().await = Some(db_path);
-
-    Ok(Campaign { id, name })
-}
-
-#[tauri::command]
-pub async fn open_campaign(path: String, state: State<'_, AppState>) -> Result<Campaign, AppError> {
-    let db_path = PathBuf::from(&path);
-    let db_url = format!("sqlite:{}?mode=rw", db_path.display());
-    let pool = SqlitePool::connect(&db_url).await?;
-
-    // Read campaign info
-    let row: (String, String) = sqlx::query_as("SELECT id, name FROM campaigns LIMIT 1")
-        .fetch_one(&pool)
-        .await?;
-
-    *state.campaign_pool.write().await = Some(pool);
-    *state.campaign_path.write().await = Some(db_path);
 
     Ok(Campaign {
-        id: row.0,
-        name: row.1,
+        id: id.to_string(),
+        name: name.to_string(),
     })
 }
 
-#[tauri::command]
-pub async fn list_characters(
-    campaign_id: String,
-    state: State<'_, AppState>,
+pub async fn list_characters_db(
+    pool: &SqlitePool,
+    campaign_id: &str,
 ) -> Result<Vec<CharacterSummary>, AppError> {
-    let pool = get_pool(&state).await?;
-
     let rows: Vec<(String, String, String, String)> =
-        sqlx::query_as("SELECT id, name, edition, metatype FROM characters WHERE campaign_id = ?")
-            .bind(&campaign_id)
-            .fetch_all(&pool)
+        sqlx::query_as("SELECT c.id, c.name, c.edition, cb.metatype FROM characters c JOIN character_base cb ON c.id = cb.character_id WHERE c.campaign_id = ?")
+            .bind(campaign_id)
+            .fetch_all(pool)
             .await?;
 
     let summaries = rows
@@ -145,7 +107,6 @@ pub async fn list_characters(
                 _ => Edition::SR5,
             },
             metatype: match metatype.as_str() {
-                "Human" => Metatype::Human,
                 "Elf" => Metatype::Elf,
                 "Dwarf" => Metatype::Dwarf,
                 "Ork" => Metatype::Ork,
@@ -159,23 +120,17 @@ pub async fn list_characters(
     Ok(summaries)
 }
 
-#[tauri::command]
-pub async fn create_character(
-    campaign_id: String,
-    edition: String,
-    name: String,
-    metatype: String,
-    state: State<'_, AppState>,
+pub async fn create_character_db(
+    pool: &SqlitePool,
+    id: &str,
+    campaign_id: &str,
+    edition: &Edition,
+    name: &str,
+    metatype: &Metatype,
 ) -> Result<CharacterSummary, AppError> {
-    let pool = get_pool(&state).await?;
-    let edition_enum = parse_edition(&edition)?;
-    let metatype_enum = parse_metatype(&metatype)?;
-    let id = uuid::Uuid::new_v4().to_string();
+    let rules = rules_for_edition(edition);
+    let limits = rules.racial_limits(*metatype);
 
-    let rules = rules_for_edition(&edition_enum);
-    let limits = rules.racial_limits(metatype_enum);
-
-    // Create default attributes at racial minimums
     let attributes = Attributes {
         body: limits.body.0,
         agility: limits.agility.0,
@@ -191,69 +146,61 @@ pub async fn create_character(
         resonance: None,
     };
 
+    let edition_str = edition.to_string();
+    let metatype_str = format!("{metatype:?}");
     let attributes_json = serde_json::to_string(&attributes)?;
 
-    // Insert character record
     sqlx::query("INSERT INTO characters (id, campaign_id, edition, name) VALUES (?, ?, ?, ?)")
-        .bind(&id)
-        .bind(&campaign_id)
-        .bind(&edition)
-        .bind(&name)
-        .execute(&pool)
+        .bind(id)
+        .bind(campaign_id)
+        .bind(&edition_str)
+        .bind(name)
+        .execute(pool)
         .await?;
 
-    // Insert character base
     sqlx::query(
         "INSERT INTO character_base (character_id, metatype, attributes_json) VALUES (?, ?, ?)",
     )
-    .bind(&id)
-    .bind(&metatype)
+    .bind(id)
+    .bind(&metatype_str)
     .bind(&attributes_json)
-    .execute(&pool)
+    .execute(pool)
     .await?;
 
     Ok(CharacterSummary {
-        id,
-        name,
-        edition: edition_enum,
-        metatype: metatype_enum,
+        id: id.to_string(),
+        name: name.to_string(),
+        edition: *edition,
+        metatype: *metatype,
         total_karma: 0,
     })
 }
 
-#[tauri::command]
-pub async fn get_character(
-    id: String,
-    state: State<'_, AppState>,
-) -> Result<ComputedCharacter, AppError> {
-    let pool = get_pool(&state).await?;
-
-    // Load character metadata
+pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCharacter, AppError> {
     let (edition_str, name, campaign_id, metatype_str): (String, String, String, String) =
         sqlx::query_as(
             "SELECT c.edition, c.name, c.campaign_id, cb.metatype \
              FROM characters c JOIN character_base cb ON c.id = cb.character_id \
              WHERE c.id = ?",
         )
-        .bind(&id)
-        .fetch_optional(&pool)
+        .bind(id)
+        .fetch_optional(pool)
         .await?
-        .ok_or_else(|| AppError::not_found("character", &id))?;
+        .ok_or_else(|| AppError::not_found("character", id))?;
 
     let edition = parse_edition(&edition_str)?;
     let metatype = parse_metatype(&metatype_str)?;
 
-    // Load attributes
     let (attributes_json,): (String,) =
         sqlx::query_as("SELECT attributes_json FROM character_base WHERE character_id = ?")
-            .bind(&id)
-            .fetch_one(&pool)
+            .bind(id)
+            .fetch_one(pool)
             .await?;
 
     let attributes: Attributes = serde_json::from_str(&attributes_json)?;
 
     let base = CharacterBase {
-        id: id.clone(),
+        id: id.to_string(),
         campaign_id,
         name,
         edition,
@@ -274,11 +221,10 @@ pub async fn get_character(
         priority_selection: None,
     };
 
-    // Load ledger events
     let ledger_rows: Vec<(String,)> =
         sqlx::query_as("SELECT payload_json FROM ledger WHERE character_id = ? ORDER BY id")
-            .bind(&id)
-            .fetch_all(&pool)
+            .bind(id)
+            .fetch_all(pool)
             .await?;
 
     let events: Vec<LedgerEvent> = ledger_rows
@@ -286,11 +232,152 @@ pub async fn get_character(
         .filter_map(|(json,)| serde_json::from_str(json).ok())
         .collect();
 
-    // Project current state
     let rules = rules_for_edition(&edition);
     let computed = projection::project(&base, &events, rules.as_ref());
 
     Ok(computed)
+}
+
+pub async fn apply_event_db(
+    pool: &SqlitePool,
+    character_id: &str,
+    event: &LedgerEvent,
+) -> Result<(), AppError> {
+    let event_type = format!("{event:?}")
+        .split('{')
+        .next()
+        .unwrap_or("Unknown")
+        .trim()
+        .to_string();
+    let payload_json = serde_json::to_string(event)?;
+
+    let run_id: Option<String> = match event {
+        LedgerEvent::KarmaReceived { run_id, .. } => run_id.clone(),
+        LedgerEvent::NuyenReceived { run_id, .. } => run_id.clone(),
+        _ => None,
+    };
+
+    sqlx::query(
+        "INSERT INTO ledger (character_id, event_type, payload_json, run_id) VALUES (?, ?, ?, ?)",
+    )
+    .bind(character_id)
+    .bind(&event_type)
+    .bind(&payload_json)
+    .bind(&run_id)
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn get_ledger_db(
+    pool: &SqlitePool,
+    character_id: &str,
+) -> Result<Vec<LedgerEvent>, AppError> {
+    let rows: Vec<(String,)> =
+        sqlx::query_as("SELECT payload_json FROM ledger WHERE character_id = ? ORDER BY id")
+            .bind(character_id)
+            .fetch_all(pool)
+            .await?;
+
+    let events: Vec<LedgerEvent> = rows
+        .iter()
+        .filter_map(|(json,)| serde_json::from_str(json).ok())
+        .collect();
+
+    Ok(events)
+}
+
+// ============================================================
+// Tauri command wrappers — thin layer over core logic
+// ============================================================
+
+#[tauri::command]
+pub async fn create_campaign(
+    name: String,
+    state: State<'_, AppState>,
+) -> Result<Campaign, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+
+    let db_dir = dirs::data_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("personafix")
+        .join("campaigns");
+    std::fs::create_dir_all(&db_dir).map_err(|e| AppError {
+        kind: "io".to_string(),
+        message: e.to_string(),
+    })?;
+
+    let db_path = db_dir.join(format!("{id}.srx"));
+    let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
+    let pool = SqlitePool::connect(&db_url).await?;
+
+    let campaign = create_campaign_db(&pool, &id, &name).await?;
+
+    *state.campaign_pool.write().await = Some(pool);
+    *state.campaign_path.write().await = Some(db_path);
+
+    Ok(campaign)
+}
+
+#[tauri::command]
+pub async fn open_campaign(path: String, state: State<'_, AppState>) -> Result<Campaign, AppError> {
+    let db_path = PathBuf::from(&path);
+    let db_url = format!("sqlite:{}?mode=rw", db_path.display());
+    let pool = SqlitePool::connect(&db_url).await?;
+
+    let row: (String, String) = sqlx::query_as("SELECT id, name FROM campaigns LIMIT 1")
+        .fetch_one(&pool)
+        .await?;
+
+    *state.campaign_pool.write().await = Some(pool);
+    *state.campaign_path.write().await = Some(db_path);
+
+    Ok(Campaign {
+        id: row.0,
+        name: row.1,
+    })
+}
+
+#[tauri::command]
+pub async fn list_characters(
+    campaign_id: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<CharacterSummary>, AppError> {
+    let pool = get_pool(&state).await?;
+    list_characters_db(&pool, &campaign_id).await
+}
+
+#[tauri::command]
+pub async fn create_character(
+    campaign_id: String,
+    edition: String,
+    name: String,
+    metatype: String,
+    state: State<'_, AppState>,
+) -> Result<CharacterSummary, AppError> {
+    let pool = get_pool(&state).await?;
+    let edition_enum = parse_edition(&edition)?;
+    let metatype_enum = parse_metatype(&metatype)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    create_character_db(
+        &pool,
+        &id,
+        &campaign_id,
+        &edition_enum,
+        &name,
+        &metatype_enum,
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn get_character(
+    id: String,
+    state: State<'_, AppState>,
+) -> Result<ComputedCharacter, AppError> {
+    let pool = get_pool(&state).await?;
+    get_character_db(&pool, &id).await
 }
 
 #[tauri::command]
@@ -300,34 +387,8 @@ pub async fn apply_event(
     state: State<'_, AppState>,
 ) -> Result<ComputedCharacter, AppError> {
     let pool = get_pool(&state).await?;
-
-    // Serialize and store the event
-    let event_type = format!("{:?}", &event)
-        .split('{')
-        .next()
-        .unwrap_or("Unknown")
-        .trim()
-        .to_string();
-    let payload_json = serde_json::to_string(&event)?;
-
-    let run_id: Option<String> = match &event {
-        LedgerEvent::KarmaReceived { run_id, .. } => run_id.clone(),
-        LedgerEvent::NuyenReceived { run_id, .. } => run_id.clone(),
-        _ => None,
-    };
-
-    sqlx::query(
-        "INSERT INTO ledger (character_id, event_type, payload_json, run_id) VALUES (?, ?, ?, ?)",
-    )
-    .bind(&character_id)
-    .bind(&event_type)
-    .bind(&payload_json)
-    .bind(&run_id)
-    .execute(&pool)
-    .await?;
-
-    // Re-project the character with all events
-    get_character(character_id, state).await
+    apply_event_db(&pool, &character_id, &event).await?;
+    get_character_db(&pool, &character_id).await
 }
 
 #[tauri::command]
@@ -336,17 +397,328 @@ pub async fn get_ledger(
     state: State<'_, AppState>,
 ) -> Result<Vec<LedgerEvent>, AppError> {
     let pool = get_pool(&state).await?;
+    get_ledger_db(&pool, &character_id).await
+}
 
-    let rows: Vec<(String,)> =
-        sqlx::query_as("SELECT payload_json FROM ledger WHERE character_id = ? ORDER BY id")
-            .bind(&character_id)
-            .fetch_all(&pool)
-            .await?;
+// ============================================================
+// Tests
+// ============================================================
 
-    let events: Vec<LedgerEvent> = rows
-        .iter()
-        .filter_map(|(json,)| serde_json::from_str(json).ok())
-        .collect();
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use personafix_core::model::edition::Edition;
 
-    Ok(events)
+    async fn setup_test_db() -> SqlitePool {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+        let migrations =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../crates/data/migrations");
+        let migrator = sqlx::migrate::Migrator::new(migrations).await.unwrap();
+        migrator.run(&pool).await.unwrap();
+        pool
+    }
+
+    #[tokio::test]
+    async fn test_create_campaign_db() {
+        let pool = setup_test_db().await;
+        let campaign = create_campaign_db(&pool, "c1", "Test Campaign")
+            .await
+            .unwrap();
+        assert_eq!(campaign.id, "c1");
+        assert_eq!(campaign.name, "Test Campaign");
+
+        // Verify it's in the database
+        let (name,): (String,) = sqlx::query_as("SELECT name FROM campaigns WHERE id = 'c1'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(name, "Test Campaign");
+    }
+
+    #[tokio::test]
+    async fn test_create_and_list_characters() {
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+
+        // Create two characters
+        create_character_db(
+            &pool,
+            "ch1",
+            "c1",
+            &Edition::SR4,
+            "Runner",
+            &Metatype::Human,
+        )
+        .await
+        .unwrap();
+        create_character_db(&pool, "ch2", "c1", &Edition::SR5, "Adept", &Metatype::Elf)
+            .await
+            .unwrap();
+
+        let chars = list_characters_db(&pool, "c1").await.unwrap();
+        assert_eq!(chars.len(), 2);
+        assert_eq!(chars[0].name, "Runner");
+        assert_eq!(chars[0].edition, Edition::SR4);
+        assert_eq!(chars[1].name, "Adept");
+        assert_eq!(chars[1].metatype, Metatype::Elf);
+    }
+
+    #[tokio::test]
+    async fn test_create_character_sets_racial_minimum_attributes() {
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+
+        // Create an Ork (SR4: BOD 3-8, STR 3-8)
+        create_character_db(
+            &pool,
+            "ch1",
+            "c1",
+            &Edition::SR4,
+            "Ork Runner",
+            &Metatype::Ork,
+        )
+        .await
+        .unwrap();
+
+        let computed = get_character_db(&pool, "ch1").await.unwrap();
+        assert_eq!(computed.computed_attributes.body, 3); // Ork minimum
+        assert_eq!(computed.computed_attributes.strength, 3); // Ork minimum
+        assert_eq!(computed.computed_attributes.charisma, 1); // Ork CHA min
+    }
+
+    #[tokio::test]
+    async fn test_get_character_computes_derived_stats() {
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_character_db(
+            &pool,
+            "ch1",
+            "c1",
+            &Edition::SR4,
+            "Runner",
+            &Metatype::Human,
+        )
+        .await
+        .unwrap();
+
+        let computed = get_character_db(&pool, "ch1").await.unwrap();
+
+        // Human minimums: all 1, Edge 2. Body 1 → physical CM = 8 + ceil(1/2) = 9
+        assert_eq!(computed.physical_condition_monitor, 9);
+        // Willpower 1 → stun CM = 9
+        assert_eq!(computed.stun_condition_monitor, 9);
+        // Initiative: REA 1 + INT 1 = 2
+        assert_eq!(computed.initiative, 2);
+        // Full essence (no augmentations)
+        assert_eq!(computed.computed_attributes.essence, 600);
+    }
+
+    #[tokio::test]
+    async fn test_get_character_not_found() {
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+
+        let result = get_character_db(&pool, "nonexistent").await;
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(err.kind, "not_found");
+    }
+
+    #[tokio::test]
+    async fn test_apply_event_and_get_character() {
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_character_db(
+            &pool,
+            "ch1",
+            "c1",
+            &Edition::SR4,
+            "Runner",
+            &Metatype::Human,
+        )
+        .await
+        .unwrap();
+
+        // Apply karma received event
+        let event = LedgerEvent::KarmaReceived {
+            amount: 10,
+            reason: "Run reward".to_string(),
+            run_id: Some("run1".to_string()),
+        };
+        apply_event_db(&pool, "ch1", &event).await.unwrap();
+
+        // Apply karma spent event
+        let event2 = LedgerEvent::KarmaSpent {
+            amount: 6,
+            description: "Skill improvement".to_string(),
+        };
+        apply_event_db(&pool, "ch1", &event2).await.unwrap();
+
+        // Get character — should have projected karma totals
+        let computed = get_character_db(&pool, "ch1").await.unwrap();
+        assert_eq!(computed.total_karma_earned, 10);
+        assert_eq!(computed.total_karma_spent, 6);
+    }
+
+    #[tokio::test]
+    async fn test_get_ledger_returns_events_in_order() {
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_character_db(
+            &pool,
+            "ch1",
+            "c1",
+            &Edition::SR4,
+            "Runner",
+            &Metatype::Human,
+        )
+        .await
+        .unwrap();
+
+        apply_event_db(
+            &pool,
+            "ch1",
+            &LedgerEvent::KarmaReceived {
+                amount: 5,
+                reason: "Run 1".to_string(),
+                run_id: None,
+            },
+        )
+        .await
+        .unwrap();
+
+        apply_event_db(
+            &pool,
+            "ch1",
+            &LedgerEvent::NuyenReceived {
+                amount: 10_000,
+                reason: "Payment".to_string(),
+                run_id: None,
+            },
+        )
+        .await
+        .unwrap();
+
+        let events = get_ledger_db(&pool, "ch1").await.unwrap();
+        assert_eq!(events.len(), 2);
+        matches!(&events[0], LedgerEvent::KarmaReceived { amount: 5, .. });
+        matches!(
+            &events[1],
+            LedgerEvent::NuyenReceived { amount: 10_000, .. }
+        );
+    }
+
+    #[tokio::test]
+    async fn test_apply_event_persists_and_projects() {
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_character_db(
+            &pool,
+            "ch1",
+            "c1",
+            &Edition::SR4,
+            "Runner",
+            &Metatype::Human,
+        )
+        .await
+        .unwrap();
+
+        // Apply attribute improvement
+        apply_event_db(
+            &pool,
+            "ch1",
+            &LedgerEvent::AttributeImproved {
+                attribute: "body".to_string(),
+                from: 1,
+                to: 4,
+                karma_cost: 50,
+            },
+        )
+        .await
+        .unwrap();
+
+        let computed = get_character_db(&pool, "ch1").await.unwrap();
+        // Body improved from 1 to 4 → physical CM = 8 + ceil(4/2) = 10
+        assert_eq!(computed.computed_attributes.body, 4);
+        assert_eq!(computed.physical_condition_monitor, 10);
+        assert_eq!(computed.total_karma_spent, 50);
+    }
+
+    #[tokio::test]
+    async fn test_full_career_round_trip() {
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_character_db(
+            &pool,
+            "ch1",
+            "c1",
+            &Edition::SR4,
+            "Street Sam",
+            &Metatype::Human,
+        )
+        .await
+        .unwrap();
+
+        // Run 1
+        for event in [
+            LedgerEvent::RunCompleted {
+                run_id: "r1".to_string(),
+                name: "Milk Run".to_string(),
+                date: "2078-01-15".to_string(),
+                notes: String::new(),
+            },
+            LedgerEvent::KarmaReceived {
+                amount: 5,
+                reason: "Run reward".to_string(),
+                run_id: Some("r1".to_string()),
+            },
+            LedgerEvent::NuyenReceived {
+                amount: 8_000,
+                reason: "Payment".to_string(),
+                run_id: Some("r1".to_string()),
+            },
+        ] {
+            apply_event_db(&pool, "ch1", &event).await.unwrap();
+        }
+
+        // Run 2
+        for event in [
+            LedgerEvent::KarmaReceived {
+                amount: 8,
+                reason: "Run 2".to_string(),
+                run_id: None,
+            },
+            LedgerEvent::NuyenReceived {
+                amount: 15_000,
+                reason: "Run 2".to_string(),
+                run_id: None,
+            },
+            LedgerEvent::NuyenSpent {
+                amount: 3_000,
+                description: "Gear".to_string(),
+            },
+        ] {
+            apply_event_db(&pool, "ch1", &event).await.unwrap();
+        }
+
+        // Run 3
+        apply_event_db(
+            &pool,
+            "ch1",
+            &LedgerEvent::KarmaReceived {
+                amount: 10,
+                reason: "Run 3".to_string(),
+                run_id: None,
+            },
+        )
+        .await
+        .unwrap();
+
+        let computed = get_character_db(&pool, "ch1").await.unwrap();
+        assert_eq!(computed.total_karma_earned, 23); // 5+8+10
+        assert_eq!(computed.nuyen, 20_000); // 8k+15k-3k
+
+        let events = get_ledger_db(&pool, "ch1").await.unwrap();
+        assert_eq!(events.len(), 7);
+    }
 }
