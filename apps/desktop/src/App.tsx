@@ -28,12 +28,10 @@ function App() {
   const [metatype, setMetatype] = useState<MetatypeKey>("Human");
   const [error, setError] = useState<string | null>(null);
 
-  // Show saved character sheet
   if (savedCharacter) {
     return <SavedCharacterView />;
   }
 
-  // Show builder if draft in progress
   if (draft && campaign) {
     return <BuilderShell campaignId={campaign.id} />;
   }
@@ -66,51 +64,58 @@ function App() {
           <img
             src="/icon.png"
             alt="personafix"
-            className="w-24 h-24 mx-auto mb-4 rounded-2xl"
+            className="w-24 h-24 mx-auto mb-4 rounded-2xl shadow-glow"
           />
-          <h1 className="text-4xl font-bold mb-2">personafix</h1>
-          <p className="text-gray-400">Shadowrun Character Manager</p>
+          <h1 className="text-4xl font-bold mb-2 text-cyber-heading">
+            personafix
+          </h1>
+          <p className="text-cyber-text-dim">Shadowrun Character Manager</p>
         </div>
 
         {!campaign ? (
-          <div className="bg-gray-800 rounded-lg p-6 space-y-4">
-            <h2 className="text-lg font-semibold">Create Campaign</h2>
+          <div className="bg-cyber-card border border-cyber-border rounded-lg p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-cyber-heading">
+              Create Campaign
+            </h2>
             <input
               type="text"
               value={campaignName}
               onChange={(e) => setCampaignName(e.target.value)}
               placeholder="Campaign name"
-              className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
+              className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
             />
             <button
               onClick={handleCreateCampaign}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium"
+              className="w-full px-4 py-2 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green rounded text-sm font-medium text-cyber-green transition-all shadow-glow"
             >
               Create Campaign
             </button>
           </div>
         ) : (
-          <div className="bg-gray-800 rounded-lg p-6 space-y-4">
-            <div className="text-sm text-gray-400">
-              Campaign: <span className="text-white">{campaign.name}</span>
+          <div className="bg-cyber-card border border-cyber-border rounded-lg p-6 space-y-4">
+            <div className="text-sm text-cyber-text-dim font-mono">
+              Campaign:{" "}
+              <span className="text-cyber-green">{campaign.name}</span>
             </div>
-            <h2 className="text-lg font-semibold">New Character</h2>
+            <h2 className="text-lg font-semibold text-cyber-heading">
+              New Character
+            </h2>
             <input
               type="text"
               value={charName}
               onChange={(e) => setCharName(e.target.value)}
               placeholder="Character name"
-              className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
+              className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
             />
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-gray-400 block mb-1">
+                <label className="text-xs text-cyber-text-dim block mb-1 font-mono">
                   Edition
                 </label>
                 <select
                   value={edition}
                   onChange={(e) => setEdition(e.target.value as Edition)}
-                  className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
+                  className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
                 >
                   {EDITIONS.map((e) => (
                     <option key={e} value={e}>
@@ -120,13 +125,13 @@ function App() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-400 block mb-1">
+                <label className="text-xs text-cyber-text-dim block mb-1 font-mono">
                   Metatype
                 </label>
                 <select
                   value={metatype}
                   onChange={(e) => setMetatype(e.target.value as MetatypeKey)}
-                  className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
+                  className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
                 >
                   {METATYPES.map((m) => (
                     <option key={m} value={m}>
@@ -138,7 +143,7 @@ function App() {
             </div>
             <button
               onClick={handleStartBuilder}
-              className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded text-sm font-medium"
+              className="w-full px-4 py-2 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green rounded text-sm font-medium text-cyber-green transition-all shadow-glow"
             >
               Start Building
             </button>
@@ -146,7 +151,7 @@ function App() {
         )}
 
         {error && (
-          <div className="bg-red-900/50 border border-red-700 rounded p-3 text-red-300 text-sm">
+          <div className="bg-cyber-red-dim/30 border border-cyber-red/50 rounded p-3 text-cyber-red text-sm">
             {error}
           </div>
         )}

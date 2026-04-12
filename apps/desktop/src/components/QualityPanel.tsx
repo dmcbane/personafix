@@ -2,14 +2,12 @@ import { useState } from "react";
 import { useCharacterStore, type Quality } from "../store/characterStore";
 
 const SAMPLE_QUALITIES: Omit<Quality, "id">[] = [
-  // Positive
   { name: "Ambidextrous", quality_type: "Positive", cost: 5, source: "SR4", page: "90", improvements: [], incompatible_with: [] },
   { name: "Analytical Mind", quality_type: "Positive", cost: 5, source: "SR4", page: "90", improvements: [], incompatible_with: [] },
   { name: "Aptitude", quality_type: "Positive", cost: 10, source: "SR4", page: "90", improvements: [], incompatible_with: [] },
   { name: "Toughness", quality_type: "Positive", cost: 10, source: "SR4", page: "90", improvements: [], incompatible_with: [] },
   { name: "High Pain Tolerance", quality_type: "Positive", cost: 5, source: "SR4", page: "90", improvements: [], incompatible_with: [] },
   { name: "Magic Resistance", quality_type: "Positive", cost: 5, source: "SR4", page: "90", improvements: [], incompatible_with: [] },
-  // Negative
   { name: "Addiction (Mild)", quality_type: "Negative", cost: 5, source: "SR4", page: "91", improvements: [], incompatible_with: [] },
   { name: "Addiction (Moderate)", quality_type: "Negative", cost: 10, source: "SR4", page: "91", improvements: [], incompatible_with: [] },
   { name: "Bad Luck", quality_type: "Negative", cost: 20, source: "SR4", page: "91", improvements: [], incompatible_with: [] },
@@ -50,14 +48,18 @@ export default function QualityPanel() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Qualities</h2>
-      <div className="flex gap-4 text-sm text-gray-400 mb-4">
+      <h2 className="text-xl font-semibold mb-4 text-cyber-heading">
+        // Qualities
+      </h2>
+      <div className="flex gap-4 text-sm text-cyber-text-dim mb-4 font-mono">
         <span>
-          Positive: <span className="text-green-400 font-mono">{posBP}</span>
+          Positive:{" "}
+          <span className="text-cyber-green">{posBP}</span>
           {draft.edition === "SR4" ? "/35 BP" : "/25 karma"}
         </span>
         <span>
-          Negative: <span className="text-red-400 font-mono">{negBP}</span>
+          Negative:{" "}
+          <span className="text-cyber-red">{negBP}</span>
           {draft.edition === "SR4" ? "/35 BP" : "/25 karma"}
         </span>
       </div>
@@ -68,67 +70,73 @@ export default function QualityPanel() {
           {draft.qualities.map((q) => (
             <div
               key={q.id}
-              className="flex items-center gap-2 bg-gray-800 rounded px-3 py-1.5 text-sm"
+              className="flex items-center gap-2 bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm"
             >
               <span
                 className={
                   q.quality_type === "Positive"
-                    ? "text-green-400"
-                    : "text-red-400"
+                    ? "text-cyber-green"
+                    : "text-cyber-red"
                 }
               >
                 {q.quality_type === "Positive" ? "+" : "-"}
               </span>
               <span className="flex-1">{q.name}</span>
-              <span className="text-gray-500 font-mono">{q.cost} BP</span>
+              <span className="text-cyber-text-dim font-mono">
+                {q.cost} BP
+              </span>
               <button
                 onClick={() => {
                   removeQuality(q.id);
                   validate();
                 }}
-                className="text-red-400 hover:text-red-300 ml-2"
+                className="text-cyber-red hover:text-cyber-red/80 ml-2 transition-colors"
               >
-                ✕
+                X
               </button>
             </div>
           ))}
         </div>
       )}
 
-      {/* Filter + add */}
-      <div className="flex gap-2 mb-2">
+      {/* Filter */}
+      <div className="flex gap-2 mb-3">
         {(["all", "Positive", "Negative"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-3 py-1 rounded text-xs ${
+            className={`px-3 py-1 rounded text-xs font-mono transition-all ${
               filter === f
-                ? "bg-blue-600 text-white"
-                : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                ? "bg-cyber-green-dim border border-cyber-green text-cyber-green shadow-glow"
+                : "bg-cyber-card border border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
             }`}
           >
             {f === "all" ? "All" : f}
           </button>
         ))}
       </div>
+
+      {/* Available qualities */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
         {available.map((q) => (
           <button
             key={q.name}
             onClick={() => handleAdd(q)}
-            className="text-left bg-gray-800 hover:bg-gray-700 rounded px-3 py-1.5 text-sm"
+            className="text-left bg-cyber-card border border-cyber-border hover:border-cyber-border-bright rounded px-3 py-1.5 text-sm transition-colors"
           >
             <span
               className={
                 q.quality_type === "Positive"
-                  ? "text-green-400"
-                  : "text-red-400"
+                  ? "text-cyber-green"
+                  : "text-cyber-red"
               }
             >
               {q.quality_type === "Positive" ? "+" : "-"}
             </span>{" "}
             {q.name}{" "}
-            <span className="text-gray-500 font-mono text-xs">{q.cost} BP</span>
+            <span className="text-cyber-text-dim font-mono text-xs">
+              {q.cost} BP
+            </span>
           </button>
         ))}
       </div>

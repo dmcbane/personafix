@@ -16,7 +16,6 @@ export default function PriorityPanel() {
 
   const selection = draft.priority_selection;
 
-  // Track which levels are already used
   const usedLevels = new Map<PriorityLevel, PriorityCategory>();
   for (const cat of PRIORITY_CATEGORIES) {
     const level = selection[cat.key];
@@ -24,12 +23,10 @@ export default function PriorityPanel() {
   }
 
   const handleChange = (category: PriorityCategory, level: PriorityLevel) => {
-    // Swap: if this level is already used by another category, swap them
     const currentLevel = selection[category];
     const otherCategory = usedLevels.get(level);
 
     if (otherCategory && otherCategory !== category) {
-      // Swap the two
       setPriority(otherCategory, currentLevel);
     }
     setPriority(category, level);
@@ -38,23 +35,25 @@ export default function PriorityPanel() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Priority Selection</h2>
-      <p className="text-sm text-gray-400 mb-4">
-        Assign each priority level (A-E) to exactly one category.
-        Selecting a level already in use will swap the two categories.
+      <h2 className="text-xl font-semibold mb-4 text-cyber-heading">
+        // Priority Selection
+      </h2>
+      <p className="text-sm text-cyber-text-dim mb-4 font-mono">
+        Assign each priority level (A-E) to exactly one category. Selecting a
+        level already in use will swap the two categories.
       </p>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-700">
-              <th className="text-left py-2 pr-4 text-gray-400 font-medium">
+            <tr className="border-b border-cyber-border">
+              <th className="text-left py-2 pr-4 text-cyber-text-dim font-mono font-medium text-xs uppercase tracking-wider">
                 Category
               </th>
               {PRIORITY_LEVELS.map((level) => (
                 <th
                   key={level}
-                  className="py-2 px-3 text-center text-gray-400 font-medium"
+                  className="py-2 px-3 text-center text-cyber-green font-mono font-medium"
                 >
                   {level}
                 </th>
@@ -63,8 +62,10 @@ export default function PriorityPanel() {
           </thead>
           <tbody>
             {PRIORITY_CATEGORIES.map((cat) => (
-              <tr key={cat.key} className="border-b border-gray-800">
-                <td className="py-2 pr-4 font-medium">{cat.label}</td>
+              <tr key={cat.key} className="border-b border-cyber-border/50">
+                <td className="py-2 pr-4 font-medium text-cyber-heading">
+                  {cat.label}
+                </td>
                 {PRIORITY_LEVELS.map((level) => {
                   const isSelected = selection[cat.key] === level;
                   const description = PRIORITY_TABLE[cat.key][level];
@@ -73,14 +74,14 @@ export default function PriorityPanel() {
                     <td key={level} className="py-2 px-1 text-center">
                       <button
                         onClick={() => handleChange(cat.key, level)}
-                        className={`w-full px-2 py-1.5 rounded text-xs transition-colors ${
+                        className={`w-full px-2 py-1.5 rounded text-xs font-mono transition-all ${
                           isSelected
-                            ? "bg-blue-600 text-white font-semibold"
-                            : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                            ? "bg-cyber-green-dim border border-cyber-green text-cyber-green shadow-glow font-semibold"
+                            : "bg-cyber-card border border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
                         }`}
                         title={description}
                       >
-                        <div>{description}</div>
+                        {description}
                       </button>
                     </td>
                   );
@@ -91,16 +92,25 @@ export default function PriorityPanel() {
         </table>
       </div>
 
-      {/* Summary of current allocation */}
+      {/* Summary */}
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
         {PRIORITY_CATEGORIES.map((cat) => {
           const level = selection[cat.key];
           const desc = PRIORITY_TABLE[cat.key][level];
           return (
-            <div key={cat.key} className="bg-gray-800 rounded px-3 py-2">
-              <span className="text-gray-400">{cat.label}: </span>
-              <span className="text-blue-400 font-mono">{level}</span>
-              <span className="text-gray-500 text-xs ml-1">({desc})</span>
+            <div
+              key={cat.key}
+              className="bg-cyber-card border border-cyber-border rounded px-3 py-2"
+            >
+              <span className="text-cyber-text-dim font-mono">
+                {cat.label}:{" "}
+              </span>
+              <span className="text-cyber-green font-mono font-bold">
+                {level}
+              </span>
+              <span className="text-cyber-text-dim text-xs ml-1">
+                ({desc})
+              </span>
             </div>
           );
         })}

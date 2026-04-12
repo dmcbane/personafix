@@ -7,7 +7,6 @@ export default function SummaryBar() {
 
   if (!draft || !limits) return null;
 
-  // Calculate BP totals (SR4)
   const attrBP =
     (draft.attributes.body - limits.body[0]) * 10 +
     (draft.attributes.agility - limits.agility[0]) * 10 +
@@ -30,40 +29,40 @@ export default function SummaryBar() {
   const realErrors = errors.filter((e) => e.severity === "Error");
 
   return (
-    <div className="bg-gray-800 border-t border-gray-700 px-6 py-3">
-      <div className="flex items-center gap-6 text-sm">
+    <div className="bg-cyber-surface border-t border-cyber-border px-6 py-3">
+      <div className="flex items-center gap-6 text-sm font-mono">
         {draft.edition === "SR4" && (
           <>
             <div>
-              <span className="text-gray-400">BP: </span>
+              <span className="text-cyber-text-dim">BP: </span>
               <span
-                className={`font-mono font-bold ${totalBP > 400 ? "text-red-400" : "text-green-400"}`}
+                className={`font-bold ${totalBP > 400 ? "text-cyber-red" : "text-cyber-green"}`}
               >
                 {totalBP}
               </span>
-              <span className="text-gray-500"> / 400</span>
+              <span className="text-cyber-text-dim"> / 400</span>
             </div>
-            <div className="text-gray-600">|</div>
-            <div className="text-gray-400">
-              Attr: <span className="text-white font-mono">{attrBP}</span>
+            <div className="text-cyber-border">|</div>
+            <div className="text-cyber-text-dim">
+              Attr: <span className="text-cyber-text">{attrBP}</span>
             </div>
-            <div className="text-gray-400">
-              Skills: <span className="text-white font-mono">{skillBP}</span>
+            <div className="text-cyber-text-dim">
+              Skills: <span className="text-cyber-text">{skillBP}</span>
             </div>
-            <div className="text-gray-400">
-              Qual: <span className="text-white font-mono">{qualBP}</span>
+            <div className="text-cyber-text-dim">
+              Qual: <span className="text-cyber-text">{qualBP}</span>
             </div>
           </>
         )}
-        <div className="text-gray-400">
+        <div className="text-cyber-text-dim">
           Essence:{" "}
-          <span className="text-cyan-400 font-mono">
+          <span className="text-cyber-blue">
             {(draft.attributes.essence / 100).toFixed(2)}
           </span>
         </div>
         <div className="flex-1" />
         {realErrors.length > 0 && (
-          <div className="text-red-400 text-xs">
+          <div className="text-cyber-red text-xs">
             {realErrors.length} error{realErrors.length > 1 ? "s" : ""}
           </div>
         )}
@@ -71,8 +70,8 @@ export default function SummaryBar() {
       {realErrors.length > 0 && (
         <div className="mt-2 space-y-0.5">
           {realErrors.map((e, i) => (
-            <p key={i} className="text-red-400 text-xs">
-              {e.message}
+            <p key={i} className="text-cyber-red text-xs font-mono">
+              [{e.field}] {e.message}
             </p>
           ))}
         </div>

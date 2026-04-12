@@ -63,21 +63,23 @@ export default function BuilderShell({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-cyber-border flex items-center justify-between bg-cyber-surface">
         <div>
-          <h1 className="text-2xl font-bold">{draft.name}</h1>
-          <p className="text-gray-400 text-sm">
-            {draft.edition} {draft.metatype} — Character Builder
+          <h1 className="text-2xl font-bold text-cyber-heading">
+            {draft.name}
+          </h1>
+          <p className="text-cyber-text-dim text-sm font-mono">
+            {draft.edition} {draft.metatype} // Character Builder
           </p>
         </div>
         <div className="flex items-center gap-3">
           {saveError && (
-            <span className="text-red-400 text-sm">{saveError}</span>
+            <span className="text-cyber-red text-sm">{saveError}</span>
           )}
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded text-sm font-medium"
+            className="px-5 py-2 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green disabled:opacity-50 rounded text-sm font-medium text-cyber-green transition-all shadow-glow"
           >
             {saving ? "Saving..." : "Save Character"}
           </button>
@@ -85,15 +87,15 @@ export default function BuilderShell({
       </div>
 
       {/* Tab bar */}
-      <div className="flex border-b border-gray-700">
+      <div className="flex border-b border-cyber-border bg-cyber-surface">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-6 py-2.5 text-sm font-medium transition-colors ${
+            className={`px-6 py-2.5 text-sm font-medium font-mono transition-colors ${
               activeTab === tab.key
-                ? "text-white border-b-2 border-blue-500"
-                : "text-gray-400 hover:text-gray-200"
+                ? "text-cyber-green border-b-2 border-cyber-green"
+                : "text-cyber-text-dim hover:text-cyber-text"
             }`}
           >
             {tab.label}
@@ -106,7 +108,9 @@ export default function BuilderShell({
                       ? "skills"
                       : "qualities",
                 ),
-              ) && <span className="ml-1 text-red-400 text-xs">!</span>}
+              ) && (
+                <span className="ml-1 text-cyber-red text-xs">!</span>
+              )}
           </button>
         ))}
       </div>

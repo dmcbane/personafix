@@ -13,48 +13,60 @@ export default function SavedCharacterView() {
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold">{saved.base.name}</h1>
-            <p className="text-gray-400">
-              {saved.base.edition} {saved.base.metatype} — Character Sheet
+            <h1 className="text-3xl font-bold text-cyber-heading">
+              {saved.base.name}
+            </h1>
+            <p className="text-cyber-text-dim font-mono">
+              {saved.base.edition} {saved.base.metatype} // Character Sheet
             </p>
           </div>
           <button
             onClick={reset}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm"
+            className="px-4 py-2 bg-cyber-card border border-cyber-border hover:border-cyber-border-bright rounded text-sm text-cyber-text transition-colors"
           >
             New Character
           </button>
         </div>
 
         {/* Attributes */}
-        <div className="bg-gray-800 rounded-lg p-4 mb-4">
-          <h2 className="text-lg font-semibold mb-3">Attributes</h2>
+        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mb-4">
+          <h2 className="text-lg font-semibold mb-3 text-cyber-heading font-mono">
+            // Attributes
+          </h2>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-            {([
-              ["BOD", attrs.body],
-              ["AGI", attrs.agility],
-              ["REA", attrs.reaction],
-              ["STR", attrs.strength],
-              ["WIL", attrs.willpower],
-              ["LOG", attrs.logic],
-              ["INT", attrs.intuition],
-              ["CHA", attrs.charisma],
-              ["EDG", attrs.edge],
-            ] as [string, number][]).map(([label, value]) => (
+            {(
+              [
+                ["BOD", attrs.body],
+                ["AGI", attrs.agility],
+                ["REA", attrs.reaction],
+                ["STR", attrs.strength],
+                ["WIL", attrs.willpower],
+                ["LOG", attrs.logic],
+                ["INT", attrs.intuition],
+                ["CHA", attrs.charisma],
+                ["EDG", attrs.edge],
+              ] as [string, number][]
+            ).map(([label, value]) => (
               <div
                 key={label}
-                className="bg-gray-700 rounded px-3 py-2 text-center"
+                className="bg-cyber-surface border border-cyber-border rounded px-3 py-2 text-center"
               >
-                <div className="text-gray-400 text-xs">{label}</div>
-                <div className="text-xl font-bold">{value}</div>
+                <div className="text-cyber-blue text-xs font-mono">
+                  {label}
+                </div>
+                <div className="text-xl font-bold text-cyber-heading">
+                  {value}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Derived Stats */}
-        <div className="bg-gray-800 rounded-lg p-4 mb-4">
-          <h2 className="text-lg font-semibold mb-3">Derived Stats</h2>
+        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mb-4">
+          <h2 className="text-lg font-semibold mb-3 text-cyber-heading font-mono">
+            // Derived Stats
+          </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <StatBox
               label="Physical CM"
@@ -68,25 +80,37 @@ export default function SavedCharacterView() {
             <StatBox
               label="Essence"
               value={(attrs.essence / 100).toFixed(2)}
+              accent="blue"
             />
             {attrs.magic !== null && (
-              <StatBox label="Magic" value={attrs.magic} />
+              <StatBox label="Magic" value={attrs.magic} accent="purple" />
             )}
             {attrs.resonance !== null && (
-              <StatBox label="Resonance" value={attrs.resonance} />
+              <StatBox
+                label="Resonance"
+                value={attrs.resonance}
+                accent="blue"
+              />
             )}
           </div>
         </div>
 
-        {/* Karma & Nuyen */}
-        <div className="bg-gray-800 rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-3">Career</h2>
+        {/* Career */}
+        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4">
+          <h2 className="text-lg font-semibold mb-3 text-cyber-heading font-mono">
+            // Career
+          </h2>
           <div className="grid grid-cols-3 gap-2">
-            <StatBox label="Karma Earned" value={saved.total_karma_earned} />
+            <StatBox
+              label="Karma Earned"
+              value={saved.total_karma_earned}
+              accent="green"
+            />
             <StatBox label="Karma Spent" value={saved.total_karma_spent} />
             <StatBox
               label="Nuyen"
-              value={`${saved.nuyen.toLocaleString()}¥`}
+              value={`${saved.nuyen.toLocaleString()}`}
+              accent="green"
             />
           </div>
         </div>
@@ -98,14 +122,27 @@ export default function SavedCharacterView() {
 function StatBox({
   label,
   value,
+  accent,
 }: {
   label: string;
   value: string | number;
+  accent?: "green" | "blue" | "purple";
 }) {
+  const valueColor =
+    accent === "green"
+      ? "text-cyber-green"
+      : accent === "blue"
+        ? "text-cyber-blue"
+        : accent === "purple"
+          ? "text-cyber-purple"
+          : "text-cyber-heading";
+
   return (
-    <div className="bg-gray-700 rounded px-3 py-2 text-center">
-      <div className="text-gray-400 text-xs">{label}</div>
-      <div className="text-lg font-bold">{value}</div>
+    <div className="bg-cyber-surface border border-cyber-border rounded px-3 py-2 text-center">
+      <div className="text-cyber-text-dim text-xs font-mono">{label}</div>
+      <div className={`text-lg font-bold font-mono ${valueColor}`}>
+        {value}
+      </div>
     </div>
   );
 }

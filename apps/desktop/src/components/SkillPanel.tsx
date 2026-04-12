@@ -35,8 +35,6 @@ export default function SkillPanel() {
   if (!draft) return null;
 
   const maxRating = 6;
-
-  // BP cost for SR4: 4 BP per rating point
   const bpCost = draft.skills.reduce((total, s) => total + s.rating * 4, 0);
 
   const availableSkills = COMMON_SKILLS.filter(
@@ -68,10 +66,12 @@ export default function SkillPanel() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Skills</h2>
+      <h2 className="text-xl font-semibold mb-4 text-cyber-heading">
+        // Skills
+      </h2>
       {draft.edition === "SR4" && (
-        <p className="text-sm text-gray-400 mb-4">
-          BP spent on skills: <span className="text-white font-mono">{bpCost}</span>
+        <p className="text-sm text-cyber-text-dim mb-4 font-mono">
+          BP spent: <span className="text-cyber-green">{bpCost}</span>
         </p>
       )}
 
@@ -80,7 +80,7 @@ export default function SkillPanel() {
         <select
           value={selectedSkill}
           onChange={(e) => setSelectedSkill(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm flex-1"
+          className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm flex-1 text-cyber-text"
         >
           <option value="">Add a skill...</option>
           {availableSkills.map((s) => (
@@ -92,7 +92,7 @@ export default function SkillPanel() {
         <button
           onClick={handleAddSkill}
           disabled={!selectedSkill}
-          className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-sm disabled:opacity-50"
+          className="px-4 py-1.5 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green rounded text-sm disabled:opacity-50 text-cyber-green font-mono transition-all"
         >
           Add
         </button>
@@ -100,28 +100,32 @@ export default function SkillPanel() {
 
       {/* Skill list */}
       {draft.skills.length === 0 ? (
-        <p className="text-gray-500 text-sm">No skills added yet.</p>
+        <p className="text-cyber-text-dim text-sm font-mono">
+          No skills added yet.
+        </p>
       ) : (
         <div className="space-y-2">
           {draft.skills.map((skill) => (
             <div
               key={skill.id}
-              className="flex items-center gap-3 bg-gray-800 rounded px-3 py-2"
+              className="flex items-center gap-3 bg-cyber-card border border-cyber-border rounded px-3 py-2"
             >
               <span className="flex-1 text-sm">
                 {skill.name}{" "}
-                <span className="text-gray-500">({skill.linked_attribute})</span>
+                <span className="text-cyber-text-dim font-mono">
+                  ({skill.linked_attribute})
+                </span>
               </span>
               <button
                 onClick={() =>
                   handleRatingChange(skill.id, Math.max(1, skill.rating - 1))
                 }
                 disabled={skill.rating <= 1}
-                className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-30 text-sm"
+                className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
               >
                 -
               </button>
-              <span className="font-mono text-lg w-4 text-center">
+              <span className="font-mono text-lg w-4 text-center text-cyber-heading">
                 {skill.rating}
               </span>
               <button
@@ -132,7 +136,7 @@ export default function SkillPanel() {
                   )
                 }
                 disabled={skill.rating >= maxRating}
-                className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-30 text-sm"
+                className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
               >
                 +
               </button>
@@ -141,9 +145,9 @@ export default function SkillPanel() {
                   removeSkill(skill.id);
                   validate();
                 }}
-                className="text-red-400 hover:text-red-300 text-sm ml-2"
+                className="text-cyber-red hover:text-cyber-red/80 text-sm ml-2 transition-colors"
               >
-                ✕
+                X
               </button>
             </div>
           ))}

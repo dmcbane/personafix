@@ -1,3 +1,53 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0e17;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e3a5f;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2a5a8f;
+  }
+
+  /* Select / dropdown fix — ensure contrast in all states */
+  select {
+    color: #c8d6e5 !important;
+    background-color: #151d2e !important;
+    border-color: #1e3a5f !important;
+  }
+  select:focus {
+    border-color: #39ff6e !important;
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(57, 255, 110, 0.3);
+  }
+  select option {
+    background-color: #151d2e;
+    color: #c8d6e5;
+  }
+
+  /* Input focus glow */
+  input:focus, select:focus {
+    outline: none;
+    border-color: #39ff6e !important;
+    box-shadow: 0 0 0 1px rgba(57, 255, 110, 0.3);
+  }
+
+  input {
+    color: #c8d6e5 !important;
+    background-color: #151d2e !important;
+    border-color: #1e3a5f !important;
+  }
+
+  input::placeholder {
+    color: #6b7d95;
+  }
+}
