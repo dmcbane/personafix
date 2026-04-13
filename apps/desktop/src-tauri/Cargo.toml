@@ -19,5 +19,6 @@ tokio = { workspace = true }
 thiserror = { workspace = true }
 tauri = { version = "2", features = [] }
 tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
 uuid = { version = "1", features = ["v4"] }
 dirs = "6"

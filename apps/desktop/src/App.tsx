@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-// Dialog plugin would be used for file picker if available
+import { open } from "@tauri-apps/plugin-dialog";
 import {
   useCharacterStore,
   type Edition,
@@ -26,7 +26,10 @@ function App() {
   const gameDataLoaded = useGameDataStore((s) => s.loaded);
   const gameDataLoading = useGameDataStore((s) => s.loading);
   const gameDataError = useGameDataStore((s) => s.error);
+  const gameDebugInfo = useGameDataStore((s) => s.debugInfo);
+  const gameLoadMessage = useGameDataStore((s) => s.loadMessage);
   const loadGameData = useGameDataStore((s) => s.loadGameData);
+  const checkFile = useGameDataStore((s) => s.checkFile);
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [campaignName, setCampaignName] = useState("My Campaign");
@@ -58,12 +61,32 @@ function App() {
   const [gameDataPath, setGameDataPath] = useState("game_data.db");
 
   const handleLoadGameData = async () => {
+    await loadGameData(gameDataPath, edition);
+  };
+
+  const handleBrowseGameData = async () => {
     try {
-      await loadGameData(gameDataPath, edition);
-      setError(null);
+      const selected = await open({
+        title: "Select game_data.db",
+        filters: [
+          { name: "SQLite Database", extensions: ["db", "sqlite", "srx"] },
+          { name: "All Files", extensions: ["*"] },
+        ],
+        multiple: false,
+        directory: false,
+      });
+      if (selected) {
+        setGameDataPath(selected);
+        // Auto-check the file
+        await checkFile(selected);
+      }
     } catch (err) {
       setError(String(err));
     }
+  };
+
+  const handleDebugCheck = async () => {
+    await checkFile(gameDataPath);
   };
 
   const handleStartBuilder = async () => {
@@ -170,6 +193,9 @@ function App() {
 
             {/* Game data */}
             <div className="border-t border-cyber-border pt-3">
+              <label className="text-xs text-cyber-text-dim block mb-1 font-mono">
+                Game Data DB
+              </label>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -179,9 +205,18 @@ function App() {
                   className="flex-1 bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-xs font-mono"
                 />
                 <button
+                  onClick={handleBrowseGameData}
+                  className="px-3 py-1.5 rounded text-xs font-mono border border-cyber-border bg-cyber-card text-cyber-text-dim hover:border-cyber-border-bright transition-all"
+                  title="Browse for game_data.db"
+                >
+                  Browse
+                </button>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button
                   onClick={handleLoadGameData}
                   disabled={gameDataLoading}
-                  className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${
+                  className={`flex-1 px-3 py-1.5 rounded text-xs font-mono border transition-all ${
                     gameDataLoaded
                       ? "bg-cyber-green-dim/20 border-cyber-green-dim text-cyber-green"
                       : "bg-cyber-card border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
@@ -190,19 +225,31 @@ function App() {
                   {gameDataLoading
                     ? "Loading..."
                     : gameDataLoaded
-                      ? "Loaded"
+                      ? "Reload"
                       : "Load Game Data"}
                 </button>
+                <button
+                  onClick={handleDebugCheck}
+                  className="px-3 py-1.5 rounded text-xs font-mono border border-cyber-border bg-cyber-card text-cyber-text-dim hover:border-cyber-border-bright transition-all"
+                  title="Check if file exists and show path info"
+                >
+                  Debug
+                </button>
               </div>
-              {gameDataLoaded && (
-                <p className="text-cyber-green-dim text-xs font-mono mt-1">
-                  Game data loaded — skills and qualities from Chummer DB
+              {gameLoadMessage && (
+                <p className="text-cyber-green text-xs font-mono mt-2 whitespace-pre-wrap">
+                  {gameLoadMessage}
                 </p>
               )}
               {gameDataError && (
-                <p className="text-cyber-red text-xs font-mono mt-1">
+                <p className="text-cyber-red text-xs font-mono mt-2 whitespace-pre-wrap">
                   {gameDataError}
                 </p>
+              )}
+              {gameDebugInfo && (
+                <pre className="text-cyber-blue text-xs font-mono mt-2 bg-cyber-surface border border-cyber-border rounded p-2 whitespace-pre-wrap">
+                  {gameDebugInfo}
+                </pre>
               )}
             </div>
 

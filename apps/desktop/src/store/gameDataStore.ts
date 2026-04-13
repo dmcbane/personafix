@@ -50,27 +50,33 @@ interface GameDataState {
   loaded: boolean;
   loading: boolean;
   error: string | null;
+  debugInfo: string | null;
+  loadMessage: string | null;
   skills: GameSkill[];
   qualities: GameQuality[];
   weapons: GameWeapon[];
   augmentations: GameAugmentation[];
 
   loadGameData: (dbPath: string, edition: string) => Promise<void>;
+  checkFile: (path: string) => Promise<void>;
 }
 
 export const useGameDataStore = create<GameDataState>((set) => ({
   loaded: false,
   loading: false,
   error: null,
+  debugInfo: null,
+  loadMessage: null,
   skills: [],
   qualities: [],
   weapons: [],
   augmentations: [],
 
   loadGameData: async (dbPath, edition) => {
-    set({ loading: true, error: null });
+    set({ loading: true, error: null, debugInfo: null, loadMessage: null });
     try {
-      await invoke("load_game_data", { path: dbPath });
+      // load_game_data now returns a status message
+      const msg = await invoke<string>("load_game_data", { path: dbPath });
 
       const [skills, qualities, weapons, augmentations] = await Promise.all([
         invoke<GameSkill[]>("get_skills", { edition }),
@@ -82,16 +88,31 @@ export const useGameDataStore = create<GameDataState>((set) => ({
       set({
         loaded: true,
         loading: false,
+        loadMessage: `${msg} | ${skills.length} skills, ${qualities.length} qualities, ${weapons.length} weapons, ${augmentations.length} augmentations for ${edition}`,
         skills,
         qualities,
         weapons,
         augmentations,
       });
-    } catch (err) {
+    } catch (err: unknown) {
+      // Extract the error message — Tauri wraps errors in objects
+      const errMsg =
+        typeof err === "object" && err !== null && "message" in err
+          ? (err as { message: string }).message
+          : String(err);
       set({
         loading: false,
-        error: String(err),
+        error: errMsg,
       });
+    }
+  },
+
+  checkFile: async (path) => {
+    try {
+      const info = await invoke<string>("debug_check_file", { path });
+      set({ debugInfo: info });
+    } catch (err) {
+      set({ debugInfo: `Debug check failed: ${err}` });
     }
   },
 }));

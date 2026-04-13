@@ -713,11 +713,88 @@ async fn get_game_pool(state: &State<'_, AppState>) -> Result<SqlitePool, AppErr
 }
 
 #[tauri::command]
-pub async fn load_game_data(path: String, state: State<'_, AppState>) -> Result<(), AppError> {
-    let db_url = format!("sqlite:{}?mode=ro", path);
-    let pool = SqlitePool::connect(&db_url).await?;
+pub async fn load_game_data(path: String, state: State<'_, AppState>) -> Result<String, AppError> {
+    // Resolve to absolute path for clarity
+    let db_path = PathBuf::from(&path);
+    let abs_path = if db_path.is_absolute() {
+        db_path.clone()
+    } else {
+        std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join(&db_path)
+    };
+
+    if !abs_path.exists() {
+        return Err(AppError {
+            kind: "file_not_found".to_string(),
+            message: format!(
+                "Game data file not found at: {}\nWorking directory: {}\nOriginal path: {}",
+                abs_path.display(),
+                std::env::current_dir()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|_| "unknown".to_string()),
+                path
+            ),
+        });
+    }
+
+    let db_url = format!("sqlite:{}?mode=ro", abs_path.display());
+    let pool = SqlitePool::connect(&db_url).await.map_err(|e| AppError {
+        kind: "database".to_string(),
+        message: format!("Failed to open {}: {}", abs_path.display(), e),
+    })?;
+
+    // Verify it has game data by checking a table
+    let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM skills_data")
+        .fetch_one(&pool)
+        .await
+        .map_err(|e| AppError {
+            kind: "database".to_string(),
+            message: format!("File opened but doesn't look like a game data DB: {e}"),
+        })?;
+
     *state.game_data_pool.write().await = Some(pool);
-    Ok(())
+
+    Ok(format!(
+        "Loaded game data from {} ({} skills)",
+        abs_path.display(),
+        count.0
+    ))
+}
+
+/// Debug command: check if a file exists and return info about paths.
+#[tauri::command]
+pub fn debug_check_file(path: String) -> Result<String, AppError> {
+    let db_path = PathBuf::from(&path);
+    let cwd = std::env::current_dir()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|_| "unknown".to_string());
+
+    let abs_path = if db_path.is_absolute() {
+        db_path.clone()
+    } else {
+        PathBuf::from(&cwd).join(&db_path)
+    };
+
+    let exists = abs_path.exists();
+    let is_file = abs_path.is_file();
+    let size = if exists {
+        std::fs::metadata(&abs_path)
+            .map(|m| format!("{} bytes", m.len()))
+            .unwrap_or_else(|e| format!("error: {e}"))
+    } else {
+        "N/A".to_string()
+    };
+
+    Ok(format!(
+        "Input path: {}\nWorking dir: {}\nResolved to: {}\nExists: {}\nIs file: {}\nSize: {}",
+        path,
+        cwd,
+        abs_path.display(),
+        exists,
+        is_file,
+        size
+    ))
 }
 
 #[tauri::command]

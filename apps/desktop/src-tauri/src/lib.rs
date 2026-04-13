@@ -8,6 +8,7 @@ use state::AppState;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState::new())
         .invoke_handler(tauri::generate_handler![
             commands::create_campaign,
@@ -25,6 +26,7 @@ pub fn run() {
             commands::get_qualities,
             commands::get_weapons,
             commands::get_augmentations,
+            commands::debug_check_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
