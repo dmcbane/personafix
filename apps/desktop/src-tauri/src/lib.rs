@@ -20,6 +20,11 @@ pub fn run() {
             commands::get_racial_limits,
             commands::validate_draft,
             commands::save_character_base,
+            commands::load_game_data,
+            commands::get_skills,
+            commands::get_qualities,
+            commands::get_weapons,
+            commands::get_augmentations,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

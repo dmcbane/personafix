@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useCharacterStore, type Skill } from "../store/characterStore";
+import { useGameDataStore } from "../store/gameDataStore";
 
-const COMMON_SKILLS = [
+const FALLBACK_SKILLS = [
   { name: "Pistols", attr: "AGI" },
   { name: "Automatics", attr: "AGI" },
   { name: "Longarms", attr: "AGI" },
@@ -30,23 +31,33 @@ export default function SkillPanel() {
   const removeSkill = useCharacterStore((s) => s.removeSkill);
   const updateSkillRating = useCharacterStore((s) => s.updateSkillRating);
   const validate = useCharacterStore((s) => s.validate);
+  const gameSkills = useGameDataStore((s) => s.skills);
+  const gameDataLoaded = useGameDataStore((s) => s.loaded);
   const [selectedSkill, setSelectedSkill] = useState("");
+  const [search, setSearch] = useState("");
 
   if (!draft) return null;
 
   const maxRating = 6;
   const bpCost = draft.skills.reduce((total, s) => total + s.rating * 4, 0);
 
-  const availableSkills = COMMON_SKILLS.filter(
-    (cs) => !draft.skills.some((s) => s.name === cs.name),
-  );
+  // Use game data if loaded, otherwise fallback
+  const skillSource = gameDataLoaded
+    ? gameSkills.map((gs) => ({ name: gs.name, attr: gs.linked_attribute, id: gs.id }))
+    : FALLBACK_SKILLS.map((s) => ({ ...s, id: s.name.toLowerCase().replace(/ /g, "_") }));
+
+  const availableSkills = skillSource
+    .filter((cs) => !draft.skills.some((s) => s.name === cs.name))
+    .filter((cs) =>
+      search === "" || cs.name.toLowerCase().includes(search.toLowerCase()),
+    );
 
   const handleAddSkill = () => {
-    const skillDef = COMMON_SKILLS.find((s) => s.name === selectedSkill);
+    const skillDef = skillSource.find((s) => s.name === selectedSkill);
     if (!skillDef) return;
 
     const skill: Skill = {
-      id: skillDef.name.toLowerCase().replace(/ /g, "_"),
+      id: skillDef.id || skillDef.name.toLowerCase().replace(/ /g, "_"),
       name: skillDef.name,
       linked_attribute: skillDef.attr,
       group: null,
@@ -69,14 +80,34 @@ export default function SkillPanel() {
       <h2 className="text-xl font-semibold mb-4 text-cyber-heading">
         // Skills
       </h2>
-      {draft.edition === "SR4" && (
-        <p className="text-sm text-cyber-text-dim mb-4 font-mono">
-          BP spent: <span className="text-cyber-green">{bpCost}</span>
-        </p>
-      )}
+      <div className="flex gap-4 text-sm text-cyber-text-dim mb-4 font-mono">
+        {draft.edition === "SR4" && (
+          <span>
+            BP spent: <span className="text-cyber-green">{bpCost}</span>
+          </span>
+        )}
+        <span>
+          Available:{" "}
+          <span className="text-cyber-text">
+            {gameDataLoaded ? gameSkills.length : FALLBACK_SKILLS.length}
+          </span>
+          {gameDataLoaded && (
+            <span className="text-cyber-green-dim ml-1">(game data)</span>
+          )}
+        </span>
+      </div>
 
-      {/* Add skill */}
+      {/* Search + Add */}
       <div className="flex gap-2 mb-4">
+        {gameDataLoaded && (
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search skills..."
+            className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm w-40"
+          />
+        )}
         <select
           value={selectedSkill}
           onChange={(e) => setSelectedSkill(e.target.value)}

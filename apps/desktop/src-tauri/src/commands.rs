@@ -377,6 +377,200 @@ pub async fn save_character_base_db(
 }
 
 // ============================================================
+// Game data query functions
+// ============================================================
+
+/// Skill record from the game data DB.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameSkill {
+    pub id: String,
+    pub name: String,
+    pub linked_attribute: String,
+    pub skill_group: Option<String>,
+    pub source: String,
+    pub page: String,
+}
+
+/// Quality record from the game data DB.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameQuality {
+    pub id: String,
+    pub name: String,
+    pub quality_type: String,
+    pub cost: i32,
+    pub source: String,
+    pub page: String,
+}
+
+/// Weapon record from the game data DB.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameWeapon {
+    pub id: String,
+    pub name: String,
+    pub category: String,
+    pub damage: String,
+    pub ap: String,
+    pub mode: String,
+    pub recoil_comp: String,
+    pub ammo: String,
+    pub availability: String,
+    pub cost: String,
+    pub source: String,
+    pub page: String,
+}
+
+/// Augmentation record from the game data DB.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameAugmentation {
+    pub id: String,
+    pub name: String,
+    pub augmentation_type: String,
+    pub essence_cost: String,
+    pub capacity: String,
+    pub availability: String,
+    pub cost: String,
+    pub source: String,
+    pub page: String,
+}
+
+pub async fn query_skills_db(pool: &SqlitePool, edition: &str) -> Result<Vec<GameSkill>, AppError> {
+    let rows: Vec<(String, String, String, Option<String>, String, String)> = sqlx::query_as(
+        "SELECT id, name, linked_attribute, skill_group, source, page \
+         FROM skills_data WHERE edition = ? ORDER BY name",
+    )
+    .bind(edition)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(
+            |(id, name, linked_attribute, skill_group, source, page)| GameSkill {
+                id,
+                name,
+                linked_attribute,
+                skill_group,
+                source,
+                page,
+            },
+        )
+        .collect())
+}
+
+pub async fn query_qualities_db(
+    pool: &SqlitePool,
+    edition: &str,
+) -> Result<Vec<GameQuality>, AppError> {
+    let rows: Vec<(String, String, String, i32, String, String)> = sqlx::query_as(
+        "SELECT id, name, quality_type, cost, source, page \
+         FROM qualities WHERE edition = ? ORDER BY quality_type, name",
+    )
+    .bind(edition)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(|(id, name, quality_type, cost, source, page)| GameQuality {
+            id,
+            name,
+            quality_type,
+            cost,
+            source,
+            page,
+        })
+        .collect())
+}
+
+pub async fn query_weapons_db(
+    pool: &SqlitePool,
+    edition: &str,
+) -> Result<Vec<GameWeapon>, AppError> {
+    #[allow(clippy::type_complexity)]
+    let rows: Vec<(String, String, String, String, String, String, String, String, String, String, String, String)> = sqlx::query_as(
+        "SELECT id, name, category, damage, ap, mode, recoil_comp, ammo, availability, cost, source, page \
+         FROM weapons WHERE edition = ? ORDER BY category, name",
+    )
+    .bind(edition)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(
+            |(
+                id,
+                name,
+                category,
+                damage,
+                ap,
+                mode,
+                recoil_comp,
+                ammo,
+                availability,
+                cost,
+                source,
+                page,
+            )| GameWeapon {
+                id,
+                name,
+                category,
+                damage,
+                ap,
+                mode,
+                recoil_comp,
+                ammo,
+                availability,
+                cost,
+                source,
+                page,
+            },
+        )
+        .collect())
+}
+
+pub async fn query_augmentations_db(
+    pool: &SqlitePool,
+    edition: &str,
+) -> Result<Vec<GameAugmentation>, AppError> {
+    #[allow(clippy::type_complexity)]
+    let rows: Vec<(String, String, String, String, String, String, String, String, String)> = sqlx::query_as(
+        "SELECT id, name, augmentation_type, essence_cost, capacity, availability, cost, source, page \
+         FROM augmentations WHERE edition = ? ORDER BY augmentation_type, name",
+    )
+    .bind(edition)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(
+            |(
+                id,
+                name,
+                augmentation_type,
+                essence_cost,
+                capacity,
+                availability,
+                cost,
+                source,
+                page,
+            )| GameAugmentation {
+                id,
+                name,
+                augmentation_type,
+                essence_cost,
+                capacity,
+                availability,
+                cost,
+                source,
+                page,
+            },
+        )
+        .collect())
+}
+
+// ============================================================
 // Tauri command wrappers — thin layer over core logic
 // ============================================================
 
@@ -508,6 +702,58 @@ pub async fn save_character_base(
     let pool = get_pool(&state).await?;
     save_character_base_db(&pool, &base).await?;
     get_character_db(&pool, &base.id).await
+}
+
+async fn get_game_pool(state: &State<'_, AppState>) -> Result<SqlitePool, AppError> {
+    let guard = state.game_data_pool.read().await;
+    guard.clone().ok_or_else(|| AppError {
+        kind: "no_game_data".to_string(),
+        message: "Game data not loaded. Run the migration tool first.".to_string(),
+    })
+}
+
+#[tauri::command]
+pub async fn load_game_data(path: String, state: State<'_, AppState>) -> Result<(), AppError> {
+    let db_url = format!("sqlite:{}?mode=ro", path);
+    let pool = SqlitePool::connect(&db_url).await?;
+    *state.game_data_pool.write().await = Some(pool);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_skills(
+    edition: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<GameSkill>, AppError> {
+    let pool = get_game_pool(&state).await?;
+    query_skills_db(&pool, &edition).await
+}
+
+#[tauri::command]
+pub async fn get_qualities(
+    edition: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<GameQuality>, AppError> {
+    let pool = get_game_pool(&state).await?;
+    query_qualities_db(&pool, &edition).await
+}
+
+#[tauri::command]
+pub async fn get_weapons(
+    edition: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<GameWeapon>, AppError> {
+    let pool = get_game_pool(&state).await?;
+    query_weapons_db(&pool, &edition).await
+}
+
+#[tauri::command]
+pub async fn get_augmentations(
+    edition: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<GameAugmentation>, AppError> {
+    let pool = get_game_pool(&state).await?;
+    query_augmentations_db(&pool, &edition).await
 }
 
 // ============================================================
@@ -1183,5 +1429,129 @@ mod tests {
         assert_eq!(priority.skills, PriorityLevel::C);
         assert_eq!(priority.resources, PriorityLevel::E);
         assert_eq!(computed.computed_attributes.magic, Some(6));
+    }
+
+    // -- Game data query tests --
+
+    async fn setup_game_data_db() -> SqlitePool {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+        let migrations =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../crates/data/migrations");
+        let migrator = sqlx::migrate::Migrator::new(migrations).await.unwrap();
+        migrator.run(&pool).await.unwrap();
+
+        // Seed sample skills
+        for (id, name, attr, group, edition) in [
+            ("s1", "Pistols", "AGI", Some("Firearms"), "SR4"),
+            ("s2", "Automatics", "AGI", Some("Firearms"), "SR4"),
+            ("s3", "Perception", "INT", None, "SR4"),
+            ("s4", "Pistols", "AGI", Some("Firearms"), "SR5"),
+            ("s5", "Sneaking", "AGI", Some("Stealth"), "SR5"),
+        ] {
+            sqlx::query(
+                "INSERT INTO skills_data (id, name, linked_attribute, skill_group, edition, source, page) VALUES (?, ?, ?, ?, ?, 'SR', '1')"
+            )
+            .bind(id).bind(name).bind(attr).bind(group).bind(edition)
+            .execute(&pool).await.unwrap();
+        }
+
+        // Seed sample qualities
+        for (id, name, qtype, cost, edition) in [
+            ("q1", "Ambidextrous", "Positive", 5, "SR4"),
+            ("q2", "Toughness", "Positive", 10, "SR4"),
+            ("q3", "SINner", "Negative", 5, "SR4"),
+            ("q4", "Analytical Mind", "Positive", 5, "SR5"),
+            ("q5", "Bad Luck", "Negative", 20, "SR5"),
+        ] {
+            sqlx::query(
+                "INSERT INTO qualities (id, name, quality_type, cost, edition, source, page) VALUES (?, ?, ?, ?, ?, 'SR', '1')"
+            )
+            .bind(id).bind(name).bind(qtype).bind(cost).bind(edition)
+            .execute(&pool).await.unwrap();
+        }
+
+        // Seed sample weapons
+        sqlx::query(
+            "INSERT INTO weapons (id, name, category, damage, ap, mode, recoil_comp, ammo, availability, cost, edition, source, page) \
+             VALUES ('w1', 'Ares Predator V', 'Heavy Pistols', '8P', '-1', 'SA', '0', '15(c)', '5R', '725', 'SR5', 'SR5', '425')"
+        ).execute(&pool).await.unwrap();
+
+        // Seed sample augmentation
+        sqlx::query(
+            "INSERT INTO augmentations (id, name, augmentation_type, essence_cost, capacity, availability, cost, edition, source, page) \
+             VALUES ('a1', 'Wired Reflexes 1', 'Cyberware', '2', '[0]', '8R', '39000', 'SR4', 'SR4', '340')"
+        ).execute(&pool).await.unwrap();
+
+        pool
+    }
+
+    #[tokio::test]
+    async fn test_query_skills_by_edition() {
+        let pool = setup_game_data_db().await;
+        let sr4_skills = query_skills_db(&pool, "SR4").await.unwrap();
+        assert_eq!(sr4_skills.len(), 3);
+        assert!(sr4_skills.iter().any(|s| s.name == "Pistols"));
+        assert!(sr4_skills.iter().any(|s| s.name == "Perception"));
+
+        let sr5_skills = query_skills_db(&pool, "SR5").await.unwrap();
+        assert_eq!(sr5_skills.len(), 2);
+        assert!(sr5_skills.iter().any(|s| s.name == "Sneaking"));
+    }
+
+    #[tokio::test]
+    async fn test_query_skills_returns_attributes_and_groups() {
+        let pool = setup_game_data_db().await;
+        let skills = query_skills_db(&pool, "SR4").await.unwrap();
+        let pistols = skills.iter().find(|s| s.name == "Pistols").unwrap();
+        assert_eq!(pistols.linked_attribute, "AGI");
+        assert_eq!(pistols.skill_group.as_deref(), Some("Firearms"));
+
+        let perception = skills.iter().find(|s| s.name == "Perception").unwrap();
+        assert!(perception.skill_group.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_query_qualities_by_edition() {
+        let pool = setup_game_data_db().await;
+        let sr4_quals = query_qualities_db(&pool, "SR4").await.unwrap();
+        assert_eq!(sr4_quals.len(), 3);
+
+        let positives: Vec<_> = sr4_quals
+            .iter()
+            .filter(|q| q.quality_type == "Positive")
+            .collect();
+        let negatives: Vec<_> = sr4_quals
+            .iter()
+            .filter(|q| q.quality_type == "Negative")
+            .collect();
+        assert_eq!(positives.len(), 2);
+        assert_eq!(negatives.len(), 1);
+        assert_eq!(negatives[0].name, "SINner");
+        assert_eq!(negatives[0].cost, 5);
+    }
+
+    #[tokio::test]
+    async fn test_query_weapons_by_edition() {
+        let pool = setup_game_data_db().await;
+        let weapons = query_weapons_db(&pool, "SR5").await.unwrap();
+        assert_eq!(weapons.len(), 1);
+        assert_eq!(weapons[0].name, "Ares Predator V");
+        assert_eq!(weapons[0].damage, "8P");
+    }
+
+    #[tokio::test]
+    async fn test_query_augmentations_by_edition() {
+        let pool = setup_game_data_db().await;
+        let augs = query_augmentations_db(&pool, "SR4").await.unwrap();
+        assert_eq!(augs.len(), 1);
+        assert_eq!(augs[0].name, "Wired Reflexes 1");
+        assert_eq!(augs[0].augmentation_type, "Cyberware");
+    }
+
+    #[tokio::test]
+    async fn test_query_empty_edition_returns_empty() {
+        let pool = setup_game_data_db().await;
+        let skills = query_skills_db(&pool, "SR6").await.unwrap();
+        assert!(skills.is_empty());
     }
 }

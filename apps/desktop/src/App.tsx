@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+// Dialog plugin would be used for file picker if available
 import {
   useCharacterStore,
   type Edition,
   type MetatypeKey,
 } from "./store/characterStore";
+import { useGameDataStore } from "./store/gameDataStore";
 import BuilderShell from "./components/BuilderShell";
 import SavedCharacterView from "./components/SavedCharacterView";
 
@@ -20,6 +22,11 @@ function App() {
   const draft = useCharacterStore((s) => s.draft);
   const savedCharacter = useCharacterStore((s) => s.savedCharacter);
   const startNewCharacter = useCharacterStore((s) => s.startNewCharacter);
+
+  const gameDataLoaded = useGameDataStore((s) => s.loaded);
+  const gameDataLoading = useGameDataStore((s) => s.loading);
+  const gameDataError = useGameDataStore((s) => s.error);
+  const loadGameData = useGameDataStore((s) => s.loadGameData);
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [campaignName, setCampaignName] = useState("My Campaign");
@@ -48,7 +55,26 @@ function App() {
     }
   };
 
+  const [gameDataPath, setGameDataPath] = useState("game_data.db");
+
+  const handleLoadGameData = async () => {
+    try {
+      await loadGameData(gameDataPath, edition);
+      setError(null);
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+
   const handleStartBuilder = async () => {
+    // Reload game data if edition changed
+    if (gameDataLoaded) {
+      try {
+        await loadGameData(gameDataPath, edition);
+      } catch {
+        // Non-fatal — will use fallback data
+      }
+    }
     try {
       await startNewCharacter(edition, metatype, charName);
       setError(null);
@@ -141,6 +167,45 @@ function App() {
                 </select>
               </div>
             </div>
+
+            {/* Game data */}
+            <div className="border-t border-cyber-border pt-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={gameDataPath}
+                  onChange={(e) => setGameDataPath(e.target.value)}
+                  placeholder="Path to game_data.db"
+                  className="flex-1 bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-xs font-mono"
+                />
+                <button
+                  onClick={handleLoadGameData}
+                  disabled={gameDataLoading}
+                  className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${
+                    gameDataLoaded
+                      ? "bg-cyber-green-dim/20 border-cyber-green-dim text-cyber-green"
+                      : "bg-cyber-card border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
+                  }`}
+                >
+                  {gameDataLoading
+                    ? "Loading..."
+                    : gameDataLoaded
+                      ? "Loaded"
+                      : "Load Game Data"}
+                </button>
+              </div>
+              {gameDataLoaded && (
+                <p className="text-cyber-green-dim text-xs font-mono mt-1">
+                  Game data loaded — skills and qualities from Chummer DB
+                </p>
+              )}
+              {gameDataError && (
+                <p className="text-cyber-red text-xs font-mono mt-1">
+                  {gameDataError}
+                </p>
+              )}
+            </div>
+
             <button
               onClick={handleStartBuilder}
               className="w-full px-4 py-2 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green rounded text-sm font-medium text-cyber-green transition-all shadow-glow"
