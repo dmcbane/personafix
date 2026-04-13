@@ -6,11 +6,9 @@
   <img src="docs/logo.png" alt="personafix — Shadowrun Character Management" width="600">
 </p>
 
-A cross-platform Shadowrun character creation and career management tool supporting both SR4 and SR5 editions.
+*Because every street sam needs a clean override.* Create and manage Shadowrun characters with a suite of tools that make "becoming someone else" easy.
 
 **[Project Homepage](https://dmcbane.github.io/personafix/)** | **[Downloads](https://github.com/dmcbane/personafix/releases)** | **[Changelog](CHANGELOG.md)**
-
-> A personafix chip in Shadowrun literally overwrites the user's identity and personality. Seems appropriate for a tool that builds your runner from scratch.
 
 ## Features
 

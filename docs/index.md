@@ -5,7 +5,7 @@ title: personafix
 
 <div class="hero">
   <img src="logo.png" alt="personafix — Shadowrun Character Management">
-  <p class="hero-tagline">A cross-platform character creation and career management tool for Shadowrun 4th and 5th Edition.</p>
+  <p class="hero-tagline">Because every street sam needs a clean override.<br>Create and manage characters with a suite of tools that make "becoming someone else" easy.</p>
 </div>
 
 <div class="nav-bar">
