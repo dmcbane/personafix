@@ -35,6 +35,7 @@ export default function SkillPanel() {
   const gameDataLoaded = useGameDataStore((s) => s.loaded);
   const [selectedSkill, setSelectedSkill] = useState("");
   const [search, setSearch] = useState("");
+  const [attrFilter, setAttrFilter] = useState<string>("all");
 
   if (!draft) return null;
 
@@ -46,8 +47,12 @@ export default function SkillPanel() {
     ? gameSkills.map((gs) => ({ name: gs.name, attr: gs.linked_attribute, id: gs.id }))
     : FALLBACK_SKILLS.map((s) => ({ ...s, id: s.name.toLowerCase().replace(/ /g, "_") }));
 
+  // Collect unique attributes for filter buttons
+  const uniqueAttrs = [...new Set(skillSource.map((s) => s.attr))].sort();
+
   const availableSkills = skillSource
     .filter((cs) => !draft.skills.some((s) => s.name === cs.name))
+    .filter((cs) => attrFilter === "all" || cs.attr === attrFilter)
     .filter((cs) =>
       search === "" || cs.name.toLowerCase().includes(search.toLowerCase()),
     );
@@ -97,17 +102,47 @@ export default function SkillPanel() {
         </span>
       </div>
 
+      {/* Attribute filter */}
+      <div className="flex gap-1.5 mb-3 flex-wrap">
+        <button
+          onClick={() => setAttrFilter("all")}
+          className={`px-2.5 py-1 rounded text-xs font-mono transition-all ${
+            attrFilter === "all"
+              ? "bg-cyber-green-dim border border-cyber-green text-cyber-green shadow-glow"
+              : "bg-cyber-card border border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
+          }`}
+        >
+          All
+        </button>
+        {uniqueAttrs.map((attr) => (
+          <button
+            key={attr}
+            onClick={() => setAttrFilter(attr === attrFilter ? "all" : attr)}
+            className={`px-2.5 py-1 rounded text-xs font-mono transition-all ${
+              attrFilter === attr
+                ? "bg-cyber-blue/20 border border-cyber-blue text-cyber-blue"
+                : "bg-cyber-card border border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
+            }`}
+          >
+            {attr}
+          </button>
+        ))}
+        {attrFilter !== "all" && (
+          <span className="text-cyber-text-dim text-xs font-mono self-center ml-1">
+            {availableSkills.length} skills
+          </span>
+        )}
+      </div>
+
       {/* Search + Add */}
       <div className="flex gap-2 mb-4">
-        {gameDataLoaded && (
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search skills..."
-            className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm w-40"
-          />
-        )}
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search skills..."
+          className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm w-40"
+        />
         <select
           value={selectedSkill}
           onChange={(e) => setSelectedSkill(e.target.value)}
