@@ -37,6 +37,9 @@ function App() {
   const [edition, setEdition] = useState<Edition>("SR4");
   const [metatype, setMetatype] = useState<MetatypeKey>("Human");
   const [error, setError] = useState<string | null>(null);
+  const [gameDataPath, setGameDataPath] = useState("game_data.db");
+
+  // All hooks must be above this line — React requires consistent hook order.
 
   if (savedCharacter) {
     return <SavedCharacterView />;
@@ -57,8 +60,6 @@ function App() {
       setError(String(err));
     }
   };
-
-  const [gameDataPath, setGameDataPath] = useState("game_data.db");
 
   const handleLoadGameData = async () => {
     await loadGameData(gameDataPath, edition);
