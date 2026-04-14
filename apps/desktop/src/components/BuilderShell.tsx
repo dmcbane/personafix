@@ -20,6 +20,8 @@ export default function BuilderShell({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  console.log("[personafix] BuilderShell render, draft:", draft?.name, "campaignId:", campaignId);
+
   if (!draft) return null;
 
   const isSR5 = draft.edition === "SR5";
@@ -61,7 +63,7 @@ export default function BuilderShell({
   const realErrors = validationErrors.filter((e) => e.severity === "Error");
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-screen">
       {/* Header */}
       <div className="px-6 py-4 border-b border-cyber-border flex items-center justify-between bg-cyber-surface">
         <div>

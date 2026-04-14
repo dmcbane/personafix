@@ -212,10 +212,12 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   savedCharacter: null,
 
   startNewCharacter: async (edition, metatype, name) => {
+    console.log("[personafix] startNewCharacter:", { edition, metatype, name });
     const limits = await invoke<RacialLimits>("get_racial_limits", {
       edition,
       metatype,
     });
+    console.log("[personafix] racial limits:", limits);
 
     const draft: CharacterDraft = {
       name,
@@ -261,12 +263,14 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       nuyen_spent: 0,
     };
 
+    console.log("[personafix] draft created:", draft);
     set({
       draft,
       racialLimits: limits,
       validationErrors: [],
       savedCharacter: null,
     });
+    console.log("[personafix] state set, builder should render");
   },
 
   setAttribute: (attr, value) => {
@@ -346,10 +350,16 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   validate: async () => {
     const { draft } = get();
     if (!draft) return;
-    const errors = await invoke<ValidationError[]>("validate_draft", {
-      draft,
-    });
-    set({ validationErrors: errors });
+    try {
+      console.log("[personafix] validate_draft calling IPC...");
+      const errors = await invoke<ValidationError[]>("validate_draft", {
+        draft,
+      });
+      console.log("[personafix] validation result:", errors.length, "errors");
+      set({ validationErrors: errors });
+    } catch (err) {
+      console.error("[personafix] validate_draft failed:", err);
+    }
   },
 
   saveCharacter: async (campaignId) => {
