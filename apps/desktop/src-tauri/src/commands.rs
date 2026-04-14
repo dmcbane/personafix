@@ -714,25 +714,15 @@ async fn get_game_pool(state: &State<'_, AppState>) -> Result<SqlitePool, AppErr
 
 #[tauri::command]
 pub async fn load_game_data(path: String, state: State<'_, AppState>) -> Result<String, AppError> {
-    // Resolve to absolute path for clarity
-    let db_path = PathBuf::from(&path);
-    let abs_path = if db_path.is_absolute() {
-        db_path.clone()
-    } else {
-        std::env::current_dir()
-            .unwrap_or_else(|_| PathBuf::from("."))
-            .join(&db_path)
-    };
+    let abs_path = resolve_path(&path);
 
     if !abs_path.exists() {
         return Err(AppError {
             kind: "file_not_found".to_string(),
             message: format!(
-                "Game data file not found at: {}\nWorking directory: {}\nOriginal path: {}",
+                "Game data file not found at: {}\nProject root: {}\nOriginal path: {}",
                 abs_path.display(),
-                std::env::current_dir()
-                    .map(|p| p.display().to_string())
-                    .unwrap_or_else(|_| "unknown".to_string()),
+                project_root().display(),
                 path
             ),
         });
@@ -762,19 +752,33 @@ pub async fn load_game_data(path: String, state: State<'_, AppState>) -> Result<
     ))
 }
 
+/// Project root directory (workspace root, not src-tauri/).
+fn project_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../..")
+        .canonicalize()
+        .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.."))
+}
+
+/// Resolve a path: absolute paths used as-is, relative paths resolved
+/// against the project root (not the working directory, which Tauri
+/// sets to src-tauri/).
+fn resolve_path(path: &str) -> PathBuf {
+    let p = PathBuf::from(path);
+    if p.is_absolute() {
+        p
+    } else {
+        project_root().join(&p)
+    }
+}
+
 /// Debug command: check if a file exists and return info about paths.
 #[tauri::command]
 pub fn debug_check_file(path: String) -> Result<String, AppError> {
-    let db_path = PathBuf::from(&path);
+    let abs_path = resolve_path(&path);
     let cwd = std::env::current_dir()
         .map(|p| p.display().to_string())
         .unwrap_or_else(|_| "unknown".to_string());
-
-    let abs_path = if db_path.is_absolute() {
-        db_path.clone()
-    } else {
-        PathBuf::from(&cwd).join(&db_path)
-    };
 
     let exists = abs_path.exists();
     let is_file = abs_path.is_file();
@@ -787,8 +791,9 @@ pub fn debug_check_file(path: String) -> Result<String, AppError> {
     };
 
     Ok(format!(
-        "Input path: {}\nWorking dir: {}\nResolved to: {}\nExists: {}\nIs file: {}\nSize: {}",
+        "Input path: {}\nProject root: {}\nWorking dir: {}\nResolved to: {}\nExists: {}\nIs file: {}\nSize: {}",
         path,
+        project_root().display(),
         cwd,
         abs_path.display(),
         exists,
