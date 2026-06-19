@@ -50,7 +50,7 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` parked (se
 
 ## Phase 4 — Conflict detection & reporting (your explicit goal)
 - [x] P4-1: incompatible qualities reported as **Warning** — *gate: L1 (un-ignore seed)*
-- [ ] P4-2: essence overage (augs exceed 6.00) reported as **Error** — *gate: L1*
+- [x] P4-2: essence overage (augs exceed 6.00) reported as **Error** — *gate: L1*
 - [ ] P4-3: magic + resonance simultaneously reported as **Error** — *gate: L1*
 - [ ] Conflicts surfaced in the builder UI (severity-colored, non-blocking) — *L3b + L4*
 

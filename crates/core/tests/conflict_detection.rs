@@ -124,7 +124,6 @@ fn incompatible_qualities_are_reported_as_warning() {
 }
 
 #[test]
-#[ignore = "TDD seed — implement in backlog item P4-2 (essence overage); remove #[ignore] then"]
 fn essence_overage_is_reported_as_error() {
     let mut draft = legal_human_draft();
     // Augmentations totaling 7.00 essence — impossible, base essence is 6.00.

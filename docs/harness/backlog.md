@@ -53,7 +53,7 @@ Status: `todo` · `doing` · `done` · `parked`
   accept: remove `#[ignore]` from `incompatible_qualities_are_reported_as_warning`
           (`crates/core/tests/conflict_detection.rs`) and make it pass — gate L1.
 
-- id: P4-2  status: todo  deps: []
+- id: P4-2  status: done   deps: []
   desc: Detect essence overage (augmentations whose graded essence cost drives essence
         <= 0) in `validate_creation`. Reuse `calculate_essence`. Report as `Error`.
   accept: un-ignore `essence_overage_is_reported_as_error` and make it pass — gate L1.

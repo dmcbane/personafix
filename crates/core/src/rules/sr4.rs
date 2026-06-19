@@ -127,6 +127,19 @@ impl CharacterRules for SR4Rules {
             });
         }
 
+        // Essence overage: augmentations cannot collectively cost more than 6.00 essence.
+        let remaining_essence = self.calculate_essence(&draft.augmentations);
+        if remaining_essence.0 <= 0 {
+            errors.push(ValidationError {
+                severity: ValidationSeverity::Error,
+                field: "essence".to_string(),
+                message: format!(
+                    "Augmentations exceed maximum essence (remaining: {:.2})",
+                    remaining_essence.0 as f32 / 100.0
+                ),
+            });
+        }
+
         // Incompatible quality detection: check each quality's incompatible_with list against
         // the IDs of the other selected qualities.
         let quality_ids: Vec<&str> = draft.qualities.iter().map(|q| q.id.as_str()).collect();

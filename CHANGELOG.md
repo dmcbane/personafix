@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-06-19
+
+### Added
+- SR4 conflict detection (P4-2): `SR4Rules::validate_creation` now reports an
+  `Error` when augmentations collectively exceed 6.00 essence (remaining <= 0),
+  reusing `calculate_essence` to guarantee consistency with `apply_improvements`
+
 ## [0.10.0] - 2026-06-19
 
 ### Added
