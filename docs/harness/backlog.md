@@ -95,7 +95,7 @@ Status: `todo` · `doing` · `done` · `parked`
   desc: Add Magic panel (spells + adept powers).
   accept: L3b smoke + L4.
 
-- id: P3-6  status: todo  deps: []
+- id: P3-6  status: done   deps: []
   desc: Character list / load screen (uses existing `list_characters` + `get_character`).
   accept: L3b smoke: create two characters, reopen one + L4.
 

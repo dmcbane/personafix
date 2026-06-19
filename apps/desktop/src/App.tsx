@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
@@ -21,7 +21,10 @@ const METATYPES: MetatypeKey[] = ["Human", "Elf", "Dwarf", "Ork", "Troll"];
 function App() {
   const draft = useCharacterStore((s) => s.draft);
   const savedCharacter = useCharacterStore((s) => s.savedCharacter);
+  const characters = useCharacterStore((s) => s.characters);
   const startNewCharacter = useCharacterStore((s) => s.startNewCharacter);
+  const listCharacters = useCharacterStore((s) => s.listCharacters);
+  const loadCharacter = useCharacterStore((s) => s.loadCharacter);
 
   const gameDataLoaded = useGameDataStore((s) => s.loaded);
   const gameDataLoading = useGameDataStore((s) => s.loading);
@@ -39,6 +42,14 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [gameDataPath, setGameDataPath] = useState("game_data.db");
 
+  // Refresh character list whenever we return to the campaign screen (draft and
+  // savedCharacter both null) so newly saved characters appear immediately.
+  useEffect(() => {
+    if (campaign && !draft && !savedCharacter) {
+      listCharacters(campaign.id).catch(() => {});
+    }
+  }, [campaign, draft, savedCharacter]);
+
   // All hooks must be above this line — React requires consistent hook order.
 
   if (savedCharacter) {
@@ -55,6 +66,7 @@ function App() {
         name: campaignName,
       });
       setCampaign(result);
+      await listCharacters(result.id);
       setError(null);
     } catch (err) {
       setError(String(err));
@@ -107,6 +119,15 @@ function App() {
     }
   };
 
+  const handleLoadCharacter = async (id: string) => {
+    try {
+      await loadCharacter(id);
+      setError(null);
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-8">
       <div className="w-full max-w-md space-y-6">
@@ -142,6 +163,39 @@ function App() {
             </button>
           </div>
         ) : (
+          <div className="space-y-4">
+            {/* Character list */}
+            {characters.length > 0 && (
+              <div className="bg-cyber-card border border-cyber-border rounded-lg p-4">
+                <h2 className="text-sm font-semibold text-cyber-heading font-mono mb-3">
+                  // {campaign.name}
+                </h2>
+                <div className="space-y-1">
+                  {characters.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center gap-3 bg-cyber-surface border border-cyber-border rounded px-3 py-2"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <span className="text-cyber-text text-sm font-medium truncate block">
+                          {c.name}
+                        </span>
+                        <span className="text-cyber-text-dim text-xs font-mono">
+                          {c.edition} {c.metatype}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleLoadCharacter(c.id)}
+                        className="px-3 py-1 text-xs font-mono border border-cyber-border-bright text-cyber-blue hover:bg-cyber-blue/10 rounded transition-colors shrink-0"
+                      >
+                        Open
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           <div className="bg-cyber-card border border-cyber-border rounded-lg p-6 space-y-4">
             <div className="text-sm text-cyber-text-dim font-mono">
               Campaign:{" "}
@@ -260,6 +314,7 @@ function App() {
             >
               Start Building
             </button>
+          </div>
           </div>
         )}
 

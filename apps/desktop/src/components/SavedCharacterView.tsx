@@ -24,7 +24,7 @@ export default function SavedCharacterView() {
             onClick={reset}
             className="px-4 py-2 bg-cyber-card border border-cyber-border hover:border-cyber-border-bright rounded text-sm text-cyber-text transition-colors"
           >
-            New Character
+            ← Characters
           </button>
         </div>
 

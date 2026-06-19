@@ -106,6 +106,14 @@ export interface ComputedCharacter {
   nuyen: number;
 }
 
+export interface CharacterSummary {
+  id: string;
+  name: string;
+  edition: Edition;
+  metatype: MetatypeKey;
+  total_karma: number;
+}
+
 export type Edition = "SR4" | "SR5";
 export type MetatypeKey = "Human" | "Elf" | "Dwarf" | "Ork" | "Troll";
 
@@ -184,8 +192,10 @@ interface CharacterState {
   draft: CharacterDraft | null;
   racialLimits: RacialLimits | null;
   validationErrors: ValidationError[];
-  // Saved character (after finalization)
+  // Saved character (after finalization or load)
   savedCharacter: ComputedCharacter | null;
+  // Characters in the active campaign
+  characters: CharacterSummary[];
 
   // Actions
   startNewCharacter: (
@@ -202,6 +212,8 @@ interface CharacterState {
   setPriority: (category: PriorityCategory, level: PriorityLevel) => void;
   validate: () => Promise<void>;
   saveCharacter: (campaignId: string) => Promise<void>;
+  listCharacters: (campaignId: string) => Promise<void>;
+  loadCharacter: (id: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -210,6 +222,7 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   racialLimits: null,
   validationErrors: [],
   savedCharacter: null,
+  characters: [],
 
   startNewCharacter: async (edition, metatype, name) => {
     console.log("[personafix] startNewCharacter:", { edition, metatype, name });
@@ -401,6 +414,18 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       "save_character_base",
       { base },
     );
+    set({ savedCharacter: computed, draft: null });
+  },
+
+  listCharacters: async (campaignId) => {
+    const chars = await invoke<CharacterSummary[]>("list_characters", {
+      campaignId,
+    });
+    set({ characters: chars });
+  },
+
+  loadCharacter: async (id) => {
+    const computed = await invoke<ComputedCharacter>("get_character", { id });
     set({ savedCharacter: computed, draft: null });
   },
 
