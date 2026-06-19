@@ -61,6 +61,7 @@ export default function BuilderShell({
   };
 
   const realErrors = validationErrors.filter((e) => e.severity === "Error");
+  const warnings = validationErrors.filter((e) => e.severity === "Warning");
 
   return (
     <div className="flex flex-col h-screen">
@@ -112,6 +113,13 @@ export default function BuilderShell({
                 ),
               ) && (
                 <span className="ml-1 text-cyber-red text-xs">!</span>
+              )}
+            {tab.key === "qualities" &&
+              warnings.some(
+                (e) =>
+                  e.field.includes("incompat") || e.field.includes("qualit"),
+              ) && (
+                <span className="ml-1 text-cyber-yellow text-xs">~</span>
               )}
           </button>
         ))}

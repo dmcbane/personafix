@@ -62,7 +62,7 @@ Status: `todo` · `doing` · `done` · `parked`
   desc: Detect magic + resonance set simultaneously in `validate_creation`. Report `Error`.
   accept: un-ignore `magic_and_resonance_together_is_reported_as_error` and pass — gate L1.
 
-- id: P4-4  status: todo  deps: [P4-1, P4-2, P4-3]
+- id: P4-4  status: done   deps: [P4-1, P4-2, P4-3]
   desc: Surface conflicts in the builder UI — severity-colored, non-blocking banner.
   accept: L3b smoke shows a warning/error rendered for a conflicting draft + L4.
 

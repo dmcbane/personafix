@@ -20,6 +20,8 @@ export default {
           purple: "#7c3aed",
           red: "#ff4757",
           "red-dim": "#8b1a25",
+          yellow: "#f9c74f",
+          "yellow-dim": "#6b5a00",
         },
       },
       fontFamily: {

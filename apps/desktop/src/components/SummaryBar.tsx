@@ -27,6 +27,7 @@ export default function SummaryBar() {
   const totalBP = attrBP + skillBP + qualBP;
 
   const realErrors = errors.filter((e) => e.severity === "Error");
+  const warnings = errors.filter((e) => e.severity === "Warning");
 
   return (
     <div className="bg-cyber-surface border-t border-cyber-border px-6 py-3">
@@ -61,17 +62,27 @@ export default function SummaryBar() {
           </span>
         </div>
         <div className="flex-1" />
+        {warnings.length > 0 && (
+          <div className="text-cyber-yellow text-xs">
+            {warnings.length} warning{warnings.length > 1 ? "s" : ""}
+          </div>
+        )}
         {realErrors.length > 0 && (
           <div className="text-cyber-red text-xs">
             {realErrors.length} error{realErrors.length > 1 ? "s" : ""}
           </div>
         )}
       </div>
-      {realErrors.length > 0 && (
+      {(realErrors.length > 0 || warnings.length > 0) && (
         <div className="mt-2 space-y-0.5">
           {realErrors.map((e, i) => (
-            <p key={i} className="text-cyber-red text-xs font-mono">
-              [{e.field}] {e.message}
+            <p key={`e-${i}`} className="text-cyber-red text-xs font-mono">
+              [error] [{e.field}] {e.message}
+            </p>
+          ))}
+          {warnings.map((e, i) => (
+            <p key={`w-${i}`} className="text-cyber-yellow text-xs font-mono">
+              [warn] [{e.field}] {e.message}
             </p>
           ))}
         </div>

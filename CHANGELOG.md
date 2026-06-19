@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-06-19
+
+### Added
+- Conflict detection surfaced in the builder UI (P4-4):
+  - SummaryBar now renders `Warning` items in yellow (`#f9c74f`) below `Error`
+    items in red — each showing `[warn] [field] message` — so incompatible
+    qualities are visible without blocking character creation
+  - Qualities tab badge shows `~` in yellow when any incompatibility warning
+    is present, alongside the existing `!` in red for hard errors
+  - Added `cyber-yellow` / `cyber-yellow-dim` to the Tailwind color palette
+- **Gate note:** L4 (human spot-check via `make dev`) still required before
+  this checklist item is fully closed
+
 ## [0.13.0] - 2026-06-19
 
 ### Added
