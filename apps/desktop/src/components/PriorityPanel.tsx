@@ -5,11 +5,20 @@ import {
   PRIORITY_TABLE,
   type PriorityCategory,
   type PriorityLevel,
+  type MagicTradition,
 } from "../store/characterStore";
+
+const TRADITIONS: { value: MagicTradition; label: string; desc: string }[] = [
+  { value: "Magician", label: "Magician", desc: "Casts spells and summons spirits" },
+  { value: "Adept", label: "Adept", desc: "Channels magic into physical power (Adept Powers)" },
+  { value: "MysticAdept", label: "Mystic Adept", desc: "Splits magic between spells and Adept Powers" },
+  { value: "Technomancer", label: "Technomancer", desc: "Uses Resonance and Complex Forms instead of magic" },
+];
 
 export default function PriorityPanel() {
   const draft = useCharacterStore((s) => s.draft);
   const setPriority = useCharacterStore((s) => s.setPriority);
+  const setMagicTradition = useCharacterStore((s) => s.setMagicTradition);
   const validate = useCharacterStore((s) => s.validate);
 
   if (!draft || !draft.priority_selection) return null;
@@ -115,6 +124,42 @@ export default function PriorityPanel() {
           );
         })}
       </div>
+
+      {/* Awakened tradition selector — shown when magic priority is not E */}
+      {selection.magic_or_resonance !== "E" && (
+        <div className="mt-6">
+          <h3 className="text-base font-semibold text-cyber-heading font-mono mb-2">
+            // Awakened Tradition
+          </h3>
+          <p className="text-xs text-cyber-text-dim font-mono mb-3">
+            Choose your tradition. This determines which abilities you can use.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {TRADITIONS.map((t) => {
+              const isSelected = draft.magic_tradition === t.value;
+              return (
+                <button
+                  key={t.value}
+                  onClick={() => { setMagicTradition(t.value); validate(); }}
+                  className={`text-left px-3 py-2 rounded border text-sm font-mono transition-all ${
+                    isSelected
+                      ? "bg-cyber-green-dim border-cyber-green text-cyber-green shadow-glow"
+                      : "bg-cyber-card border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
+                  }`}
+                >
+                  <div className="font-semibold">{t.label}</div>
+                  <div className="text-xs mt-0.5 opacity-70">{t.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+          {!draft.magic_tradition && (
+            <p className="mt-2 text-cyber-red text-xs font-mono">
+              Tradition required — choose one above.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

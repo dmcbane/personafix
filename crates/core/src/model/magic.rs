@@ -1,6 +1,16 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+/// Which awakened tradition a character follows (SR5 only).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub enum MagicTradition {
+    Magician,
+    Adept,
+    MysticAdept,
+    Technomancer,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub enum SpellCategory {

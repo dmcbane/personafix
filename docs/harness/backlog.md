@@ -122,7 +122,7 @@ Status: `todo` · `doing` · `done` · `parked`
         Contacts keeps add-form at top, list below.
   accept: L4 spot-check across all 5 panels in SR4 and SR5 mode.
 
-- id: P6-2  status: todo  deps: []
+- id: P6-2  status: done  deps: []
   desc: SR5 Awakened subtype enforcement — priority A/B/C/D for magic_or_resonance
         distinguishes Magician / Adept / Mystic Adept / Technomancer. The PriorityPanel
         shows descriptive text but does not gate spells vs adept powers vs complex forms.

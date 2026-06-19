@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0] - 2026-06-19
+
+### Added
+- P6-2: SR5 Awakened subtype enforcement. `MagicTradition` enum (Magician, Adept,
+  MysticAdept, Technomancer) added to Rust model (`crates/core`) and stored in
+  `character_base.magic_tradition` SQLite column (migration 00002)
+- `MagicTradition` field on `CharacterDraft` and `CharacterBase` (serde-defaulted
+  for backwards compatibility)
+- SR5 validation: non-Mundane magic priority requires `magic_tradition` to be set
+  (L1 test: `validate_magic_tradition_required_when_awakened`)
+- PriorityPanel: tradition selector appears when magic priority ≠ E; shows
+  Magician / Adept / Mystic Adept / Technomancer buttons with descriptions
+- MagicPanel: gates spell list to Magician/MysticAdept; shows Adept Powers
+  placeholder (with power point budget) for Adept/MysticAdept; shows Complex Forms
+  placeholder for Technomancer; Mundane SR5 characters see a "no magic" message
+- `setMagicTradition` action in character store
+- `setPriority` auto-clears tradition to null when magic priority switches to E;
+  auto-sets "Magician" as default when first choosing a non-E magic priority
+- DB save/load paths updated to persist `magic_tradition`
+- Bump 0.26.0 → 0.27.0; P6-2 done
+
 ## [0.26.0] - 2026-06-19
 
 ### Changed

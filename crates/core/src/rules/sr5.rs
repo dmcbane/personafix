@@ -158,6 +158,17 @@ impl CharacterRules for SR5Rules {
             });
         }
 
+        // Magic tradition must be chosen if a non-Mundane priority is selected
+        if sr5_priority::magic_starting_rating(priority.magic_or_resonance).is_some()
+            && draft.magic_tradition.is_none()
+        {
+            errors.push(ValidationError {
+                severity: ValidationSeverity::Error,
+                field: "magic_tradition".to_string(),
+                message: "Awakened tradition must be chosen (Magician, Adept, Mystic Adept, or Technomancer)".to_string(),
+            });
+        }
+
         // Magic / resonance attribute must be set if a non-Mundane priority is chosen
         if let Some(max) = sr5_priority::magic_starting_rating(priority.magic_or_resonance) {
             let awakened_val = draft.attributes.magic.or(draft.attributes.resonance);
@@ -379,6 +390,7 @@ mod tests {
     use crate::model::{
         augmentations::{AugmentationGrade, AugmentationType},
         contacts::Contact,
+        magic::MagicTradition,
         priority::{PriorityLevel, PrioritySelection},
         qualities::{Quality, QualityType},
         skills::Skill,
@@ -620,6 +632,25 @@ mod tests {
     }
 
     #[test]
+    fn validate_magic_tradition_required_when_awakened() {
+        let mut draft = make_legal_human_draft();
+        draft.priority_selection = Some(PrioritySelection {
+            metatype: PriorityLevel::D,
+            attributes: PriorityLevel::A,
+            magic_or_resonance: PriorityLevel::B,
+            skills: PriorityLevel::C,
+            resources: PriorityLevel::E,
+        });
+        draft.attributes.magic = Some(6);
+        draft.magic_tradition = None; // tradition not chosen → should error
+        let errors = rules().validate_creation(&draft);
+        assert!(
+            errors.iter().any(|e| e.field == "magic_tradition"),
+            "Expected magic_tradition error, got: {errors:?}"
+        );
+    }
+
+    #[test]
     fn validate_mundane_magic_priority_allows_null_magic() {
         let draft = make_legal_human_draft(); // uses priority E / magic = None
         let errors = rules().validate_creation(&draft);
@@ -729,6 +760,7 @@ mod tests {
                 skills: PriorityLevel::C,
                 resources: PriorityLevel::E,
             }),
+            magic_tradition: Some(MagicTradition::Adept),
             creation_points_spent: 0,
             nuyen_spent: 5_000,
         };
@@ -774,6 +806,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             priority_selection: draft.priority_selection.clone(),
+            magic_tradition: draft.magic_tradition,
         };
 
         let computed = rules().apply_improvements(&base, &[]);
@@ -835,6 +868,7 @@ mod tests {
                 skills: PriorityLevel::C,
                 resources: PriorityLevel::A,
             }),
+            magic_tradition: None,
             creation_points_spent: 0,
             nuyen_spent: 5_000,
         }
@@ -874,6 +908,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             priority_selection: None,
+            magic_tradition: None,
         }
     }
 

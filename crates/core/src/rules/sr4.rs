@@ -775,6 +775,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             priority_selection: None,
+            magic_tradition: None,
             creation_points_spent: 0,
             nuyen_spent: 200_000, // 40 BP
         };
@@ -826,6 +827,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             priority_selection: None,
+            magic_tradition: None,
         };
 
         let computed = rules().apply_improvements(&base, &[]);
@@ -878,6 +880,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             priority_selection: None,
+            magic_tradition: None,
             creation_points_spent: 0,
             nuyen_spent: 50_000,
         }
@@ -917,6 +920,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             priority_selection: None,
+            magic_tradition: None,
         }
     }
 

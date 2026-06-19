@@ -52,6 +52,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             priority_selection: None,
+            magic_tradition: None,
         }
     }
 

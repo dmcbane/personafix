@@ -209,11 +209,12 @@ pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCha
         String,
         String,
         Option<String>,
+        Option<String>,
     ) = sqlx::query_as(
         "SELECT attributes_json, skills_json, skill_groups_json, qualities_json, \
              augmentations_json, spells_json, adept_powers_json, complex_forms_json, \
              contacts_json, weapons_json, armor_json, gear_json, vehicles_json, \
-             priority_selection_json \
+             priority_selection_json, magic_tradition \
              FROM character_base WHERE character_id = ?",
     )
     .bind(id)
@@ -240,6 +241,7 @@ pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCha
         gear: serde_json::from_str(&row.11)?,
         vehicles: serde_json::from_str(&row.12)?,
         priority_selection: row.13.as_deref().and_then(|s| serde_json::from_str(s).ok()),
+        magic_tradition: row.14.as_deref().and_then(|s| serde_json::from_str(s).ok()),
     };
 
     let ledger_rows: Vec<(String,)> =
@@ -345,13 +347,18 @@ pub async fn save_character_base_db(
         .as_ref()
         .map(serde_json::to_string)
         .transpose()?;
+    let magic_tradition_json = base
+        .magic_tradition
+        .as_ref()
+        .map(serde_json::to_string)
+        .transpose()?;
 
     sqlx::query(
         "UPDATE character_base SET \
          metatype = ?, attributes_json = ?, skills_json = ?, skill_groups_json = ?, \
          qualities_json = ?, augmentations_json = ?, spells_json = ?, adept_powers_json = ?, \
          complex_forms_json = ?, contacts_json = ?, weapons_json = ?, armor_json = ?, \
-         gear_json = ?, vehicles_json = ?, priority_selection_json = ? \
+         gear_json = ?, vehicles_json = ?, priority_selection_json = ?, magic_tradition = ? \
          WHERE character_id = ?",
     )
     .bind(&metatype_str)
@@ -369,6 +376,7 @@ pub async fn save_character_base_db(
     .bind(&gear_json)
     .bind(&vehicles_json)
     .bind(&priority_json)
+    .bind(&magic_tradition_json)
     .bind(&base.id)
     .execute(pool)
     .await?;
@@ -1328,6 +1336,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             priority_selection: None,
+            magic_tradition: None,
             creation_points_spent: 0,
             nuyen_spent: 0,
         };
@@ -1375,6 +1384,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             priority_selection: None,
+            magic_tradition: None,
             creation_points_spent: 0,
             nuyen_spent: 0,
         };
@@ -1439,6 +1449,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             priority_selection: None,
+            magic_tradition: None,
         };
 
         save_character_base_db(&pool, &base).await.unwrap();
@@ -1540,6 +1551,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             priority_selection: None,
+            magic_tradition: None,
         };
 
         save_character_base_db(&pool, &base).await.unwrap();
@@ -1617,6 +1629,7 @@ mod tests {
                 skills: PriorityLevel::C,
                 resources: PriorityLevel::E,
             }),
+            magic_tradition: None,
         };
 
         save_character_base_db(&pool, &base).await.unwrap();

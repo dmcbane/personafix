@@ -8,7 +8,7 @@ use super::{
     edition::Edition,
     gear::{Armor, GearItem, Vehicle, Weapon},
     improvements::Improvement,
-    magic::{AdeptPower, ComplexForm, Spell},
+    magic::{AdeptPower, ComplexForm, MagicTradition, Spell},
     priority::PrioritySelection,
     qualities::Quality,
     skills::{Skill, SkillGroup},
@@ -37,6 +37,9 @@ pub struct CharacterDraft {
     pub vehicles: Vec<Vehicle>,
     /// SR5 only.
     pub priority_selection: Option<PrioritySelection>,
+    /// SR5 only. Which awakened tradition the character follows.
+    #[serde(default)]
+    pub magic_tradition: Option<MagicTradition>,
     /// SR4: BP total. SR5: karma total.
     pub creation_points_spent: i32,
     pub nuyen_spent: i64,
@@ -65,6 +68,8 @@ pub struct CharacterBase {
     pub gear: Vec<GearItem>,
     pub vehicles: Vec<Vehicle>,
     pub priority_selection: Option<PrioritySelection>,
+    #[serde(default)]
+    pub magic_tradition: Option<MagicTradition>,
 }
 
 /// Fully computed character state — the projection of base + all ledger events.

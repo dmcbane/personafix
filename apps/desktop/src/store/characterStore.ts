@@ -90,6 +90,8 @@ export interface PrioritySelection {
   resources: PriorityLevel;
 }
 
+export type MagicTradition = "Magician" | "Adept" | "MysticAdept" | "Technomancer";
+
 export interface CharacterDraft {
   name: string;
   edition: "SR4" | "SR5";
@@ -108,6 +110,7 @@ export interface CharacterDraft {
   gear: unknown[];
   vehicles: unknown[];
   priority_selection: PrioritySelection | null;
+  magic_tradition: MagicTradition | null;
   creation_points_spent: number;
   nuyen_spent: number;
 }
@@ -316,6 +319,7 @@ interface CharacterState {
   ) => Promise<void>;
   setAttribute: (attr: AttributeName, value: number) => void;
   setMagic: (value: number | null) => void;
+  setMagicTradition: (tradition: MagicTradition | null) => void;
   addSkill: (skill: Skill) => void;
   removeSkill: (skillId: string) => void;
   updateSkillRating: (skillId: string, rating: number) => void;
@@ -396,6 +400,8 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
               resources: "E",
             }
           : null,
+      // SR5 default: priority C for magic = Magician. SR4 is mundane.
+      magic_tradition: edition === "SR5" ? "Magician" : null,
       creation_points_spent: 0,
       nuyen_spent: 0,
     };
@@ -430,6 +436,12 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
         attributes: { ...draft.attributes, magic: value },
       },
     });
+  },
+
+  setMagicTradition: (tradition) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({ draft: { ...draft, magic_tradition: tradition } });
   },
 
   addSkill: (skill) => {
@@ -586,8 +598,9 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
     const { draft } = get();
     if (!draft || !draft.priority_selection) return;
     const newSelection = { ...draft.priority_selection, [category]: level };
-    // Auto-sync magic attribute when magic_or_resonance priority changes
+    // Auto-sync magic attribute and tradition when magic_or_resonance priority changes
     let newAttrs = draft.attributes;
+    let newTradition = draft.magic_tradition;
     if (category === "magic_or_resonance") {
       const startingMagic = SR5_MAGIC_STARTING[level];
       newAttrs = {
@@ -595,12 +608,20 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
         magic: startingMagic > 0 ? startingMagic : null,
         resonance: null,
       };
+      // Reset tradition when switching to Mundane (E)
+      if (level === "E") {
+        newTradition = null;
+      } else if (!draft.magic_tradition) {
+        // Default to Magician when first choosing a magic priority
+        newTradition = "Magician";
+      }
     }
     set({
       draft: {
         ...draft,
         priority_selection: newSelection,
         attributes: newAttrs,
+        magic_tradition: newTradition,
       },
     });
   },
@@ -653,6 +674,7 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       gear: draft.gear,
       vehicles: draft.vehicles,
       priority_selection: draft.priority_selection,
+      magic_tradition: draft.magic_tradition,
     };
 
     const computed = await invoke<ComputedCharacter>(
