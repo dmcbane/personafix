@@ -400,6 +400,7 @@ pub struct GameQuality {
     pub cost: i32,
     pub source: String,
     pub page: String,
+    pub incompatible_with: Vec<String>,
 }
 
 /// Weapon record from the game data DB.
@@ -461,8 +462,8 @@ pub async fn query_qualities_db(
     pool: &SqlitePool,
     edition: &str,
 ) -> Result<Vec<GameQuality>, AppError> {
-    let rows: Vec<(String, String, String, i32, String, String)> = sqlx::query_as(
-        "SELECT id, name, quality_type, cost, source, page \
+    let rows: Vec<(String, String, String, i32, String, String, String)> = sqlx::query_as(
+        "SELECT id, name, quality_type, cost, source, page, incompatible_with_json \
          FROM qualities WHERE edition = ? ORDER BY quality_type, name",
     )
     .bind(edition)
@@ -471,14 +472,21 @@ pub async fn query_qualities_db(
 
     Ok(rows
         .into_iter()
-        .map(|(id, name, quality_type, cost, source, page)| GameQuality {
-            id,
-            name,
-            quality_type,
-            cost,
-            source,
-            page,
-        })
+        .map(
+            |(id, name, quality_type, cost, source, page, incompat_json)| {
+                let incompatible_with: Vec<String> =
+                    serde_json::from_str(&incompat_json).unwrap_or_default();
+                GameQuality {
+                    id,
+                    name,
+                    quality_type,
+                    cost,
+                    source,
+                    page,
+                    incompatible_with,
+                }
+            },
+        )
         .collect())
 }
 

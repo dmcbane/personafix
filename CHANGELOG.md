@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2026-06-19
+
+### Fixed
+- Conflict detection end-to-end: `incompatible_with` was silently dropped at
+  every layer between the DB and the UI; the warning rendered as empty
+  - `query_qualities_db` now selects `incompatible_with_json` and deserializes
+    it into `GameQuality.incompatible_with: Vec<String>`
+  - `GameQuality` in `gameDataStore.ts` gains `incompatible_with: string[]`
+  - `QualityPanel` now passes `gq.incompatible_with` through when mapping game
+    data (previously hardcoded `[]`)
+  - Fallback quality list adds **Lucky** (Positive, 20 BP, incompatible with
+    Bad Luck) and wires `Bad Luck ↔ Lucky` mutual incompatibility — so the
+    warning is testable without game_data.db
+
 ## [0.14.0] - 2026-06-19
 
 ### Added

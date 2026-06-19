@@ -17,6 +17,7 @@ export interface GameQuality {
   cost: number;
   source: string;
   page: string;
+  incompatible_with: string[];
 }
 
 export interface GameWeapon {
