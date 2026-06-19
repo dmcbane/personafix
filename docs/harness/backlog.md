@@ -83,7 +83,7 @@ Status: `todo` · `doing` · `done` · `parked`
   desc: Add Augmentations panel (essence cost + grade), mirroring `QualityPanel`.
   accept: L3b smoke + L4.
 
-- id: P3-3  status: doing  deps: [P1-2]
+- id: P3-3  status: done   deps: [P1-2]
   desc: Add Gear/Weapons/Armor panel.
   accept: L3b smoke + L4.
 
@@ -101,7 +101,7 @@ Status: `todo` · `doing` · `done` · `parked`
 
 ## P5 — Career play
 
-- id: P5-1  status: todo  deps: [P3-6]
+- id: P5-1  status: doing  deps: [P3-6]
   desc: UI to apply ledger events (karma/nuyen received/spent) via `apply_event`.
   accept: L2 round-trip already exists; add L3b smoke + L4.
 

@@ -5,6 +5,7 @@ import SkillPanel from "./SkillPanel";
 import QualityPanel from "./QualityPanel";
 import ContactPanel from "./ContactPanel";
 import AugmentationPanel from "./AugmentationPanel";
+import GearPanel from "./GearPanel";
 import MagicPanel from "./MagicPanel";
 import PriorityPanel from "./PriorityPanel";
 import SummaryBar from "./SummaryBar";
@@ -15,6 +16,7 @@ type Tab =
   | "skills"
   | "qualities"
   | "augmentations"
+  | "gear"
   | "magic"
   | "contacts";
 
@@ -42,6 +44,7 @@ export default function BuilderShell({
     { key: "skills", label: "Skills" },
     { key: "qualities", label: "Qualities" },
     { key: "augmentations", label: "Augs" },
+    { key: "gear", label: "Gear" },
     { key: "magic", label: "Magic" },
     { key: "contacts", label: "Contacts" },
   ];
@@ -145,6 +148,7 @@ export default function BuilderShell({
         {activeTab === "skills" && <SkillPanel />}
         {activeTab === "qualities" && <QualityPanel />}
         {activeTab === "augmentations" && <AugmentationPanel />}
+        {activeTab === "gear" && <GearPanel />}
         {activeTab === "magic" && <MagicPanel />}
         {activeTab === "contacts" && <ContactPanel />}
       </div>

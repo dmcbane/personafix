@@ -35,6 +35,16 @@ export interface GameWeapon {
   page: string;
 }
 
+export interface GameArmor {
+  id: string;
+  name: string;
+  armor_value: string;
+  availability: string;
+  cost: string;
+  source: string;
+  page: string;
+}
+
 export interface GameSpell {
   id: string;
   name: string;
@@ -69,6 +79,7 @@ interface GameDataState {
   skills: GameSkill[];
   qualities: GameQuality[];
   weapons: GameWeapon[];
+  armor: GameArmor[];
   augmentations: GameAugmentation[];
   spells: GameSpell[];
 
@@ -85,6 +96,7 @@ export const useGameDataStore = create<GameDataState>((set) => ({
   skills: [],
   qualities: [],
   weapons: [],
+  armor: [],
   augmentations: [],
   spells: [],
 
@@ -94,11 +106,12 @@ export const useGameDataStore = create<GameDataState>((set) => ({
       // load_game_data now returns a status message
       const msg = await invoke<string>("load_game_data", { path: dbPath });
 
-      const [skills, qualities, weapons, augmentations, spells] =
+      const [skills, qualities, weapons, armor, augmentations, spells] =
         await Promise.all([
           invoke<GameSkill[]>("get_skills", { edition }),
           invoke<GameQuality[]>("get_qualities", { edition }),
           invoke<GameWeapon[]>("get_weapons", { edition }),
+          invoke<GameArmor[]>("get_armor", { edition }),
           invoke<GameAugmentation[]>("get_augmentations", { edition }),
           invoke<GameSpell[]>("get_spells", { edition }),
         ]);
@@ -106,10 +119,11 @@ export const useGameDataStore = create<GameDataState>((set) => ({
       set({
         loaded: true,
         loading: false,
-        loadMessage: `${msg} | ${skills.length} skills, ${qualities.length} qualities, ${weapons.length} weapons, ${augmentations.length} augmentations, ${spells.length} spells for ${edition}`,
+        loadMessage: `${msg} | ${skills.length} skills, ${qualities.length} qualities, ${weapons.length} weapons, ${armor.length} armor, ${augmentations.length} augmentations, ${spells.length} spells for ${edition}`,
         skills,
         qualities,
         weapons,
+        armor,
         augmentations,
         spells,
       });

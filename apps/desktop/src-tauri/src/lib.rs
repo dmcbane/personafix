@@ -26,6 +26,7 @@ pub fn run() {
             commands::get_qualities,
             commands::get_weapons,
             commands::get_augmentations,
+            commands::get_armor,
             commands::get_spells,
             commands::debug_check_file,
         ])

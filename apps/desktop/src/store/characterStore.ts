@@ -80,8 +80,8 @@ export interface CharacterDraft {
   adept_powers: unknown[];
   complex_forms: unknown[];
   contacts: Contact[];
-  weapons: unknown[];
-  armor: unknown[];
+  weapons: DraftWeapon[];
+  armor: DraftArmor[];
   gear: unknown[];
   vehicles: unknown[];
   priority_selection: PrioritySelection | null;
@@ -128,6 +128,31 @@ export interface DraftAugmentation {
   source: string;
   page: string;
   improvements: unknown[];
+}
+
+export interface DraftWeapon {
+  id: string;
+  name: string;
+  category: string;
+  damage: string;
+  ap: string;
+  mode: string;
+  recoil_comp: number;
+  ammo: string;
+  availability: string;
+  cost: number;
+  source: string;
+  page: string;
+}
+
+export interface DraftArmor {
+  id: string;
+  name: string;
+  armor_value: number;
+  availability: string;
+  cost: number;
+  source: string;
+  page: string;
 }
 
 export interface DraftSpell {
@@ -257,6 +282,10 @@ interface CharacterState {
   removeQuality: (qualityId: string) => void;
   addAugmentation: (aug: DraftAugmentation) => void;
   removeAugmentation: (augId: string) => void;
+  addWeapon: (weapon: DraftWeapon) => void;
+  removeWeapon: (weaponId: string) => void;
+  addArmor: (armor: DraftArmor) => void;
+  removeArmor: (armorId: string) => void;
   addSpell: (spell: DraftSpell) => void;
   removeSpell: (spellId: string) => void;
   addContact: (contact: Contact) => void;
@@ -412,6 +441,34 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
         ...draft,
         augmentations: draft.augmentations.filter((a) => a.id !== augId),
       },
+    });
+  },
+
+  addWeapon: (weapon) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({ draft: { ...draft, weapons: [...draft.weapons, weapon] } });
+  },
+
+  removeWeapon: (weaponId) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({
+      draft: { ...draft, weapons: draft.weapons.filter((w) => w.id !== weaponId) },
+    });
+  },
+
+  addArmor: (armor) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({ draft: { ...draft, armor: [...draft.armor, armor] } });
+  },
+
+  removeArmor: (armorId) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({
+      draft: { ...draft, armor: draft.armor.filter((a) => a.id !== armorId) },
     });
   },
 

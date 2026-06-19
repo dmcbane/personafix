@@ -847,6 +847,51 @@ pub async fn get_augmentations(
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameArmor {
+    pub id: String,
+    pub name: String,
+    pub armor_value: String,
+    pub availability: String,
+    pub cost: String,
+    pub source: String,
+    pub page: String,
+}
+
+pub async fn query_armor_db(
+    pool: &SqlitePool,
+    edition: &str,
+) -> Result<Vec<GameArmor>, AppError> {
+    let rows: Vec<(String, String, String, String, String, String, String)> = sqlx::query_as(
+        "SELECT id, name, armor_value, availability, cost, source, page \
+         FROM armor WHERE edition = ? ORDER BY name",
+    )
+    .bind(edition)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(|(id, name, armor_value, availability, cost, source, page)| GameArmor {
+            id,
+            name,
+            armor_value,
+            availability,
+            cost,
+            source,
+            page,
+        })
+        .collect())
+}
+
+#[tauri::command]
+pub async fn get_armor(
+    edition: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<GameArmor>, AppError> {
+    let pool = get_game_pool(&state).await?;
+    query_armor_db(&pool, &edition).await
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameSpell {
     pub id: String,
     pub name: String,
