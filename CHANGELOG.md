@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.0] - 2026-06-19
+
+### Fixed
+- Gear now tracks nuyen in `nuyen_spent`: `addWeapon`/`addArmor` increment
+  `nuyen_spent` by item cost; `removeWeapon`/`removeArmor` decrement it. This
+  makes SR5 nuyen budget enforcement and SR4 resource-BP enforcement live in the UI.
+- SummaryBar SR4 now includes resource BP (`nuyen_spent / 5000`) in the total BP
+  counter, with a "Res: N" breakdown chip — previously gear cost was invisible to
+  the budget display
+- ContactPanel: "BP" labels now read "karma" when the draft is SR5
+- MagicPanel: "max: Magic rating in SR4" → "max: Magic rating" (edition-agnostic)
+- Bump 0.24.0 → 0.25.0
+
 ## [0.24.0] - 2026-06-19
 
 ### Added

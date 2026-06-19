@@ -81,7 +81,7 @@ export default function MagicPanel() {
         <span className="text-cyber-blue">{draft.spells.length}</span>
         {isMagic && (
           <span className="text-cyber-text-dim">
-            {" "}(max: Magic rating in SR4)
+            {" "}(max: Magic rating)
           </span>
         )}
       </div>

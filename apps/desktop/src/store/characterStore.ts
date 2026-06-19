@@ -501,28 +501,50 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   addWeapon: (weapon) => {
     const { draft } = get();
     if (!draft) return;
-    set({ draft: { ...draft, weapons: [...draft.weapons, weapon] } });
+    set({
+      draft: {
+        ...draft,
+        weapons: [...draft.weapons, weapon],
+        nuyen_spent: draft.nuyen_spent + weapon.cost,
+      },
+    });
   },
 
   removeWeapon: (weaponId) => {
     const { draft } = get();
     if (!draft) return;
+    const removed = draft.weapons.find((w) => w.id === weaponId);
     set({
-      draft: { ...draft, weapons: draft.weapons.filter((w) => w.id !== weaponId) },
+      draft: {
+        ...draft,
+        weapons: draft.weapons.filter((w) => w.id !== weaponId),
+        nuyen_spent: Math.max(0, draft.nuyen_spent - (removed?.cost ?? 0)),
+      },
     });
   },
 
   addArmor: (armor) => {
     const { draft } = get();
     if (!draft) return;
-    set({ draft: { ...draft, armor: [...draft.armor, armor] } });
+    set({
+      draft: {
+        ...draft,
+        armor: [...draft.armor, armor],
+        nuyen_spent: draft.nuyen_spent + armor.cost,
+      },
+    });
   },
 
   removeArmor: (armorId) => {
     const { draft } = get();
     if (!draft) return;
+    const removed = draft.armor.find((a) => a.id === armorId);
     set({
-      draft: { ...draft, armor: draft.armor.filter((a) => a.id !== armorId) },
+      draft: {
+        ...draft,
+        armor: draft.armor.filter((a) => a.id !== armorId),
+        nuyen_spent: Math.max(0, draft.nuyen_spent - (removed?.cost ?? 0)),
+      },
     });
   },
 

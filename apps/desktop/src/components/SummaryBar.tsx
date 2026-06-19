@@ -36,7 +36,10 @@ export default function SummaryBar() {
     0,
   );
 
-  const totalBP = attrBP + skillBP + qualBP + contactBP;
+  // SR4: nuyen spent converts to BP at ¥5000/BP (mirrors sr4_bp::bp_cost_resources)
+  const resourceBP = Math.floor(draft.nuyen_spent / 5000);
+
+  const totalBP = attrBP + skillBP + qualBP + contactBP + resourceBP;
 
   // SR5 budget computations
   const isSR5 = draft.edition === "SR5";
@@ -136,6 +139,11 @@ export default function SummaryBar() {
             {contactBP > 0 && (
               <div className="text-cyber-text-dim">
                 Contacts: <span className="text-cyber-text">{contactBP}</span>
+              </div>
+            )}
+            {resourceBP > 0 && (
+              <div className="text-cyber-text-dim">
+                Res: <span className="text-cyber-text">{resourceBP}</span>
               </div>
             )}
           </>

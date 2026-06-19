@@ -18,6 +18,9 @@ export default function ContactPanel() {
 
   if (!draft) return null;
 
+  const isSR4 = draft.edition === "SR4";
+  const costUnit = isSR4 ? "BP" : "karma";
+
   const totalContactBP = draft.contacts.reduce(
     (sum, c) => sum + c.connection + c.loyalty,
     0,
@@ -45,10 +48,10 @@ export default function ContactPanel() {
         // Contacts
       </h2>
       <div className="text-sm text-cyber-text-dim font-mono mb-4">
-        Contact BP:{" "}
+        Contact {costUnit}:{" "}
         <span className="text-cyber-blue">{totalContactBP}</span>
         <span className="text-cyber-text-dim">
-          {" "}(1 BP per connection + loyalty point)
+          {" "}(1 {costUnit} per connection + loyalty point)
         </span>
       </div>
 
@@ -75,7 +78,7 @@ export default function ContactPanel() {
                   LOY {c.loyalty}
                 </span>
                 <span className="text-cyber-text-dim">
-                  ({c.connection + c.loyalty} BP)
+                  ({c.connection + c.loyalty} {costUnit})
                 </span>
               </div>
               <button
@@ -152,7 +155,7 @@ export default function ContactPanel() {
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-cyber-text-dim font-mono">
-            Cost: <span className="text-cyber-blue">{connection + loyalty} BP</span>
+            Cost: <span className="text-cyber-blue">{connection + loyalty} {costUnit}</span>
           </span>
           <button
             onClick={handleAdd}
