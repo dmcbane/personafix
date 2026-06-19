@@ -112,3 +112,41 @@ Status: `todo` · `doing` · `done` · `parked`
 - id: P5-3  status: done   deps: [P5-1]
   desc: Career timeline / ledger view (uses `get_ledger`).
   accept: L3b smoke + L4.
+
+## P6 — UI polish + SR5 completeness
+
+- id: P6-1  status: todo  deps: []
+  desc: Panel layout consistency — Qualities, Augs, Gear, and Magic panels should
+        mirror the Skills panel layout: filters on top, search field, drop-down +
+        Add button for selection, equipped/selected list at the bottom.
+        Contacts keeps add-form at top, list below.
+  accept: L4 spot-check across all 5 panels in SR4 and SR5 mode.
+
+- id: P6-2  status: todo  deps: []
+  desc: SR5 Awakened subtype enforcement — priority A/B/C/D for magic_or_resonance
+        distinguishes Magician / Adept / Mystic Adept / Technomancer. The PriorityPanel
+        shows descriptive text but does not gate spells vs adept powers vs complex forms.
+        MagicPanel should show spells for Magicians, adept powers for Adepts, complex
+        forms for Technomancers.
+  accept: L1 test in sr5.rs; L4 with each archetype.
+
+- id: P6-3  status: todo  deps: []
+  desc: SR5 special attribute pool — metatype priority A/B/C gives 13/11/9 special
+        attribute points used to raise Magic/Resonance above starting rating or Edge
+        above racial minimum. Currently Magic is hard-set to the starting value; the
+        special pool is not tracked or spent.
+  accept: L1 test (special pool budget validated); SummaryBar shows pool used/total;
+          AttributePanel lets the player allocate remaining special points.
+
+- id: P6-4  status: todo  deps: [P6-2]
+  desc: SR5 contacts at creation — SR5 uses a Charisma × 3 free contact pool
+        (connection + loyalty points distributed freely up to the cap); excess costs
+        1 karma per point. Currently contacts cost 1 karma/point unconditionally (SR4
+        model). The ContactPanel should show the free pool and flag karma overflow.
+  accept: L1 test in sr5.rs (contact pool validated); ContactPanel shows pool + overflow.
+
+- id: P6-5  status: todo  deps: [P6-2]
+  desc: SR5 adept powers panel — currently MagicPanel only shows spells. Adepts (magic
+        priority A/B for Adept or Mystic Adept) need a power point pool and adept power
+        list instead of (or alongside) the spell list.
+  accept: L4 — adept can add powers, pool consumed correctly.
