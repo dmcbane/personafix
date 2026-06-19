@@ -38,7 +38,7 @@ Status: `todo` · `doing` · `done` · `parked`
 
 ## P0 — Oracle scaffolding (mostly done in bootstrap)
 
-- id: P0-5  status: todo  deps: []
+- id: P0-5  status: done   deps: []
   desc: Add the L3a data-smoke test: given a `game_data.db` path (env var or fixture),
         assert `query_skills_db`/`query_qualities_db` return non-empty, well-formed rows.
         Mark `#[ignore]` with a loud reason until P1 provides the DB.

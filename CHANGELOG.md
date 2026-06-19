@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-06-19
+
+### Added
+- L3a data-smoke test scaffold (`data_smoke_real_game_data_db` in `commands.rs`):
+  verifies that `query_skills_db` and `query_qualities_db` return non-empty,
+  well-formed SR4 rows from a real `game_data.db`; ignored until backlog P1-1
+  produces the file; accepts `GAME_DATA_DB` env var to override the default path
+
 ## [0.12.0] - 2026-06-19
 
 ### Added

@@ -1636,4 +1636,54 @@ mod tests {
         let skills = query_skills_db(&pool, "SR6").await.unwrap();
         assert!(skills.is_empty());
     }
+
+    // -- L3a data smoke (requires a real game_data.db; blocked on backlog P1-1) --
+
+    #[tokio::test]
+    #[ignore = "L3a data smoke — requires a populated game_data.db (backlog P1-1). \
+                Run `make migrate` after completing P1-1 to generate it, then re-run \
+                with: GAME_DATA_DB=/path/to/game_data.db cargo test -p personafix-desktop \
+                -- --ignored data_smoke_real_game_data_db"]
+    async fn data_smoke_real_game_data_db() {
+        let db_path = std::env::var("GAME_DATA_DB").unwrap_or_else(|_| {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../../vendor/game_data.db")
+                .to_string_lossy()
+                .to_string()
+        });
+        let db_url = format!("sqlite:{db_path}");
+        let pool = SqlitePool::connect(&db_url).await.unwrap_or_else(|e| {
+            panic!(
+                "Cannot open game_data.db at '{db_path}': {e}\n\
+                 Set GAME_DATA_DB env var or run `make migrate` to generate the file."
+            )
+        });
+
+        let sr4_skills = query_skills_db(&pool, "SR4").await.unwrap();
+        assert!(
+            !sr4_skills.is_empty(),
+            "Expected non-empty SR4 skills from real game_data.db, got 0 rows"
+        );
+        for skill in &sr4_skills {
+            assert!(!skill.name.is_empty(), "Skill has empty name: {skill:?}");
+            assert!(
+                !skill.linked_attribute.is_empty(),
+                "Skill has empty linked_attribute: {skill:?}"
+            );
+        }
+
+        let sr4_qualities = query_qualities_db(&pool, "SR4").await.unwrap();
+        assert!(
+            !sr4_qualities.is_empty(),
+            "Expected non-empty SR4 qualities from real game_data.db, got 0 rows"
+        );
+        assert!(
+            sr4_qualities.iter().any(|q| q.quality_type == "Positive"),
+            "Expected at least one Positive quality in SR4 data"
+        );
+        assert!(
+            sr4_qualities.iter().any(|q| q.quality_type == "Negative"),
+            "Expected at least one Negative quality in SR4 data"
+        );
+    }
 }

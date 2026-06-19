@@ -22,7 +22,7 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` parked (se
 - [x] Conflict-detection TDD seed exists and fails for the right reason
       (`crates/core/tests/conflict_detection.rs`) — *gate: L1 red under `--ignored`*
 - [x] Driver workflow script exists for review (`docs/harness/driver.workflow.js`)
-- [ ] L3a data-smoke test scaffold exists (ignored until P1 produces a DB)
+- [x] L3a data-smoke test scaffold exists (ignored until P1 produces a DB)
 
 ## Phase 1 — Game data (THE blocker to usability)
 - [ ] ChummerGenSR4 data source located; redistribution stance confirmed
