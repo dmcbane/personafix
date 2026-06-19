@@ -8,13 +8,7 @@ import {
 } from "../store/characterStore";
 import { useGameDataStore } from "../store/gameDataStore";
 
-const GRADES: AugmentationGrade[] = [
-  "Standard",
-  "Alpha",
-  "Beta",
-  "Delta",
-  "Used",
-];
+const GRADES: AugmentationGrade[] = ["Standard", "Alpha", "Beta", "Delta", "Used"];
 
 const GRADE_LABEL: Record<AugmentationGrade, string> = {
   Standard: "Std",
@@ -25,7 +19,6 @@ const GRADE_LABEL: Record<AugmentationGrade, string> = {
 };
 
 function parseEssenceCost(raw: string, rating: number): number {
-  // FixedValues(a,b,...) — Standard grade = first value
   const fv = raw.match(/^FixedValues\(([^)]+)\)$/i);
   if (fv) {
     const vals = fv[1].split(",").map(Number);
@@ -47,6 +40,20 @@ function computeAugEssence(aug: DraftAugmentation): number {
   return Math.floor((aug.essence_cost * mult) / 100);
 }
 
+const FILTER_BTN = (active: boolean) =>
+  `px-2.5 py-1 rounded text-xs font-mono transition-all ${
+    active
+      ? "bg-cyber-blue/20 border border-cyber-blue text-cyber-blue"
+      : "bg-cyber-card border border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
+  }`;
+
+const GRADE_BTN = (active: boolean) =>
+  `px-2 py-0.5 rounded text-xs font-mono border transition-colors ${
+    active
+      ? "border-cyber-green text-cyber-green bg-cyber-green/10"
+      : "border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
+  }`;
+
 export default function AugmentationPanel() {
   const draft = useCharacterStore((s) => s.draft);
   const addAugmentation = useCharacterStore((s) => s.addAugmentation);
@@ -55,9 +62,9 @@ export default function AugmentationPanel() {
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<AugmentationType | "All">("All");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [grade, setGrade] = useState<AugmentationGrade>("Standard");
   const [rating, setRating] = useState(1);
+  const [selected, setSelected] = useState("");
 
   if (!draft) return null;
 
@@ -67,20 +74,19 @@ export default function AugmentationPanel() {
   );
   const essenceRemaining = 600 - essenceUsed;
 
-  const existingIds = new Set(draft.augmentations.map((a) => a.id));
+  const existingIds = new Set(
+    draft.augmentations.map((a) => `${a.name}_${a.grade}`),
+  );
 
-  const filtered = gameAugs.filter((a) => {
+  const available = gameAugs.filter((a) => {
     if (typeFilter !== "All" && a.augmentation_type !== typeFilter) return false;
-    if (
-      search &&
-      !a.name.toLowerCase().includes(search.toLowerCase())
-    )
-      return false;
-    return true;
+    if (search && !a.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return !existingIds.has(`${a.name}_${grade}`);
   });
 
-  const handleAdd = (ga: (typeof gameAugs)[0]) => {
-    const hasRating = /Rating/i.test(ga.essence_cost);
+  const handleAdd = () => {
+    const ga = available.find((a) => a.name === selected);
+    if (!ga) return;
     const essenceCost = parseEssenceCost(ga.essence_cost, rating);
     const aug: DraftAugmentation = {
       id: `${ga.id}_${grade}`,
@@ -94,38 +100,109 @@ export default function AugmentationPanel() {
       page: ga.page,
       improvements: [],
     };
-    void hasRating;
     addAugmentation(aug);
-    setExpandedId(null);
+    setSelected("");
   };
+
+  const mult = GRADE_MULTIPLIER[grade] ?? 100;
+  const selectedAug = available.find((a) => a.name === selected);
+  const previewEssence = selectedAug
+    ? Math.floor((parseEssenceCost(selectedAug.essence_cost, rating) * mult) / 100)
+    : null;
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-2 text-cyber-heading">
+      <h2 className="text-xl font-semibold mb-4 text-cyber-heading">
         // Augmentations
       </h2>
-      <div className="text-sm text-cyber-text-dim font-mono mb-4 flex gap-4">
+
+      {/* Stats */}
+      <div className="flex gap-4 text-sm text-cyber-text-dim mb-4 font-mono">
         <span>
           Essence:{" "}
-          <span
-            className={
-              essenceRemaining <= 0 ? "text-cyber-red" : "text-cyber-blue"
-            }
-          >
+          <span className={essenceRemaining <= 0 ? "text-cyber-red" : "text-cyber-blue"}>
             {(essenceRemaining / 100).toFixed(2)}
-          </span>{" "}
-          / 6.00
+          </span>
+          {" / 6.00"}
         </span>
         {draft.augmentations.length > 0 && (
-          <span className="text-cyber-text-dim">
-            ({draft.augmentations.length} installed)
+          <span>({draft.augmentations.length} installed)</span>
+        )}
+      </div>
+
+      {/* Type filter */}
+      <div className="flex gap-1.5 mb-3 flex-wrap">
+        {(["All", "Cyberware", "Bioware"] as const).map((t) => (
+          <button key={t} onClick={() => { setTypeFilter(t); setSelected(""); }}
+            className={FILTER_BTN(typeFilter === t)}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* Grade + Rating */}
+      <div className="flex gap-2 items-center mb-3 flex-wrap">
+        <span className="text-xs font-mono text-cyber-text-dim">Grade:</span>
+        {GRADES.map((g) => (
+          <button key={g} onClick={() => setGrade(g)} className={GRADE_BTN(grade === g)}>
+            {GRADE_LABEL[g]}
+          </button>
+        ))}
+        <span className="text-xs font-mono text-cyber-text-dim ml-2">Rating:</span>
+        <input
+          type="number"
+          min={1}
+          max={6}
+          value={rating}
+          onChange={(e) => setRating(Math.min(6, Math.max(1, Number(e.target.value))))}
+          className="w-12 bg-cyber-card border border-cyber-border rounded px-1 py-0.5 text-center text-sm"
+        />
+        {previewEssence !== null && (
+          <span className="text-xs font-mono text-cyber-blue ml-1">
+            → {(previewEssence / 100).toFixed(2)}E
           </span>
         )}
       </div>
 
-      {/* Installed augmentations */}
-      {draft.augmentations.length > 0 && (
-        <div className="space-y-1 mb-4">
+      {/* Search + select + Add */}
+      <div className="flex gap-2 mb-6">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setSelected(""); }}
+          placeholder="Search augmentations…"
+          className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm w-44"
+        />
+        <select
+          value={selected}
+          onChange={(e) => setSelected(e.target.value)}
+          className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm flex-1 text-cyber-text"
+        >
+          <option value="">Select an augmentation…</option>
+          {available.map((a) => {
+            const ec = parseEssenceCost(a.essence_cost, rating);
+            const adj = Math.floor((ec * mult) / 100);
+            return (
+              <option key={a.id} value={a.name}>
+                {a.name} ({a.augmentation_type}, {(adj / 100).toFixed(2)}E)
+              </option>
+            );
+          })}
+        </select>
+        <button
+          onClick={handleAdd}
+          disabled={!selected}
+          className="px-4 py-1.5 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green rounded text-sm disabled:opacity-50 text-cyber-green font-mono transition-all"
+        >
+          Add
+        </button>
+      </div>
+
+      {/* Installed list */}
+      {draft.augmentations.length === 0 ? (
+        <p className="text-cyber-text-dim text-sm font-mono">No augmentations installed.</p>
+      ) : (
+        <div className="space-y-1">
           {draft.augmentations.map((a) => (
             <div
               key={a.id}
@@ -153,128 +230,6 @@ export default function AugmentationPanel() {
           ))}
         </div>
       )}
-
-      {/* Add augmentation section */}
-      <div className="bg-cyber-card border border-cyber-border rounded-lg p-3 space-y-3">
-        <div className="flex gap-2 items-center">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search augmentations…"
-            className="flex-1 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm"
-          />
-          {(["All", "Cyberware", "Bioware"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTypeFilter(t)}
-              className={`px-2 py-1 text-xs font-mono rounded border transition-colors ${
-                typeFilter === t
-                  ? "border-cyber-blue text-cyber-blue bg-cyber-blue/10"
-                  : "border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-
-        {/* Grade + rating controls */}
-        <div className="flex gap-2 items-center text-xs font-mono">
-          <span className="text-cyber-text-dim">Grade:</span>
-          {GRADES.map((g) => (
-            <button
-              key={g}
-              onClick={() => setGrade(g)}
-              className={`px-2 py-0.5 rounded border transition-colors ${
-                grade === g
-                  ? "border-cyber-green text-cyber-green bg-cyber-green/10"
-                  : "border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
-              }`}
-            >
-              {GRADE_LABEL[g]}
-            </button>
-          ))}
-          <span className="text-cyber-text-dim ml-2">Rating:</span>
-          <input
-            type="number"
-            min={1}
-            max={6}
-            value={rating}
-            onChange={(e) =>
-              setRating(Math.min(6, Math.max(1, Number(e.target.value))))
-            }
-            className="w-12 bg-cyber-surface border border-cyber-border rounded px-1 py-0.5 text-center"
-          />
-        </div>
-
-        <div className="max-h-64 overflow-y-auto space-y-0.5">
-          {filtered.length === 0 ? (
-            <p className="text-cyber-text-dim text-xs font-mono py-4 text-center">
-              No augmentations match filter
-            </p>
-          ) : (
-            filtered.map((ga) => {
-              const hasRating = /Rating/i.test(ga.essence_cost);
-              const essenceCost = parseEssenceCost(ga.essence_cost, rating);
-              const adjCost = Math.floor(
-                (essenceCost * (GRADE_MULTIPLIER[grade] ?? 100)) / 100,
-              );
-              const alreadyInstalled = existingIds.has(
-                `${ga.id}_${grade}`,
-              );
-              const isExpanded = expandedId === ga.id;
-
-              return (
-                <div
-                  key={ga.id}
-                  className="bg-cyber-surface border border-cyber-border rounded"
-                >
-                  <div className="flex items-center gap-2 px-3 py-1.5 text-sm">
-                    <div className="flex-1 min-w-0">
-                      <span className="text-cyber-text truncate block">
-                        {ga.name}
-                      </span>
-                      <span className="text-cyber-text-dim font-mono text-xs">
-                        {ga.augmentation_type}
-                        {hasRating ? " · Rating-based" : ""} ·{" "}
-                        {(adjCost / 100).toFixed(2)}E
-                      </span>
-                    </div>
-                    <button
-                      onClick={() =>
-                        alreadyInstalled
-                          ? undefined
-                          : isExpanded
-                            ? handleAdd(ga)
-                            : setExpandedId(ga.id)
-                      }
-                      disabled={alreadyInstalled}
-                      className={`px-2 py-0.5 text-xs font-mono border rounded transition-colors shrink-0 ${
-                        alreadyInstalled
-                          ? "border-cyber-border text-cyber-text-dim opacity-40 cursor-default"
-                          : isExpanded
-                            ? "border-cyber-green text-cyber-green bg-cyber-green/10"
-                            : "border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
-                      }`}
-                    >
-                      {alreadyInstalled ? "✓" : isExpanded ? "Confirm" : "+"}
-                    </button>
-                    {isExpanded && (
-                      <button
-                        onClick={() => setExpandedId(null)}
-                        className="text-cyber-text-dim hover:text-cyber-text text-xs"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
     </div>
   );
 }

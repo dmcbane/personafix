@@ -8,6 +8,20 @@ import { useGameDataStore } from "../store/gameDataStore";
 
 type Section = "Weapons" | "Armor";
 
+const SECTION_BTN = (active: boolean) =>
+  `px-3 py-1 text-xs font-mono rounded border transition-colors ${
+    active
+      ? "border-cyber-blue text-cyber-blue bg-cyber-blue/10"
+      : "border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
+  }`;
+
+const CAT_BTN = (active: boolean) =>
+  `px-2.5 py-1 rounded text-xs font-mono transition-all ${
+    active
+      ? "bg-cyber-green-dim border border-cyber-green text-cyber-green shadow-glow"
+      : "bg-cyber-card border border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
+  }`;
+
 export default function GearPanel() {
   const draft = useCharacterStore((s) => s.draft);
   const addWeapon = useCharacterStore((s) => s.addWeapon);
@@ -20,27 +34,29 @@ export default function GearPanel() {
   const [section, setSection] = useState<Section>("Weapons");
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("All");
+  const [selected, setSelected] = useState("");
 
   if (!draft) return null;
 
-  const weaponCategories = Array.from(
-    new Set(gameWeapons.map((w) => w.category)),
-  ).sort();
-  const armorCategories: string[] = [];
-
-  const filteredWeapons = gameWeapons.filter((w) => {
-    if (catFilter !== "All" && w.category !== catFilter) return false;
-    return !search || w.name.toLowerCase().includes(search.toLowerCase());
-  });
-
-  const filteredArmor = gameArmor.filter((a) =>
-    !search || a.name.toLowerCase().includes(search.toLowerCase()),
-  );
-
+  const nuyenSpent = draft.nuyen_spent;
+  const weaponCategories = Array.from(new Set(gameWeapons.map((w) => w.category))).sort();
   const existingWeaponIds = new Set(draft.weapons.map((w) => w.id));
   const existingArmorIds = new Set(draft.armor.map((a) => a.id));
 
-  const handleAddWeapon = (gw: (typeof gameWeapons)[0]) => {
+  const availableWeapons = gameWeapons.filter((w) => {
+    if (catFilter !== "All" && w.category !== catFilter) return false;
+    if (search && !w.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return !existingWeaponIds.has(w.id);
+  });
+
+  const availableArmor = gameArmor.filter((a) => {
+    if (search && !a.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return !existingArmorIds.has(a.id);
+  });
+
+  const handleAddWeapon = () => {
+    const gw = availableWeapons.find((w) => w.name === selected);
+    if (!gw) return;
     const weapon: DraftWeapon = {
       id: gw.id,
       name: gw.name,
@@ -56,9 +72,12 @@ export default function GearPanel() {
       page: gw.page,
     };
     addWeapon(weapon);
+    setSelected("");
   };
 
-  const handleAddArmor = (ga: (typeof gameArmor)[0]) => {
+  const handleAddArmor = () => {
+    const ga = availableArmor.find((a) => a.name === selected);
+    if (!ga) return;
     const armor: DraftArmor = {
       id: ga.id,
       name: ga.name,
@@ -69,20 +88,100 @@ export default function GearPanel() {
       page: ga.page,
     };
     addArmor(armor);
+    setSelected("");
   };
 
-  const categories =
-    section === "Weapons" ? weaponCategories : armorCategories;
+  const handleAdd = section === "Weapons" ? handleAddWeapon : handleAddArmor;
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-2 text-cyber-heading">
+      <h2 className="text-xl font-semibold mb-4 text-cyber-heading">
         // Gear
       </h2>
 
-      {/* Equipped summary */}
-      {(draft.weapons.length > 0 || draft.armor.length > 0) && (
-        <div className="space-y-1 mb-4">
+      {/* Stats */}
+      <div className="flex gap-4 text-sm text-cyber-text-dim mb-4 font-mono">
+        <span>
+          Nuyen spent:{" "}
+          <span className="text-cyber-text">¥{nuyenSpent.toLocaleString()}</span>
+        </span>
+        {draft.weapons.length > 0 && (
+          <span>Weapons: <span className="text-cyber-text">{draft.weapons.length}</span></span>
+        )}
+        {draft.armor.length > 0 && (
+          <span>Armor: <span className="text-cyber-text">{draft.armor.length}</span></span>
+        )}
+      </div>
+
+      {/* Section tabs */}
+      <div className="flex gap-2 mb-3">
+        {(["Weapons", "Armor"] as Section[]).map((s) => (
+          <button
+            key={s}
+            onClick={() => { setSection(s); setCatFilter("All"); setSearch(""); setSelected(""); }}
+            className={SECTION_BTN(section === s)}
+          >
+            {s} ({s === "Weapons" ? gameWeapons.length : gameArmor.length})
+          </button>
+        ))}
+      </div>
+
+      {/* Category filter (weapons only) */}
+      {section === "Weapons" && (
+        <div className="flex gap-1.5 mb-3 flex-wrap">
+          <button onClick={() => { setCatFilter("All"); setSelected(""); }} className={CAT_BTN(catFilter === "All")}>
+            All
+          </button>
+          {weaponCategories.map((c) => (
+            <button key={c} onClick={() => { setCatFilter(c); setSelected(""); }}
+              className={CAT_BTN(catFilter === c)}>
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Search + select + Add */}
+      <div className="flex gap-2 mb-6">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setSelected(""); }}
+          placeholder={`Search ${section.toLowerCase()}…`}
+          className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm w-44"
+        />
+        <select
+          value={selected}
+          onChange={(e) => setSelected(e.target.value)}
+          className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm flex-1 text-cyber-text"
+        >
+          <option value="">Select {section === "Weapons" ? "a weapon" : "armor"}…</option>
+          {section === "Weapons"
+            ? availableWeapons.map((w) => (
+                <option key={w.id} value={w.name}>
+                  {w.name} ({w.category}, {w.damage}, {w.mode})
+                </option>
+              ))
+            : availableArmor.map((a) => (
+                <option key={a.id} value={a.name}>
+                  {a.name} (Armor {a.armor_value || "—"})
+                </option>
+              ))}
+        </select>
+        <button
+          onClick={handleAdd}
+          disabled={!selected}
+          className="px-4 py-1.5 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green rounded text-sm disabled:opacity-50 text-cyber-green font-mono transition-all"
+        >
+          Add
+        </button>
+      </div>
+
+      {/* Equipped list */}
+      {draft.weapons.length === 0 && draft.armor.length === 0 ? (
+        <p className="text-cyber-text-dim text-sm font-mono">No gear equipped.</p>
+      ) : (
+        <div className="space-y-1">
           {draft.weapons.map((w) => (
             <div
               key={w.id}
@@ -90,9 +189,7 @@ export default function GearPanel() {
             >
               <div className="flex-1 min-w-0">
                 <span className="text-cyber-text font-medium">{w.name}</span>
-                <span className="text-cyber-text-dim font-mono text-xs ml-2">
-                  {w.category}
-                </span>
+                <span className="text-cyber-text-dim font-mono text-xs ml-2">{w.category}</span>
               </div>
               <span className="font-mono text-xs text-cyber-text-dim shrink-0">
                 {w.damage} / {w.mode}
@@ -112,9 +209,7 @@ export default function GearPanel() {
             >
               <div className="flex-1 min-w-0">
                 <span className="text-cyber-text font-medium">{a.name}</span>
-                <span className="text-cyber-text-dim font-mono text-xs ml-2">
-                  Armor
-                </span>
+                <span className="text-cyber-text-dim font-mono text-xs ml-2">Armor</span>
               </div>
               <span className="font-mono text-xs text-cyber-blue shrink-0">
                 {a.armor_value}
@@ -129,133 +224,6 @@ export default function GearPanel() {
           ))}
         </div>
       )}
-
-      {/* Section tabs + search */}
-      <div className="bg-cyber-card border border-cyber-border rounded-lg p-3 space-y-3">
-        <div className="flex gap-2 items-center">
-          {(["Weapons", "Armor"] as Section[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => {
-                setSection(s);
-                setCatFilter("All");
-                setSearch("");
-              }}
-              className={`px-3 py-1 text-xs font-mono rounded border transition-colors ${
-                section === s
-                  ? "border-cyber-blue text-cyber-blue bg-cyber-blue/10"
-                  : "border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
-              }`}
-            >
-              {s}{" "}
-              {s === "Weapons"
-                ? `(${gameWeapons.length})`
-                : `(${gameArmor.length})`}
-            </button>
-          ))}
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={`Search ${section.toLowerCase()}…`}
-            className="flex-1 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm"
-          />
-        </div>
-
-        {section === "Weapons" && categories.length > 0 && (
-          <div className="flex gap-1 flex-wrap">
-            {["All", ...categories].map((c) => (
-              <button
-                key={c}
-                onClick={() => setCatFilter(c)}
-                className={`px-2 py-0.5 text-xs font-mono rounded border transition-colors ${
-                  catFilter === c
-                    ? "border-cyber-green text-cyber-green bg-cyber-green/10"
-                    : "border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="max-h-64 overflow-y-auto space-y-0.5">
-          {section === "Weapons" &&
-            (filteredWeapons.length === 0 ? (
-              <p className="text-cyber-text-dim text-xs font-mono py-4 text-center">
-                No weapons match filter
-              </p>
-            ) : (
-              filteredWeapons.map((gw) => {
-                const alreadyOwned = existingWeaponIds.has(gw.id);
-                return (
-                  <div
-                    key={gw.id}
-                    className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <span className="text-cyber-text truncate block">
-                        {gw.name}
-                      </span>
-                      <span className="text-cyber-text-dim font-mono text-xs">
-                        {gw.category} · {gw.damage} · {gw.mode}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => !alreadyOwned && handleAddWeapon(gw)}
-                      disabled={alreadyOwned}
-                      className={`px-2 py-0.5 text-xs font-mono border rounded transition-colors shrink-0 ${
-                        alreadyOwned
-                          ? "border-cyber-border text-cyber-text-dim opacity-40 cursor-default"
-                          : "border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
-                      }`}
-                    >
-                      {alreadyOwned ? "✓" : "+"}
-                    </button>
-                  </div>
-                );
-              })
-            ))}
-
-          {section === "Armor" &&
-            (filteredArmor.length === 0 ? (
-              <p className="text-cyber-text-dim text-xs font-mono py-4 text-center">
-                No armor match filter
-              </p>
-            ) : (
-              filteredArmor.map((ga) => {
-                const alreadyOwned = existingArmorIds.has(ga.id);
-                return (
-                  <div
-                    key={ga.id}
-                    className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <span className="text-cyber-text truncate block">
-                        {ga.name}
-                      </span>
-                      <span className="text-cyber-text-dim font-mono text-xs">
-                        Armor {ga.armor_value || "—"} · {ga.availability}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => !alreadyOwned && handleAddArmor(ga)}
-                      disabled={alreadyOwned}
-                      className={`px-2 py-0.5 text-xs font-mono border rounded transition-colors shrink-0 ${
-                        alreadyOwned
-                          ? "border-cyber-border text-cyber-text-dim opacity-40 cursor-default"
-                          : "border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
-                      }`}
-                    >
-                      {alreadyOwned ? "✓" : "+"}
-                    </button>
-                  </div>
-                );
-              })
-            ))}
-        </div>
-      </div>
     </div>
   );
 }

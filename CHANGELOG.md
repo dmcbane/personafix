@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.0] - 2026-06-19
+
+### Changed
+- Panel layout consistency (P6-1): Qualities, Augmentations, Gear, and Magic panels
+  now share the Skills panel UX pattern — filters on top, search + drop-down select +
+  Add button in the middle, installed/selected list at the bottom
+- **QualityPanel**: type filter chips → search + select (shows +/- and cost) → Add → list
+- **AugmentationPanel**: type filter chips → grade chips + rating input → search + select
+  (shows essence cost at chosen grade) → Add → installed list; essence preview shown
+  next to rating for the currently-selected aug
+- **GearPanel**: section tabs (Weapons/Armor) → category filter chips (weapons) →
+  search + select (shows damage/mode for weapons, armor value for armor) → Add → list
+- **MagicPanel**: category filter chips → type filter (Physical/Mana) → search + select
+  (shows category/type/drain) → Add → known spells list; spell count now shows X/Magic
+  and turns red if over the Magic-rating cap
+- Bump 0.25.0 → 0.26.0; P6-1 done
+
 ## [0.25.0] - 2026-06-19
 
 ### Fixed

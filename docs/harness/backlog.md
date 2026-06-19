@@ -115,7 +115,7 @@ Status: `todo` · `doing` · `done` · `parked`
 
 ## P6 — UI polish + SR5 completeness
 
-- id: P6-1  status: todo  deps: []
+- id: P6-1  status: done   deps: []
   desc: Panel layout consistency — Qualities, Augs, Gear, and Magic panels should
         mirror the Skills panel layout: filters on top, search field, drop-down +
         Add button for selection, equipped/selected list at the bottom.
