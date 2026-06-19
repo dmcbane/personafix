@@ -87,7 +87,7 @@ Status: `todo` · `doing` · `done` · `parked`
   desc: Add Gear/Weapons/Armor panel.
   accept: L3b smoke + L4.
 
-- id: P3-4  status: todo  deps: []
+- id: P3-4  status: done   deps: []
   desc: Add Contacts panel (connection/loyalty, 1 BP per point).
   accept: L3b smoke + L4.
 

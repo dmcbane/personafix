@@ -3,10 +3,11 @@ import { useCharacterStore } from "../store/characterStore";
 import AttributePanel from "./AttributePanel";
 import SkillPanel from "./SkillPanel";
 import QualityPanel from "./QualityPanel";
+import ContactPanel from "./ContactPanel";
 import PriorityPanel from "./PriorityPanel";
 import SummaryBar from "./SummaryBar";
 
-type Tab = "priority" | "attributes" | "skills" | "qualities";
+type Tab = "priority" | "attributes" | "skills" | "qualities" | "contacts";
 
 export default function BuilderShell({
   campaignId,
@@ -31,6 +32,7 @@ export default function BuilderShell({
     { key: "attributes", label: "Attributes" },
     { key: "skills", label: "Skills" },
     { key: "qualities", label: "Qualities" },
+    { key: "contacts", label: "Contacts" },
   ];
 
   const [activeTab, setActiveTab] = useState<Tab>(
@@ -131,6 +133,7 @@ export default function BuilderShell({
         {activeTab === "attributes" && <AttributePanel />}
         {activeTab === "skills" && <SkillPanel />}
         {activeTab === "qualities" && <QualityPanel />}
+        {activeTab === "contacts" && <ContactPanel />}
       </div>
 
       {/* Summary bar */}

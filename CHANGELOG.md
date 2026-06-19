@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2026-06-19
+
+### Added
+- Contacts panel (P3-4): tabbed "Contacts" view in BuilderShell lets you add
+  contacts with name, archetype (Fixer, Street Doc, Decker, …), connection (1–6),
+  and loyalty (1–6); remove button on each row
+- `Contact` interface added to `characterStore.ts`; `contacts: unknown[]` typed as
+  `Contact[]`; `addContact` / `removeContact` store actions
+- SummaryBar now includes contact BP in the total (1 per connection + loyalty point)
+  and shows a `Contacts: N` breakdown chip when contacts are present
+- **Gate note:** L4 required — run `make dev`, add contacts, confirm BP counter updates
+
 ## [0.16.0] - 2026-06-19
 
 ### Added

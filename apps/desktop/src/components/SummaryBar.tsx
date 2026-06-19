@@ -24,7 +24,12 @@ export default function SummaryBar() {
     return sum + (q.quality_type === "Positive" ? q.cost : -q.cost);
   }, 0);
 
-  const totalBP = attrBP + skillBP + qualBP;
+  const contactBP = draft.contacts.reduce(
+    (sum, c) => sum + c.connection + c.loyalty,
+    0,
+  );
+
+  const totalBP = attrBP + skillBP + qualBP + contactBP;
 
   const realErrors = errors.filter((e) => e.severity === "Error");
   const warnings = errors.filter((e) => e.severity === "Warning");
@@ -53,6 +58,11 @@ export default function SummaryBar() {
             <div className="text-cyber-text-dim">
               Qual: <span className="text-cyber-text">{qualBP}</span>
             </div>
+            {contactBP > 0 && (
+              <div className="text-cyber-text-dim">
+                Contacts: <span className="text-cyber-text">{contactBP}</span>
+              </div>
+            )}
           </>
         )}
         <div className="text-cyber-text-dim">

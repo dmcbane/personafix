@@ -79,7 +79,7 @@ export interface CharacterDraft {
   spells: unknown[];
   adept_powers: unknown[];
   complex_forms: unknown[];
-  contacts: unknown[];
+  contacts: Contact[];
   weapons: unknown[];
   armor: unknown[];
   gear: unknown[];
@@ -104,6 +104,15 @@ export interface ComputedCharacter {
   total_karma_earned: number;
   total_karma_spent: number;
   nuyen: number;
+}
+
+export interface Contact {
+  id: string;
+  name: string;
+  connection: number;
+  loyalty: number;
+  archetype: string;
+  notes: string;
 }
 
 export interface CharacterSummary {
@@ -209,6 +218,8 @@ interface CharacterState {
   updateSkillRating: (skillId: string, rating: number) => void;
   addQuality: (quality: Quality) => void;
   removeQuality: (qualityId: string) => void;
+  addContact: (contact: Contact) => void;
+  removeContact: (contactId: string) => void;
   setPriority: (category: PriorityCategory, level: PriorityLevel) => void;
   validate: () => Promise<void>;
   saveCharacter: (campaignId: string) => Promise<void>;
@@ -342,6 +353,23 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       draft: {
         ...draft,
         qualities: draft.qualities.filter((q) => q.id !== qualityId),
+      },
+    });
+  },
+
+  addContact: (contact) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({ draft: { ...draft, contacts: [...draft.contacts, contact] } });
+  },
+
+  removeContact: (contactId) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({
+      draft: {
+        ...draft,
+        contacts: draft.contacts.filter((c) => c.id !== contactId),
       },
     });
   },
