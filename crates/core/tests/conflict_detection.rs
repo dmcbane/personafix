@@ -144,7 +144,6 @@ fn essence_overage_is_reported_as_error() {
 }
 
 #[test]
-#[ignore = "TDD seed — implement in backlog item P4-3 (magic/resonance exclusivity); remove #[ignore] then"]
 fn magic_and_resonance_together_is_reported_as_error() {
     let mut draft = legal_human_draft();
     // A character cannot be both Awakened (Magic) and a technomancer (Resonance).

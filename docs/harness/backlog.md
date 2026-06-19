@@ -58,7 +58,7 @@ Status: `todo` · `doing` · `done` · `parked`
         <= 0) in `validate_creation`. Reuse `calculate_essence`. Report as `Error`.
   accept: un-ignore `essence_overage_is_reported_as_error` and make it pass — gate L1.
 
-- id: P4-3  status: todo  deps: []
+- id: P4-3  status: done   deps: []
   desc: Detect magic + resonance set simultaneously in `validate_creation`. Report `Error`.
   accept: un-ignore `magic_and_resonance_together_is_reported_as_error` and pass — gate L1.
 

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-06-19
+
+### Added
+- SR4 conflict detection (P4-3): `SR4Rules::validate_creation` now reports an
+  `Error` when both `magic` and `resonance` attributes are set simultaneously —
+  a character cannot be both Awakened and a technomancer in SR4
+
 ## [0.11.0] - 2026-06-19
 
 ### Added

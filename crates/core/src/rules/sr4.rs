@@ -127,6 +127,18 @@ impl CharacterRules for SR4Rules {
             });
         }
 
+        // Magic + Resonance mutual exclusivity: a character cannot be both Awakened and
+        // a technomancer in SR4.
+        if draft.attributes.magic.is_some() && draft.attributes.resonance.is_some() {
+            errors.push(ValidationError {
+                severity: ValidationSeverity::Error,
+                field: "magic_resonance".to_string(),
+                message: "A character cannot have both Magic and Resonance (Awakened and \
+                          technomancer are mutually exclusive in SR4)"
+                    .to_string(),
+            });
+        }
+
         // Essence overage: augmentations cannot collectively cost more than 6.00 essence.
         let remaining_essence = self.calculate_essence(&draft.augmentations);
         if remaining_essence.0 <= 0 {
