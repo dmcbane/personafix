@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.0] - 2026-06-19
+
+### Added
+- P6-5: SR5 adept powers panel. Parses `powers.xml` from chummer5a (109 SR5 powers);
+  seeds `adept_powers` table in `game_data.db`; `get_adept_powers` IPC command.
+- `DraftAdeptPower` type in characterStore; `addAdeptPower`/`removeAdeptPower` actions.
+- `GameAdeptPower` type in gameDataStore; loaded alongside spells on startup.
+- MagicPanel: Adept/MysticAdept characters see a real power browser with search +
+  dropdown + pool tracker (PP spent/total = Magic rating); zero-cost and leveled powers
+  supported.
+- L3a smoke test extended: asserts adept powers non-empty and all costs parse as
+  non-negative decimals.
+- Bump 0.29.0 → 0.30.0; P6-5 done.
+
 ## [0.29.0] - 2026-06-19
 
 ### Added

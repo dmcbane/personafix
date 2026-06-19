@@ -15,6 +15,7 @@ pub struct ParsedGameData {
     pub armor: Vec<ParsedArmor>,
     pub augmentations: Vec<ParsedAugmentation>,
     pub spells: Vec<ParsedSpell>,
+    pub adept_powers: Vec<ParsedAdeptPower>,
 }
 
 // -- XML root wrappers --
@@ -455,7 +456,55 @@ pub struct ParsedSpell {
     pub page: String,
 }
 
+/// Adept powers XML wrapper.
+#[derive(Debug, Deserialize)]
+pub struct ChummerPowers {
+    #[serde(default)]
+    pub powers: Powers,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct Powers {
+    #[serde(rename = "power", default)]
+    pub items: Vec<XmlPower>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct XmlPower {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default)]
+    pub name: String,
+    /// Power point cost as decimal string (e.g. "0.25", "0.5", "1").
+    #[serde(default)]
+    pub points: String,
+    /// Whether the power can be taken multiple times ("True"/"False").
+    #[serde(default)]
+    pub levels: String,
+    #[serde(default)]
+    pub source: String,
+    #[serde(default)]
+    pub page: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct ParsedAdeptPower {
+    pub id: String,
+    pub name: String,
+    /// Cost in hundredths (25 = 0.25 PP).
+    pub cost: i32,
+    pub levels: bool,
+    pub source: String,
+    pub page: String,
+}
+
 /// Parse a string as i32, defaulting to 0 for empty or invalid values.
 pub fn parse_int(s: &str) -> i32 {
     s.trim().parse().unwrap_or(0)
+}
+
+/// Parse a power point decimal string to hundredths integer (e.g. "0.25" → 25).
+pub fn parse_power_cost(s: &str) -> i32 {
+    let v: f64 = s.trim().parse().unwrap_or(0.0);
+    (v * 100.0).round() as i32
 }

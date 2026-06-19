@@ -23,6 +23,7 @@ pub fn parse_sr5(data_dir: &Path) -> MigrateResult<ParsedGameData> {
     data.augmentations = augmentations;
 
     data.spells = parse_spells(&data_dir.join("spells.xml"))?;
+    data.adept_powers = parse_powers(&data_dir.join("powers.xml"))?;
 
     Ok(data)
 }
@@ -213,6 +214,25 @@ fn parse_spells(path: &Path) -> MigrateResult<Vec<ParsedSpell>> {
                 source: s.source,
                 page: s.page,
             }
+        })
+        .collect())
+}
+
+fn parse_powers(path: &Path) -> MigrateResult<Vec<ParsedAdeptPower>> {
+    let xml = std::fs::read_to_string(path)?;
+    let chummer: ChummerPowers = quick_xml::de::from_str(&xml)?;
+    Ok(chummer
+        .powers
+        .items
+        .into_iter()
+        .filter(|p| !p.id.is_empty() && !p.name.is_empty())
+        .map(|p| ParsedAdeptPower {
+            id: p.id,
+            name: p.name,
+            cost: parse_power_cost(&p.points),
+            levels: p.levels.trim().eq_ignore_ascii_case("true"),
+            source: p.source,
+            page: p.page,
         })
         .collect())
 }

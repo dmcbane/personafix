@@ -102,7 +102,7 @@ export interface CharacterDraft {
   qualities: Quality[];
   augmentations: DraftAugmentation[];
   spells: DraftSpell[];
-  adept_powers: unknown[];
+  adept_powers: DraftAdeptPower[];
   complex_forms: unknown[];
   contacts: Contact[];
   weapons: DraftWeapon[];
@@ -192,6 +192,16 @@ export interface DraftSpell {
   damage: string;
   duration: string;
   drain: string;
+  source: string;
+  page: string;
+}
+
+export interface DraftAdeptPower {
+  id: string;
+  name: string;
+  /** Decimal string like "0.25" or "1.00" */
+  cost: string;
+  levels: boolean;
   source: string;
   page: string;
 }
@@ -337,6 +347,8 @@ interface CharacterState {
   removeArmor: (armorId: string) => void;
   addSpell: (spell: DraftSpell) => void;
   removeSpell: (spellId: string) => void;
+  addAdeptPower: (power: DraftAdeptPower) => void;
+  removeAdeptPower: (powerId: string) => void;
   addContact: (contact: Contact) => void;
   removeContact: (contactId: string) => void;
   setPriority: (category: PriorityCategory, level: PriorityLevel) => void;
@@ -577,6 +589,23 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       draft: {
         ...draft,
         spells: draft.spells.filter((s) => s.id !== spellId),
+      },
+    });
+  },
+
+  addAdeptPower: (power) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({ draft: { ...draft, adept_powers: [...draft.adept_powers, power] } });
+  },
+
+  removeAdeptPower: (powerId) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({
+      draft: {
+        ...draft,
+        adept_powers: draft.adept_powers.filter((p) => p.id !== powerId),
       },
     });
   },

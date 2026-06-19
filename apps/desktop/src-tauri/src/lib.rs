@@ -28,6 +28,7 @@ pub fn run() {
             commands::get_augmentations,
             commands::get_armor,
             commands::get_spells,
+            commands::get_adept_powers,
             commands::debug_check_file,
         ])
         .run(tauri::generate_context!())

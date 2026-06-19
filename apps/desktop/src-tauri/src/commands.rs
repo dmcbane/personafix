@@ -965,6 +965,48 @@ pub async fn get_spells(
     query_spells_db(&pool, &edition).await
 }
 
+/// Adept power record from the game data DB.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameAdeptPower {
+    pub id: String,
+    pub name: String,
+    /// Power point cost as decimal string (e.g. "0.25", "1.00").
+    pub cost: String,
+    pub levels: bool,
+    pub source: String,
+    pub page: String,
+}
+
+pub async fn query_adept_powers_db(
+    pool: &SqlitePool,
+) -> Result<Vec<GameAdeptPower>, AppError> {
+    let rows: Vec<(String, String, String, i32, String, String)> = sqlx::query_as(
+        "SELECT id, name, cost, levels, source, page \
+         FROM adept_powers WHERE edition = 'SR5' ORDER BY name",
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(|(id, name, cost, levels, source, page)| GameAdeptPower {
+            id,
+            name,
+            cost,
+            levels: levels != 0,
+            source,
+            page,
+        })
+        .collect())
+}
+
+#[tauri::command]
+pub async fn get_adept_powers(
+    state: State<'_, AppState>,
+) -> Result<Vec<GameAdeptPower>, AppError> {
+    let pool = get_game_pool(&state).await?;
+    query_adept_powers_db(&pool).await
+}
+
 // ============================================================
 // Tests
 // ============================================================
@@ -1813,5 +1855,17 @@ mod tests {
             sr4_qualities.iter().any(|q| q.quality_type == "Negative"),
             "Expected at least one Negative quality in SR4 data"
         );
+
+        let sr5_powers = query_adept_powers_db(&pool).await.unwrap();
+        assert!(
+            !sr5_powers.is_empty(),
+            "Expected non-empty SR5 adept powers from real game_data.db, got 0 rows"
+        );
+        for p in &sr5_powers {
+            assert!(!p.name.is_empty(), "Adept power has empty name: {p:?}");
+            // Cost must be a valid non-negative decimal like "0.25" or "0.00"
+            let cost: f64 = p.cost.parse().unwrap_or(-1.0);
+            assert!(cost >= 0.0, "Adept power '{}' has invalid cost: '{}'", p.name, p.cost);
+        }
     }
 }

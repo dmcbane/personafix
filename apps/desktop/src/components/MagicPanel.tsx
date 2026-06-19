@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   useCharacterStore,
   type DraftSpell,
+  type DraftAdeptPower,
   type MagicTradition,
 } from "../store/characterStore";
 import { useGameDataStore } from "../store/gameDataStore";
@@ -43,16 +44,26 @@ function canUseComplexForms(tradition: MagicTradition | null): boolean {
   return tradition === "Technomancer";
 }
 
+/** Parse cost string like "0.25" → 0.25 */
+function parseCost(cost: string): number {
+  return parseFloat(cost) || 0;
+}
+
 export default function MagicPanel() {
   const draft = useCharacterStore((s) => s.draft);
   const addSpell = useCharacterStore((s) => s.addSpell);
   const removeSpell = useCharacterStore((s) => s.removeSpell);
+  const addAdeptPower = useCharacterStore((s) => s.addAdeptPower);
+  const removeAdeptPower = useCharacterStore((s) => s.removeAdeptPower);
   const gameSpells = useGameDataStore((s) => s.spells);
+  const gameAdeptPowers = useGameDataStore((s) => s.adeptPowers);
 
   const [catFilter, setCatFilter] = useState<KnownCategory | "All">("All");
   const [typeFilter, setTypeFilter] = useState<"All" | "Physical" | "Mana">("All");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState("");
+  const [powerSearch, setPowerSearch] = useState("");
+  const [selectedPower, setSelectedPower] = useState("");
 
   if (!draft) return null;
 
@@ -65,7 +76,15 @@ export default function MagicPanel() {
   const showAdeptPowers = canUseAdeptPowers(tradition);
   const showComplexForms = canUseComplexForms(tradition);
 
-  const available = gameSpells
+  // Power point pool = magic rating; each power costs its decimal value
+  const totalPowerPoints = magicRating;
+  const spentPowerPoints = draft.adept_powers.reduce(
+    (acc, p) => acc + parseCost(p.cost),
+    0
+  );
+  const remainingPP = totalPowerPoints - spentPowerPoints;
+
+  const availableSpells = gameSpells
     .filter((s) => (KNOWN_CATEGORIES as readonly string[]).includes(s.category))
     .filter((s) => {
       if (catFilter !== "All" && s.category !== catFilter) return false;
@@ -74,8 +93,15 @@ export default function MagicPanel() {
       return !existingIds.has(s.id);
     });
 
-  const handleAdd = () => {
-    const gs = available.find((s) => s.name === selected);
+  const equippedPowerIds = new Set(draft.adept_powers.map((p) => p.id));
+  const availablePowers = gameAdeptPowers.filter((p) => {
+    if (equippedPowerIds.has(p.id)) return false;
+    if (powerSearch && !p.name.toLowerCase().includes(powerSearch.toLowerCase())) return false;
+    return true;
+  });
+
+  const handleAddSpell = () => {
+    const gs = availableSpells.find((s) => s.name === selected);
     if (!gs) return;
     const spell: DraftSpell = {
       id: gs.id,
@@ -93,6 +119,21 @@ export default function MagicPanel() {
     setSelected("");
   };
 
+  const handleAddPower = () => {
+    const gp = availablePowers.find((p) => p.name === selectedPower);
+    if (!gp) return;
+    const power: DraftAdeptPower = {
+      id: gp.id,
+      name: gp.name,
+      cost: gp.cost,
+      levels: gp.levels,
+      source: gp.source,
+      page: gp.page,
+    };
+    addAdeptPower(power);
+    setSelectedPower("");
+  };
+
   // SR5 with no tradition: show guidance
   if (draft.edition === "SR5" && !tradition) {
     return (
@@ -101,18 +142,6 @@ export default function MagicPanel() {
         <div className="text-cyber-yellow text-sm font-mono bg-cyber-yellow-dim/20 border border-cyber-yellow/30 rounded px-3 py-2">
           Choose an awakened tradition in the Priority tab to unlock Magic options.
         </div>
-      </div>
-    );
-  }
-
-  // Mundane SR5 (priority E) or SR4 with no magic
-  if (draft.edition === "SR5" && tradition === null) {
-    return (
-      <div>
-        <h2 className="text-xl font-semibold mb-4 text-cyber-heading">// Magic</h2>
-        <p className="text-cyber-text-dim text-sm font-mono">
-          Mundane characters have no magic abilities.
-        </p>
       </div>
     );
   }
@@ -135,18 +164,78 @@ export default function MagicPanel() {
         </div>
       )}
 
-      {/* Adept powers placeholder */}
+      {/* Adept powers section */}
       {showAdeptPowers && (
-        <div className="mb-4 p-3 bg-cyber-card border border-cyber-border rounded">
-          <p className="text-cyber-blue font-mono text-sm font-semibold mb-1">
-            Adept Powers
-          </p>
-          <p className="text-cyber-text-dim text-xs font-mono">
-            Power points: {magicRating} available (equal to Magic rating)
-          </p>
-          <p className="text-cyber-text-dim text-xs font-mono mt-1 italic">
-            Full adept powers panel coming in P6-5.
-          </p>
+        <div className="mb-6">
+          <div className="flex items-center gap-4 mb-3">
+            <p className="text-cyber-blue font-mono text-sm font-semibold">Adept Powers</p>
+            <span className={`text-xs font-mono ${remainingPP < 0 ? "text-cyber-red" : "text-cyber-text-dim"}`}>
+              PP: {spentPowerPoints.toFixed(2)}/{totalPowerPoints}
+              {remainingPP < 0 && (
+                <span className="text-cyber-red ml-1">({Math.abs(remainingPP).toFixed(2)} over)</span>
+              )}
+            </span>
+          </div>
+
+          {/* Power search + select + Add */}
+          <div className="flex gap-2 mb-4">
+            <input
+              type="text"
+              value={powerSearch}
+              onChange={(e) => { setPowerSearch(e.target.value); setSelectedPower(""); }}
+              placeholder="Search powers…"
+              className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm w-40"
+            />
+            <select
+              value={selectedPower}
+              onChange={(e) => setSelectedPower(e.target.value)}
+              className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm flex-1 text-cyber-text"
+            >
+              <option value="">Select a power…</option>
+              {availablePowers.map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.name} ({p.cost} PP{p.levels ? ", levels" : ""})
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleAddPower}
+              disabled={!selectedPower}
+              className="px-4 py-1.5 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green rounded text-sm disabled:opacity-50 text-cyber-green font-mono transition-all"
+            >
+              Add
+            </button>
+          </div>
+
+          {/* Equipped powers list */}
+          {draft.adept_powers.length === 0 ? (
+            <p className="text-cyber-text-dim text-sm font-mono">No adept powers chosen.</p>
+          ) : (
+            <div className="space-y-1">
+              {draft.adept_powers.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center gap-2 bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
+                >
+                  <div className="flex-1 min-w-0">
+                    <span className="text-cyber-text font-medium">{p.name}</span>
+                    {p.levels && (
+                      <span className="text-cyber-text-dim font-mono text-xs ml-2">leveled</span>
+                    )}
+                  </div>
+                  <span className="font-mono text-xs text-cyber-blue shrink-0">
+                    {p.cost} PP
+                  </span>
+                  <button
+                    onClick={() => removeAdeptPower(p.id)}
+                    className="text-cyber-red hover:text-cyber-red/80 transition-colors ml-1 shrink-0"
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -211,14 +300,14 @@ export default function MagicPanel() {
               className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm flex-1 text-cyber-text"
             >
               <option value="">Select a spell…</option>
-              {available.map((s) => (
+              {availableSpells.map((s) => (
                 <option key={s.id} value={s.name}>
                   {s.name} ({s.category}, {s.spell_type}, {s.drain})
                 </option>
               ))}
             </select>
             <button
-              onClick={handleAdd}
+              onClick={handleAddSpell}
               disabled={!selected}
               className="px-4 py-1.5 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green rounded text-sm disabled:opacity-50 text-cyber-green font-mono transition-all"
             >

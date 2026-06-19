@@ -145,7 +145,7 @@ Status: `todo` · `doing` · `done` · `parked`
         model). The ContactPanel should show the free pool and flag karma overflow.
   accept: L1 test in sr5.rs (contact pool validated); ContactPanel shows pool + overflow.
 
-- id: P6-5  status: todo  deps: [P6-2]
+- id: P6-5  status: done  deps: [P6-2]
   desc: SR5 adept powers panel — currently MagicPanel only shows spells. Adepts (magic
         priority A/B for Adept or Mystic Adept) need a power point pool and adept power
         list instead of (or alongside) the spell list.

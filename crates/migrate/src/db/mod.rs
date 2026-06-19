@@ -190,6 +190,24 @@ async fn seed_edition(pool: &SqlitePool, data: &ParsedGameData) -> MigrateResult
         .await?;
     }
 
+    // Adept Powers
+    for p in &data.adept_powers {
+        // Store cost as decimal string (e.g. "0.25") for human readability
+        let cost_str = format!("{:.2}", p.cost as f64 / 100.0);
+        sqlx::query(
+            "INSERT OR REPLACE INTO adept_powers (id, name, cost, levels, edition, source, page) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(&p.id)
+        .bind(&p.name)
+        .bind(&cost_str)
+        .bind(p.levels as i32)
+        .bind(edition)
+        .bind(&p.source)
+        .bind(&p.page)
+        .execute(&mut *tx)
+        .await?;
+    }
+
     tx.commit().await?;
     Ok(())
 }

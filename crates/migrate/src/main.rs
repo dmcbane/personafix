@@ -41,7 +41,7 @@ async fn main() -> MigrateResult<()> {
         println!("Parsing SR5 data from: {}", sr5_path.display());
         let data = xml::sr5::parse_sr5(sr5_path)?;
         println!(
-            "  SR5: {} books, {} metatypes, {} skills, {} qualities, {} weapons, {} armor, {} augmentations, {} spells",
+            "  SR5: {} books, {} metatypes, {} skills, {} qualities, {} weapons, {} armor, {} augmentations, {} spells, {} adept powers",
             data.books.len(),
             data.metatypes.len(),
             data.skills.len(),
@@ -50,6 +50,7 @@ async fn main() -> MigrateResult<()> {
             data.armor.len(),
             data.augmentations.len(),
             data.spells.len(),
+            data.adept_powers.len(),
         );
         datasets.push(data);
     }

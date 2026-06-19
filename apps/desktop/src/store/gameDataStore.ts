@@ -70,6 +70,16 @@ export interface GameAugmentation {
   page: string;
 }
 
+export interface GameAdeptPower {
+  id: string;
+  name: string;
+  /** Decimal string like "0.25" or "1.00" */
+  cost: string;
+  levels: boolean;
+  source: string;
+  page: string;
+}
+
 interface GameDataState {
   loaded: boolean;
   loading: boolean;
@@ -82,6 +92,7 @@ interface GameDataState {
   armor: GameArmor[];
   augmentations: GameAugmentation[];
   spells: GameSpell[];
+  adeptPowers: GameAdeptPower[];
 
   loadGameData: (dbPath: string, edition: string) => Promise<void>;
   checkFile: (path: string) => Promise<void>;
@@ -99,6 +110,7 @@ export const useGameDataStore = create<GameDataState>((set) => ({
   armor: [],
   augmentations: [],
   spells: [],
+  adeptPowers: [],
 
   loadGameData: async (dbPath, edition) => {
     set({ loading: true, error: null, debugInfo: null, loadMessage: null });
@@ -106,7 +118,7 @@ export const useGameDataStore = create<GameDataState>((set) => ({
       // load_game_data now returns a status message
       const msg = await invoke<string>("load_game_data", { path: dbPath });
 
-      const [skills, qualities, weapons, armor, augmentations, spells] =
+      const [skills, qualities, weapons, armor, augmentations, spells, adeptPowers] =
         await Promise.all([
           invoke<GameSkill[]>("get_skills", { edition }),
           invoke<GameQuality[]>("get_qualities", { edition }),
@@ -114,18 +126,20 @@ export const useGameDataStore = create<GameDataState>((set) => ({
           invoke<GameArmor[]>("get_armor", { edition }),
           invoke<GameAugmentation[]>("get_augmentations", { edition }),
           invoke<GameSpell[]>("get_spells", { edition }),
+          invoke<GameAdeptPower[]>("get_adept_powers"),
         ]);
 
       set({
         loaded: true,
         loading: false,
-        loadMessage: `${msg} | ${skills.length} skills, ${qualities.length} qualities, ${weapons.length} weapons, ${armor.length} armor, ${augmentations.length} augmentations, ${spells.length} spells for ${edition}`,
+        loadMessage: `${msg} | ${skills.length} skills, ${qualities.length} qualities, ${weapons.length} weapons, ${armor.length} armor, ${augmentations.length} augmentations, ${spells.length} spells, ${adeptPowers.length} powers for ${edition}`,
         skills,
         qualities,
         weapons,
         armor,
         augmentations,
         spells,
+        adeptPowers,
       });
     } catch (err: unknown) {
       // Extract the error message — Tauri wraps errors in objects
