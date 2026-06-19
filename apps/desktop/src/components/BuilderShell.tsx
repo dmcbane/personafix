@@ -4,10 +4,19 @@ import AttributePanel from "./AttributePanel";
 import SkillPanel from "./SkillPanel";
 import QualityPanel from "./QualityPanel";
 import ContactPanel from "./ContactPanel";
+import AugmentationPanel from "./AugmentationPanel";
+import MagicPanel from "./MagicPanel";
 import PriorityPanel from "./PriorityPanel";
 import SummaryBar from "./SummaryBar";
 
-type Tab = "priority" | "attributes" | "skills" | "qualities" | "contacts";
+type Tab =
+  | "priority"
+  | "attributes"
+  | "skills"
+  | "qualities"
+  | "augmentations"
+  | "magic"
+  | "contacts";
 
 export default function BuilderShell({
   campaignId,
@@ -32,6 +41,8 @@ export default function BuilderShell({
     { key: "attributes", label: "Attributes" },
     { key: "skills", label: "Skills" },
     { key: "qualities", label: "Qualities" },
+    { key: "augmentations", label: "Augs" },
+    { key: "magic", label: "Magic" },
     { key: "contacts", label: "Contacts" },
   ];
 
@@ -133,6 +144,8 @@ export default function BuilderShell({
         {activeTab === "attributes" && <AttributePanel />}
         {activeTab === "skills" && <SkillPanel />}
         {activeTab === "qualities" && <QualityPanel />}
+        {activeTab === "augmentations" && <AugmentationPanel />}
+        {activeTab === "magic" && <MagicPanel />}
         {activeTab === "contacts" && <ContactPanel />}
       </div>
 

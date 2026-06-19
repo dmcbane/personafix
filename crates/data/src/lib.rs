@@ -1,5 +1,3 @@
-pub mod sqlite;
-
 use personafix_core::model::{
     augmentations::Augmentation, edition::Edition, gear::*, magic::*, qualities::Quality,
     skills::Skill,

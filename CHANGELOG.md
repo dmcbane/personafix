@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-06-19
+
+### Added
+- Augmentations panel (P3-2): browse 436 SR4 cyberware/bioware items by type and
+  name; choose grade (Std/α/β/δ/Used) and rating before install; essence cost
+  shown per item and as running total; removal supported
+- Magic panel (P3-5): browse 253 SR4 spells by category and type (Physical/Mana);
+  warns when Magic attribute is 0; only known-category spells shown so Rust
+  deserialization succeeds on character save
+- `get_spells` IPC command + `query_spells_db` helper; `GameSpell` struct; `spells`
+  loaded in `loadGameData` alongside existing game data types
+- `DraftAugmentation`, `DraftSpell`, `AugmentationGrade`, `AugmentationType`,
+  `GRADE_MULTIPLIER` added to `characterStore`; `augmentations`/`spells` typed
+  (were `unknown[]`)
+- SummaryBar essence display now computes remaining essence from installed
+  augmentations using the Rust-matching formula
+  `adjusted = floor(essence_cost * grade_multiplier / 100)`; turns red at ≤ 0
+- Deleted dead `crates/data/src/sqlite.rs` + `pub mod sqlite` (P2-1): 11 `todo!()`
+  stubs removed; `GameDataRepository` trait kept for future web backend
+- Bump 0.19.0 → 0.20.0; mark P2-1, P3-2, P3-5 done
+
 ## [0.19.0] - 2026-06-19
 
 ### Changed

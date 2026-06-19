@@ -1,4 +1,4 @@
-import { useCharacterStore } from "../store/characterStore";
+import { useCharacterStore, GRADE_MULTIPLIER } from "../store/characterStore";
 
 export default function SummaryBar() {
   const draft = useCharacterStore((s) => s.draft);
@@ -30,6 +30,12 @@ export default function SummaryBar() {
   );
 
   const totalBP = attrBP + skillBP + qualBP + contactBP;
+
+  const augEssenceUsed = draft.augmentations.reduce((sum, a) => {
+    const mult = GRADE_MULTIPLIER[a.grade] ?? 100;
+    return sum + Math.floor((a.essence_cost * mult) / 100);
+  }, 0);
+  const essenceRemaining = 600 - augEssenceUsed;
 
   const realErrors = errors.filter((e) => e.severity === "Error");
   const warnings = errors.filter((e) => e.severity === "Warning");
@@ -67,8 +73,12 @@ export default function SummaryBar() {
         )}
         <div className="text-cyber-text-dim">
           Essence:{" "}
-          <span className="text-cyber-blue">
-            {(draft.attributes.essence / 100).toFixed(2)}
+          <span
+            className={
+              essenceRemaining <= 0 ? "text-cyber-red" : "text-cyber-blue"
+            }
+          >
+            {(essenceRemaining / 100).toFixed(2)}
           </span>
         </div>
         <div className="flex-1" />

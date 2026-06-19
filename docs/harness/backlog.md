@@ -68,7 +68,7 @@ Status: `todo` · `doing` · `done` · `parked`
 
 ## P2 — Data layer hygiene
 
-- id: P2-1  status: todo  deps: [P1-2]
+- id: P2-1  status: done   deps: [P1-2]
   desc: Either delete the dead `SqliteGameDataRepository` `todo!()` stubs in
         `crates/data/src/sqlite.rs`, or implement them to match the desktop query layer.
   accept: no `todo!()` remain in `crates/data`; L0+L1 green. (Low priority — not on app path.)
@@ -79,11 +79,11 @@ Status: `todo` · `doing` · `done` · `parked`
   desc: Wire Skills + Qualities panels to real `game_data.db` (replace any seeded data).
   accept: L3b smoke: open builder, skill/quality lists are non-empty + L4.
 
-- id: P3-2  status: todo  deps: [P1-2]
+- id: P3-2  status: done   deps: [P1-2]
   desc: Add Augmentations panel (essence cost + grade), mirroring `QualityPanel`.
   accept: L3b smoke + L4.
 
-- id: P3-3  status: todo  deps: [P1-2]
+- id: P3-3  status: doing  deps: [P1-2]
   desc: Add Gear/Weapons/Armor panel.
   accept: L3b smoke + L4.
 
@@ -91,7 +91,7 @@ Status: `todo` · `doing` · `done` · `parked`
   desc: Add Contacts panel (connection/loyalty, 1 BP per point).
   accept: L3b smoke + L4.
 
-- id: P3-5  status: todo  deps: [P1-2]
+- id: P3-5  status: done   deps: [P1-2]
   desc: Add Magic panel (spells + adept powers).
   accept: L3b smoke + L4.
 

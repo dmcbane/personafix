@@ -846,6 +846,72 @@ pub async fn get_augmentations(
     query_augmentations_db(&pool, &edition).await
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameSpell {
+    pub id: String,
+    pub name: String,
+    pub category: String,
+    pub spell_type: String,
+    pub range: String,
+    pub damage: String,
+    pub duration: String,
+    pub drain: String,
+    pub source: String,
+    pub page: String,
+}
+
+pub async fn query_spells_db(
+    pool: &SqlitePool,
+    edition: &str,
+) -> Result<Vec<GameSpell>, AppError> {
+    let rows: Vec<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+    )> = sqlx::query_as(
+        "SELECT id, name, category, spell_type, range, damage, duration, drain, source, page \
+         FROM spells WHERE edition = ? ORDER BY category, name",
+    )
+    .bind(edition)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(
+            |(id, name, category, spell_type, range, damage, duration, drain, source, page)| {
+                GameSpell {
+                    id,
+                    name,
+                    category,
+                    spell_type,
+                    range,
+                    damage,
+                    duration,
+                    drain,
+                    source,
+                    page,
+                }
+            },
+        )
+        .collect())
+}
+
+#[tauri::command]
+pub async fn get_spells(
+    edition: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<GameSpell>, AppError> {
+    let pool = get_game_pool(&state).await?;
+    query_spells_db(&pool, &edition).await
+}
+
 // ============================================================
 // Tests
 // ============================================================

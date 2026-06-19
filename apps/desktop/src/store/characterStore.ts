@@ -75,8 +75,8 @@ export interface CharacterDraft {
   skills: Skill[];
   skill_groups: unknown[];
   qualities: Quality[];
-  augmentations: unknown[];
-  spells: unknown[];
+  augmentations: DraftAugmentation[];
+  spells: DraftSpell[];
   adept_powers: unknown[];
   complex_forms: unknown[];
   contacts: Contact[];
@@ -104,6 +104,43 @@ export interface ComputedCharacter {
   total_karma_earned: number;
   total_karma_spent: number;
   nuyen: number;
+}
+
+export type AugmentationGrade = "Standard" | "Alpha" | "Beta" | "Delta" | "Used";
+export type AugmentationType = "Cyberware" | "Bioware";
+
+export const GRADE_MULTIPLIER: Record<AugmentationGrade, number> = {
+  Standard: 100,
+  Alpha: 80,
+  Beta: 70,
+  Delta: 50,
+  Used: 125,
+};
+
+export interface DraftAugmentation {
+  id: string;
+  name: string;
+  augmentation_type: AugmentationType;
+  grade: AugmentationGrade;
+  essence_cost: number;
+  availability: string;
+  cost: number;
+  source: string;
+  page: string;
+  improvements: unknown[];
+}
+
+export interface DraftSpell {
+  id: string;
+  name: string;
+  category: string;
+  spell_type: string;
+  range: string;
+  damage: string;
+  duration: string;
+  drain: string;
+  source: string;
+  page: string;
 }
 
 export interface Contact {
@@ -218,6 +255,10 @@ interface CharacterState {
   updateSkillRating: (skillId: string, rating: number) => void;
   addQuality: (quality: Quality) => void;
   removeQuality: (qualityId: string) => void;
+  addAugmentation: (aug: DraftAugmentation) => void;
+  removeAugmentation: (augId: string) => void;
+  addSpell: (spell: DraftSpell) => void;
+  removeSpell: (spellId: string) => void;
   addContact: (contact: Contact) => void;
   removeContact: (contactId: string) => void;
   setPriority: (category: PriorityCategory, level: PriorityLevel) => void;
@@ -353,6 +394,40 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       draft: {
         ...draft,
         qualities: draft.qualities.filter((q) => q.id !== qualityId),
+      },
+    });
+  },
+
+  addAugmentation: (aug) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({ draft: { ...draft, augmentations: [...draft.augmentations, aug] } });
+  },
+
+  removeAugmentation: (augId) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({
+      draft: {
+        ...draft,
+        augmentations: draft.augmentations.filter((a) => a.id !== augId),
+      },
+    });
+  },
+
+  addSpell: (spell) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({ draft: { ...draft, spells: [...draft.spells, spell] } });
+  },
+
+  removeSpell: (spellId) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({
+      draft: {
+        ...draft,
+        spells: draft.spells.filter((s) => s.id !== spellId),
       },
     });
   },

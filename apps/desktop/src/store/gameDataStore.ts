@@ -35,6 +35,19 @@ export interface GameWeapon {
   page: string;
 }
 
+export interface GameSpell {
+  id: string;
+  name: string;
+  category: string;
+  spell_type: string;
+  range: string;
+  damage: string;
+  duration: string;
+  drain: string;
+  source: string;
+  page: string;
+}
+
 export interface GameAugmentation {
   id: string;
   name: string;
@@ -57,6 +70,7 @@ interface GameDataState {
   qualities: GameQuality[];
   weapons: GameWeapon[];
   augmentations: GameAugmentation[];
+  spells: GameSpell[];
 
   loadGameData: (dbPath: string, edition: string) => Promise<void>;
   checkFile: (path: string) => Promise<void>;
@@ -72,6 +86,7 @@ export const useGameDataStore = create<GameDataState>((set) => ({
   qualities: [],
   weapons: [],
   augmentations: [],
+  spells: [],
 
   loadGameData: async (dbPath, edition) => {
     set({ loading: true, error: null, debugInfo: null, loadMessage: null });
@@ -79,21 +94,24 @@ export const useGameDataStore = create<GameDataState>((set) => ({
       // load_game_data now returns a status message
       const msg = await invoke<string>("load_game_data", { path: dbPath });
 
-      const [skills, qualities, weapons, augmentations] = await Promise.all([
-        invoke<GameSkill[]>("get_skills", { edition }),
-        invoke<GameQuality[]>("get_qualities", { edition }),
-        invoke<GameWeapon[]>("get_weapons", { edition }),
-        invoke<GameAugmentation[]>("get_augmentations", { edition }),
-      ]);
+      const [skills, qualities, weapons, augmentations, spells] =
+        await Promise.all([
+          invoke<GameSkill[]>("get_skills", { edition }),
+          invoke<GameQuality[]>("get_qualities", { edition }),
+          invoke<GameWeapon[]>("get_weapons", { edition }),
+          invoke<GameAugmentation[]>("get_augmentations", { edition }),
+          invoke<GameSpell[]>("get_spells", { edition }),
+        ]);
 
       set({
         loaded: true,
         loading: false,
-        loadMessage: `${msg} | ${skills.length} skills, ${qualities.length} qualities, ${weapons.length} weapons, ${augmentations.length} augmentations for ${edition}`,
+        loadMessage: `${msg} | ${skills.length} skills, ${qualities.length} qualities, ${weapons.length} weapons, ${augmentations.length} augmentations, ${spells.length} spells for ${edition}`,
         skills,
         qualities,
         weapons,
         augmentations,
+        spells,
       });
     } catch (err: unknown) {
       // Extract the error message — Tauri wraps errors in objects
