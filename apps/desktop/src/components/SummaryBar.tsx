@@ -4,6 +4,8 @@ import {
   SR5_ATTR_POINTS,
   SR5_SKILL_POINTS,
   SR5_RESOURCE_NUYEN,
+  SR5_MAGIC_STARTING,
+  SR5_SPECIAL_ATTR_POINTS,
   ATTRIBUTE_NAMES,
 } from "../store/characterStore";
 
@@ -64,6 +66,15 @@ export default function SummaryBar() {
       )
     : 0;
 
+  // SR5 special attribute pool: magic above starting + edge above racial min
+  const sr5MagicStarting = isSR5 && sel ? SR5_MAGIC_STARTING[sel.magic_or_resonance] : 0;
+  const sr5SpecialPool = isSR5 && sel ? SR5_SPECIAL_ATTR_POINTS[sel.metatype] : 0;
+  const sr5MagicSpecial = isSR5 && draft.attributes.magic != null && draft.magic_tradition
+    ? Math.max(0, draft.attributes.magic - sr5MagicStarting)
+    : 0;
+  const sr5EdgeSpecial = isSR5 ? Math.max(0, draft.attributes.edge - limits.edge[0]) : 0;
+  const sr5SpecialSpent = sr5MagicSpecial + sr5EdgeSpecial;
+
   const augEssenceUsed = draft.augmentations.reduce((sum, a) => {
     const mult = GRADE_MULTIPLIER[a.grade] ?? 100;
     return sum + Math.floor((a.essence_cost * mult) / 100);
@@ -111,6 +122,16 @@ export default function SummaryBar() {
                 {draft.nuyen_spent.toLocaleString()}
               </span>
               <span className="text-cyber-text-dim">/{sr5NuyenBudget.toLocaleString()}</span>
+            </div>
+            <div className="text-cyber-border">|</div>
+            <div>
+              <span className="text-cyber-text-dim">SAP: </span>
+              <span
+                className={`font-bold ${sr5SpecialSpent > sr5SpecialPool ? "text-cyber-red" : "text-cyber-green"}`}
+              >
+                {sr5SpecialSpent}
+              </span>
+              <span className="text-cyber-text-dim">/{sr5SpecialPool}</span>
             </div>
             <div className="text-cyber-border">|</div>
           </>

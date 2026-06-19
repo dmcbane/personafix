@@ -49,6 +49,18 @@ pub fn resource_nuyen(level: PriorityLevel) -> i64 {
     }
 }
 
+/// Special attribute points granted by each metatype priority level.
+/// Used to raise Magic/Resonance above starting rating or Edge above racial min.
+pub fn special_attribute_points(level: PriorityLevel) -> i32 {
+    match level {
+        PriorityLevel::A => 13,
+        PriorityLevel::B => 11,
+        PriorityLevel::C => 9,
+        PriorityLevel::D => 4,
+        PriorityLevel::E => 1,
+    }
+}
+
 /// Starting magic or resonance rating granted by a magic/resonance priority level.
 /// Returns `None` for E (Mundane — no magic).
 pub fn magic_starting_rating(level: PriorityLevel) -> Option<u8> {

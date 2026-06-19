@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.0] - 2026-06-19
+
+### Added
+- P6-3: SR5 special attribute pool. `special_attribute_points(metatype_priority) -> i32`
+  in sr5_priority.rs (A=13, B=11, C=9, D=4, E=1)
+- SR5 validation checks that magic above starting + edge above racial min ≤ special pool;
+  error on "special_attribute_pool" field (L1 tests: overspent_errors + within_budget_passes)
+- SR5 magic slider in AttributePanel now allows values up to racial max (6) above the
+  starting value; shows SAP used in yellow/red next to the slider
+- AttributePanel shows special pool summary "(used/total) includes Edge above racial min"
+- SummaryBar shows "SAP: X/Y" chip for SR5 drafts, turns red when over budget
+- `SR5_SPECIAL_ATTR_POINTS` constant exported from characterStore
+- Updated `validate_magic_over_priority_max_errors` test to `validate_magic_over_racial_max_errors`:
+  now tests magic > 6 (true racial cap) rather than magic > starting value
+- Bump 0.27.0 → 0.28.0; P6-3 done
+
 ## [0.27.0] - 2026-06-19
 
 ### Added

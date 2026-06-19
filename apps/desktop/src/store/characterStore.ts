@@ -300,6 +300,10 @@ export const SR5_RESOURCE_NUYEN: Record<PriorityLevel, number> = {
 export const SR5_MAGIC_STARTING: Record<PriorityLevel, number> = {
   A: 6, B: 6, C: 3, D: 2, E: 0,
 };
+// Special attribute points from metatype priority (for raising Magic/Edge above starting/min)
+export const SR5_SPECIAL_ATTR_POINTS: Record<PriorityLevel, number> = {
+  A: 13, B: 11, C: 9, D: 4, E: 1,
+};
 
 interface CharacterState {
   // Current draft being built

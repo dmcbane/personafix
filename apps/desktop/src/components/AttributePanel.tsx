@@ -3,6 +3,7 @@ import {
   ATTRIBUTE_NAMES,
   SR5_ATTR_POINTS,
   SR5_MAGIC_STARTING,
+  SR5_SPECIAL_ATTR_POINTS,
   type AttributeName,
 } from "../store/characterStore";
 
@@ -47,9 +48,20 @@ export default function AttributePanel() {
   const sr5AttrAlloc = isSR5 && draft.priority_selection
     ? SR5_ATTR_POINTS[draft.priority_selection.attributes]
     : 0;
-  const magicPriorityMax = isSR5 && draft.priority_selection
+  const magicStarting = isSR5 && draft.priority_selection
     ? SR5_MAGIC_STARTING[draft.priority_selection.magic_or_resonance]
     : 0;
+  // Hard cap for magic/resonance is 6 for all SR5 metatypes.
+  // Raising above starting costs special attribute points (tracked in SummaryBar).
+  const magicPriorityMax = magicStarting > 0 ? 6 : 0;
+  const sr5SpecialPool = isSR5 && draft.priority_selection
+    ? SR5_SPECIAL_ATTR_POINTS[draft.priority_selection.metatype]
+    : 0;
+  const sr5EdgeSpecial = isSR5 ? Math.max(0, draft.attributes.edge - limits.edge[0]) : 0;
+  const sr5MagicSpecial = isSR5 && draft.attributes.magic != null
+    ? Math.max(0, draft.attributes.magic - magicStarting)
+    : 0;
+  const sr5SpecialSpent = sr5MagicSpecial + sr5EdgeSpecial;
 
   return (
     <div>
@@ -120,41 +132,53 @@ export default function AttributePanel() {
       {isSR5 && magicPriorityMax > 0 && (
         <div className="mt-4">
           <h3 className="text-sm font-mono text-cyber-text-dim mb-2">
-            Magic (from priority — max {magicPriorityMax})
+            Magic — starting {magicStarting}, max {magicPriorityMax} (raises above {magicStarting} cost special attribute points)
           </h3>
-          <div className="flex items-center gap-3 bg-cyber-card border border-cyber-border rounded px-3 py-2 w-48">
+          <div className="flex items-center gap-3 bg-cyber-card border border-cyber-border rounded px-3 py-2">
             <span className="text-cyber-purple font-mono w-10 text-sm font-semibold">
               MAG
             </span>
             <button
               onClick={() => {
-                const cur = draft.attributes.magic ?? 0;
-                setMagic(Math.max(1, cur - 1));
+                const cur = draft.attributes.magic ?? magicStarting;
+                setMagic(Math.max(magicStarting, cur - 1));
                 validate();
               }}
-              disabled={(draft.attributes.magic ?? 0) <= 1}
+              disabled={(draft.attributes.magic ?? magicStarting) <= magicStarting}
               className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
             >
               -
             </button>
             <span className="font-mono text-lg w-6 text-center text-cyber-heading">
-              {draft.attributes.magic ?? 0}
+              {draft.attributes.magic ?? magicStarting}
             </span>
             <button
               onClick={() => {
-                const cur = draft.attributes.magic ?? 0;
+                const cur = draft.attributes.magic ?? magicStarting;
                 setMagic(Math.min(magicPriorityMax, cur + 1));
                 validate();
               }}
-              disabled={(draft.attributes.magic ?? 0) >= magicPriorityMax}
+              disabled={(draft.attributes.magic ?? magicStarting) >= magicPriorityMax}
               className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
             >
               +
             </button>
             <span className="text-cyber-text-dim text-xs ml-1 font-mono">
-              1-{magicPriorityMax}
+              {magicStarting}-{magicPriorityMax}
             </span>
+            {sr5MagicSpecial > 0 && (
+              <span className={`text-xs font-mono ml-2 ${sr5SpecialSpent > sr5SpecialPool ? "text-cyber-red" : "text-cyber-yellow"}`}>
+                +{sr5MagicSpecial} SAP
+              </span>
+            )}
           </div>
+          {isSR5 && (
+            <p className="text-xs text-cyber-text-dim font-mono mt-1">
+              Special pool: <span className={sr5SpecialSpent > sr5SpecialPool ? "text-cyber-red" : "text-cyber-green"}>
+                {sr5SpecialSpent}/{sr5SpecialPool}
+              </span> spent (includes Edge above racial min)
+            </p>
+          )}
         </div>
       )}
       {isSR5 && magicPriorityMax === 0 && (

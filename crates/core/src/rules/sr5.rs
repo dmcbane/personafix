@@ -169,25 +169,64 @@ impl CharacterRules for SR5Rules {
             });
         }
 
-        // Magic / resonance attribute must be set if a non-Mundane priority is chosen
-        if let Some(max) = sr5_priority::magic_starting_rating(priority.magic_or_resonance) {
+        // Magic / resonance attribute must be set if a non-Mundane priority is chosen.
+        // The starting value is free; raising above it costs special attribute points.
+        // Hard cap for magic/resonance is 6 for all SR5 metatypes.
+        const MAGIC_RESONANCE_MAX: u8 = 6;
+        if let Some(starting) = sr5_priority::magic_starting_rating(priority.magic_or_resonance) {
             let awakened_val = draft.attributes.magic.or(draft.attributes.resonance);
             match awakened_val {
                 None => errors.push(ValidationError {
                     severity: ValidationSeverity::Error,
                     field: "attributes.magic".to_string(),
                     message: format!(
-                        "Magic or resonance attribute is required for a non-Mundane priority (max {max})"
+                        "Magic or resonance attribute is required for non-Mundane priority (starting {starting})"
                     ),
                 }),
-                Some(v) if v > max => errors.push(ValidationError {
+                Some(v) if v > MAGIC_RESONANCE_MAX => errors.push(ValidationError {
                     severity: ValidationSeverity::Error,
                     field: "attributes.magic".to_string(),
                     message: format!(
-                        "Magic/resonance rating {v} exceeds priority maximum {max}"
+                        "Magic/resonance rating {v} exceeds racial maximum {MAGIC_RESONANCE_MAX}"
                     ),
                 }),
-                _ => {}
+                Some(v) => {
+                    // Special attribute points: magic above starting + edge above racial min
+                    let magic_special = v.saturating_sub(starting) as i32;
+                    let racial_edge_min = limits.edge.0 as i32;
+                    let edge_special = (draft.attributes.edge as i32 - racial_edge_min).max(0);
+                    let resonance_special = draft
+                        .attributes
+                        .resonance
+                        .map(|r| r.saturating_sub(starting) as i32)
+                        .unwrap_or(0);
+                    let special_spent = magic_special + edge_special + resonance_special;
+                    let special_pool =
+                        sr5_priority::special_attribute_points(priority.metatype);
+                    if special_spent > special_pool {
+                        errors.push(ValidationError {
+                            severity: ValidationSeverity::Error,
+                            field: "special_attribute_pool".to_string(),
+                            message: format!(
+                                "Special attribute points spent ({special_spent}) exceed pool ({special_pool})"
+                            ),
+                        });
+                    }
+                }
+            }
+        } else {
+            // Mundane: edge still uses special attribute points
+            let racial_edge_min = limits.edge.0 as i32;
+            let edge_special = (draft.attributes.edge as i32 - racial_edge_min).max(0);
+            let special_pool = sr5_priority::special_attribute_points(priority.metatype);
+            if edge_special > special_pool {
+                errors.push(ValidationError {
+                    severity: ValidationSeverity::Error,
+                    field: "special_attribute_pool".to_string(),
+                    message: format!(
+                        "Special attribute points spent ({edge_special}) exceed pool ({special_pool})"
+                    ),
+                });
             }
         }
 
@@ -613,21 +652,22 @@ mod tests {
     }
 
     #[test]
-    fn validate_magic_over_priority_max_errors() {
+    fn validate_magic_over_racial_max_errors() {
+        // Magic 7 exceeds the racial max of 6 for all SR5 metatypes.
         let mut draft = make_legal_human_draft();
-        // C = Magician(3), max magic 3; use D/B/C/A/E
         draft.priority_selection = Some(PrioritySelection {
-            metatype: PriorityLevel::D,
+            metatype: PriorityLevel::A, // 13 special points — plenty
             attributes: PriorityLevel::B,
             magic_or_resonance: PriorityLevel::C,
-            skills: PriorityLevel::A,
+            skills: PriorityLevel::D,
             resources: PriorityLevel::E,
         });
-        draft.attributes.magic = Some(5); // exceeds priority max of 3
+        draft.magic_tradition = Some(MagicTradition::Magician);
+        draft.attributes.magic = Some(7); // exceeds racial max of 6
         let errors = rules().validate_creation(&draft);
         assert!(
             errors.iter().any(|e| e.field == "attributes.magic"),
-            "Expected magic overage error, got: {errors:?}"
+            "Expected magic-exceeds-racial-max error, got: {errors:?}"
         );
     }
 
@@ -661,6 +701,53 @@ mod tests {
         assert!(
             real_errors.is_empty(),
             "Mundane character should have no magic errors, got: {real_errors:?}"
+        );
+    }
+
+    #[test]
+    fn validate_special_attribute_pool_overspent_errors() {
+        // Metatype E = 1 special point; Magician starting magic 3 (priority C);
+        // spending 2 on magic (to 5) + 1 on edge (to 3) = 3 > 1 pool → error.
+        let mut draft = make_legal_human_draft();
+        draft.priority_selection = Some(PrioritySelection {
+            metatype: PriorityLevel::E, // 1 special point
+            attributes: PriorityLevel::B,
+            magic_or_resonance: PriorityLevel::C,
+            skills: PriorityLevel::A,
+            resources: PriorityLevel::D,
+        });
+        draft.magic_tradition = Some(MagicTradition::Magician);
+        draft.attributes.magic = Some(5); // 2 points above starting 3
+        draft.attributes.edge = 3;        // 1 point above racial min 2
+        let errors = rules().validate_creation(&draft);
+        assert!(
+            errors.iter().any(|e| e.field == "special_attribute_pool"),
+            "Expected special pool error, got: {errors:?}"
+        );
+    }
+
+    #[test]
+    fn validate_special_attribute_pool_within_budget_passes() {
+        // Metatype B = 11 special points; Magician starting magic 3 (priority C);
+        // spending 2 on magic (to 5) + 0 on edge = 2 ≤ 11 → no error.
+        let mut draft = make_legal_human_draft();
+        draft.priority_selection = Some(PrioritySelection {
+            metatype: PriorityLevel::B,
+            attributes: PriorityLevel::D,
+            magic_or_resonance: PriorityLevel::C,
+            skills: PriorityLevel::A,
+            resources: PriorityLevel::E,
+        });
+        draft.magic_tradition = Some(MagicTradition::Magician);
+        draft.attributes.magic = Some(5); // 2 above starting 3
+        let errors = rules().validate_creation(&draft);
+        let pool_errors: Vec<_> = errors
+            .iter()
+            .filter(|e| e.field == "special_attribute_pool")
+            .collect();
+        assert!(
+            pool_errors.is_empty(),
+            "Should be within budget, got: {pool_errors:?}"
         );
     }
 

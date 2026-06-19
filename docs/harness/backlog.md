@@ -130,7 +130,7 @@ Status: `todo` · `doing` · `done` · `parked`
         forms for Technomancers.
   accept: L1 test in sr5.rs; L4 with each archetype.
 
-- id: P6-3  status: todo  deps: []
+- id: P6-3  status: done  deps: []
   desc: SR5 special attribute pool — metatype priority A/B/C gives 13/11/9 special
         attribute points used to raise Magic/Resonance above starting rating or Edge
         above racial minimum. Currently Magic is hard-set to the starting value; the
