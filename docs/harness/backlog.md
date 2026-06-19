@@ -101,14 +101,14 @@ Status: `todo` · `doing` · `done` · `parked`
 
 ## P5 — Career play
 
-- id: P5-1  status: doing  deps: [P3-6]
+- id: P5-1  status: done   deps: [P3-6]
   desc: UI to apply ledger events (karma/nuyen received/spent) via `apply_event`.
   accept: L2 round-trip already exists; add L3b smoke + L4.
 
-- id: P5-2  status: todo  deps: [P5-1]
+- id: P5-2  status: done   deps: [P5-1]
   desc: UI for skill/attribute improvement (show karma cost from rules engine).
   accept: L3b smoke + L4.
 
-- id: P5-3  status: todo  deps: [P5-1]
+- id: P5-3  status: doing  deps: [P5-1]
   desc: Career timeline / ledger view (uses `get_ledger`).
   accept: L3b smoke + L4.

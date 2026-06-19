@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0] - 2026-06-19
+
+### Added
+- Career event UI (P5-1 + P5-2): `SavedCharacterView` gains "Apply Event" controls
+  for Karma Received and Nuyen Received; karma/nuyen totals update live after each event
+- Karma Improvements panel (P5-2): collapsible section shows all 9 attributes with karma
+  cost (+1 costs new_rating × 5) and all character skills with karma cost (new_rating × 2);
+  buttons disabled when not enough karma available
+- `applyEvent` action in `characterStore` calls `apply_event` IPC and updates
+  `savedCharacter` with the returned `ComputedCharacter`
+- `LedgerEvent` TypeScript union: KarmaReceived, KarmaSpent, NuyenReceived, NuyenSpent,
+  SkillImproved, AttributeImproved (externally-tagged serde format)
+- `ComputedCharacter.base.skills` and `base.attributes` added to TS interface so the
+  improvement panel can show current ratings
+- Bump 0.21.0 → 0.22.0; P5-1, P5-2 done; P5-3 doing
+
 ## [0.21.0] - 2026-06-19
 
 ### Added

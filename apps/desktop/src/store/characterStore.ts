@@ -51,6 +51,29 @@ export interface Quality {
   incompatible_with: string[];
 }
 
+// Subset of Rust's LedgerEvent enum (externally tagged serde format)
+export type LedgerEvent =
+  | { KarmaReceived: { amount: number; reason: string; run_id: null } }
+  | { KarmaSpent: { amount: number; description: string } }
+  | { NuyenReceived: { amount: number; reason: string; run_id: null } }
+  | { NuyenSpent: { amount: number; description: string } }
+  | {
+      SkillImproved: {
+        skill_name: string;
+        from: number;
+        to: number;
+        karma_cost: number;
+      };
+    }
+  | {
+      AttributeImproved: {
+        attribute: string;
+        from: number;
+        to: number;
+        karma_cost: number;
+      };
+    };
+
 export interface ValidationError {
   severity: "Error" | "Warning";
   field: string;
@@ -95,6 +118,8 @@ export interface ComputedCharacter {
     name: string;
     edition: string;
     metatype: string;
+    attributes: Attributes;
+    skills: Skill[];
   };
   computed_attributes: Attributes;
   physical_condition_monitor: number;
@@ -295,6 +320,7 @@ interface CharacterState {
   saveCharacter: (campaignId: string) => Promise<void>;
   listCharacters: (campaignId: string) => Promise<void>;
   loadCharacter: (id: string) => Promise<void>;
+  applyEvent: (characterId: string, event: LedgerEvent) => Promise<void>;
   reset: () => void;
 }
 
@@ -587,6 +613,14 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   loadCharacter: async (id) => {
     const computed = await invoke<ComputedCharacter>("get_character", { id });
     set({ savedCharacter: computed, draft: null });
+  },
+
+  applyEvent: async (characterId, event) => {
+    const computed = await invoke<ComputedCharacter>("apply_event", {
+      characterId,
+      event,
+    });
+    set({ savedCharacter: computed });
   },
 
   reset: () => {
