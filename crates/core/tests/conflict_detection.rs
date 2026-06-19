@@ -92,7 +92,6 @@ fn augmentation(id: &str, essence_cost: i32) -> Augmentation {
 }
 
 #[test]
-#[ignore = "TDD seed — implement in backlog item P4-1 (quality incompatibility); remove #[ignore] then"]
 fn incompatible_qualities_are_reported_as_warning() {
     let mut draft = legal_human_draft();
     // Two qualities that declare each other incompatible.

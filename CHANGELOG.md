@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-06-19
+
+### Added
+- SR4 conflict detection (P4-1): `SR4Rules::validate_creation` now reports mutually
+  incompatible qualities as `ValidationSeverity::Warning` using the existing
+  `Quality::incompatible_with` field — conflicts are surfaced without blocking creation
+
+## [0.9.0] - 2026-06-19
+
+### Added
+- Autonomous iteration harness scaffolding: SR4 parity checklist, ordered backlog,
+  conflict-detection TDD seed (3 ignored tests), and deterministic driver workflow script
+- Dev journal entry documenting the harness design and the dead-code correction for
+  `SqliteGameDataRepository`
+
 ## [0.8.0] - 2026-04-12
 
 ### Added

@@ -127,6 +127,25 @@ impl CharacterRules for SR4Rules {
             });
         }
 
+        // Incompatible quality detection: check each quality's incompatible_with list against
+        // the IDs of the other selected qualities.
+        let quality_ids: Vec<&str> = draft.qualities.iter().map(|q| q.id.as_str()).collect();
+        for quality in &draft.qualities {
+            for incompat_id in &quality.incompatible_with {
+                if quality_ids.contains(&incompat_id.as_str()) {
+                    errors.push(ValidationError {
+                        severity: ValidationSeverity::Warning,
+                        field: "qualities.incompatible".to_string(),
+                        message: format!(
+                            "{} is incompatible with another selected quality ({})",
+                            quality.name, incompat_id
+                        ),
+                    });
+                    break;
+                }
+            }
+        }
+
         errors
     }
 

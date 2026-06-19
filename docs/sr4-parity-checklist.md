@@ -49,7 +49,7 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` parked (se
 - [ ] Character list / load screen (open an existing character) — *L3b + L4*
 
 ## Phase 4 — Conflict detection & reporting (your explicit goal)
-- [ ] P4-1: incompatible qualities reported as **Warning** — *gate: L1 (un-ignore seed)*
+- [x] P4-1: incompatible qualities reported as **Warning** — *gate: L1 (un-ignore seed)*
 - [ ] P4-2: essence overage (augs exceed 6.00) reported as **Error** — *gate: L1*
 - [ ] P4-3: magic + resonance simultaneously reported as **Error** — *gate: L1*
 - [ ] Conflicts surfaced in the builder UI (severity-colored, non-blocking) — *L3b + L4*

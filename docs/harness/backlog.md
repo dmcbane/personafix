@@ -47,7 +47,7 @@ Status: `todo` · `doing` · `done` · `parked`
 
 ## P4 — Conflict detection (your explicit goal; pure-core, no data dependency)
 
-- id: P4-1  status: todo  deps: []
+- id: P4-1  status: done   deps: []
   desc: Detect mutually-incompatible qualities in `SR4Rules::validate_creation`, using the
         existing `Quality::incompatible_with` field. Report as `Warning` (don't block).
   accept: remove `#[ignore]` from `incompatible_qualities_are_reported_as_warning`
