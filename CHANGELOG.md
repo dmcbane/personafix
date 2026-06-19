@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0] - 2026-06-19
+
+### Added
+- P6-4: SR5 contact free pool (Charisma × 3). SR5 validation warns when total
+  contact points (sum of connection + loyalty) exceed free pool; overflow flagged
+  as a Warning (not Error) with message showing karma cost
+  (L1 tests: validate_contacts_over_free_pool_flagged_as_warning,
+   validate_contacts_within_free_pool_is_clean)
+- ContactPanel: SR5 mode shows "X/Y free (CHA × 3)" + "+N karma overflow" in yellow
+  when over pool; SR4 mode unchanged (BP per point)
+- Bump 0.28.0 → 0.29.0; P6-4 done
+
 ## [0.28.0] - 2026-06-19
 
 ### Added

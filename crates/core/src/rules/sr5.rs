@@ -230,6 +230,24 @@ impl CharacterRules for SR5Rules {
             }
         }
 
+        // Contacts: Charisma × 3 free points; excess overflows (Warning, not Error)
+        let contact_free_pool = draft.attributes.charisma as i32 * 3;
+        let contact_points_spent: i32 = draft
+            .contacts
+            .iter()
+            .map(|c| c.connection as i32 + c.loyalty as i32)
+            .sum();
+        if contact_points_spent > contact_free_pool {
+            let overflow = contact_points_spent - contact_free_pool;
+            errors.push(ValidationError {
+                severity: ValidationSeverity::Warning,
+                field: "contacts".to_string(),
+                message: format!(
+                    "Contact points ({contact_points_spent}) exceed free pool ({contact_free_pool}); {overflow} point(s) cost 1 karma each"
+                ),
+            });
+        }
+
         // Resource limit
         let resource_limit = sr5_priority::resource_nuyen(priority.resources);
         if draft.nuyen_spent > resource_limit {
@@ -748,6 +766,48 @@ mod tests {
         assert!(
             pool_errors.is_empty(),
             "Should be within budget, got: {pool_errors:?}"
+        );
+    }
+
+    #[test]
+    fn validate_contacts_over_free_pool_flagged_as_warning() {
+        // Free pool = Cha × 3 = 2 × 3 = 6 points.
+        // Contact with connection 4 + loyalty 4 = 8 points → 2 points over free pool.
+        let mut draft = make_legal_human_draft();
+        draft.attributes.charisma = 2;
+        draft.contacts.push(Contact {
+            id: "c1".to_string(),
+            name: "Fixer".to_string(),
+            connection: 4,
+            loyalty: 4,
+            archetype: "Fixer".to_string(),
+            notes: String::new(),
+        });
+        let errors = rules().validate_creation(&draft);
+        assert!(
+            errors.iter().any(|e| e.field == "contacts" && e.severity == ValidationSeverity::Warning),
+            "Expected contacts overflow warning, got: {errors:?}"
+        );
+    }
+
+    #[test]
+    fn validate_contacts_within_free_pool_is_clean() {
+        // Free pool = Cha × 3 = 3 × 3 = 9 points.
+        // Contact with connection 4 + loyalty 4 = 8 ≤ 9 → no contacts warning.
+        let mut draft = make_legal_human_draft();
+        draft.attributes.charisma = 3;
+        draft.contacts.push(Contact {
+            id: "c1".to_string(),
+            name: "Fixer".to_string(),
+            connection: 4,
+            loyalty: 4,
+            archetype: "Fixer".to_string(),
+            notes: String::new(),
+        });
+        let errors = rules().validate_creation(&draft);
+        assert!(
+            !errors.iter().any(|e| e.field == "contacts" && e.severity == ValidationSeverity::Warning),
+            "Should be within free pool, got: {errors:?}"
         );
     }
 

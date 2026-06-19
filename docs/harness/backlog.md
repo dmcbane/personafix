@@ -138,7 +138,7 @@ Status: `todo` · `doing` · `done` · `parked`
   accept: L1 test (special pool budget validated); SummaryBar shows pool used/total;
           AttributePanel lets the player allocate remaining special points.
 
-- id: P6-4  status: todo  deps: [P6-2]
+- id: P6-4  status: done  deps: [P6-2]
   desc: SR5 contacts at creation — SR5 uses a Charisma × 3 free contact pool
         (connection + loyalty points distributed freely up to the cap); excess costs
         1 karma per point. Currently contacts cost 1 karma/point unconditionally (SR4

@@ -21,10 +21,14 @@ export default function ContactPanel() {
   const isSR4 = draft.edition === "SR4";
   const costUnit = isSR4 ? "BP" : "karma";
 
-  const totalContactBP = draft.contacts.reduce(
+  const totalContactPoints = draft.contacts.reduce(
     (sum, c) => sum + c.connection + c.loyalty,
     0,
   );
+
+  // SR5: Charisma × 3 free contact points; overflow costs 1 karma per point
+  const sr5FreePool = isSR4 ? 0 : draft.attributes.charisma * 3;
+  const sr5Overflow = isSR4 ? 0 : Math.max(0, totalContactPoints - sr5FreePool);
 
   const handleAdd = () => {
     if (!name.trim()) return;
@@ -48,11 +52,26 @@ export default function ContactPanel() {
         // Contacts
       </h2>
       <div className="text-sm text-cyber-text-dim font-mono mb-4">
-        Contact {costUnit}:{" "}
-        <span className="text-cyber-blue">{totalContactBP}</span>
-        <span className="text-cyber-text-dim">
-          {" "}(1 {costUnit} per connection + loyalty point)
-        </span>
+        {isSR4 ? (
+          <>
+            Contact BP:{" "}
+            <span className="text-cyber-blue">{totalContactPoints}</span>
+            <span className="text-cyber-text-dim"> (1 BP per connection + loyalty point)</span>
+          </>
+        ) : (
+          <>
+            Contact pool:{" "}
+            <span className={totalContactPoints > sr5FreePool ? "text-cyber-yellow" : "text-cyber-blue"}>
+              {totalContactPoints}
+            </span>
+            <span className="text-cyber-text-dim">/{sr5FreePool} free (CHA × 3)</span>
+            {sr5Overflow > 0 && (
+              <span className="text-cyber-yellow ml-2">
+                +{sr5Overflow} karma overflow
+              </span>
+            )}
+          </>
+        )}
       </div>
 
       {/* Current contacts */}
@@ -155,7 +174,10 @@ export default function ContactPanel() {
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-cyber-text-dim font-mono">
-            Cost: <span className="text-cyber-blue">{connection + loyalty} {costUnit}</span>
+            {isSR4
+              ? <>Cost: <span className="text-cyber-blue">{connection + loyalty} BP</span></>
+              : <>{connection + loyalty} contact points {sr5Overflow > 0 ? <span className="text-cyber-yellow">(may cost karma)</span> : null}</>
+            }
           </span>
           <button
             onClick={handleAdd}
