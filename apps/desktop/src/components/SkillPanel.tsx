@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { useCharacterStore, type Skill } from "../store/characterStore";
+import {
+  useCharacterStore,
+  SR5_SKILL_POINTS,
+  type Skill,
+} from "../store/characterStore";
 import { useGameDataStore } from "../store/gameDataStore";
 
 const FALLBACK_SKILLS = [
@@ -41,6 +45,13 @@ export default function SkillPanel() {
 
   const maxRating = 6;
   const bpCost = draft.skills.reduce((total, s) => total + s.rating * 4, 0);
+
+  const isSR5 = draft.edition === "SR5";
+  const sr5SkillSpent = draft.skills.reduce((sum, s) => sum + s.rating, 0);
+  const [sr5SkillAlloc, sr5GroupAlloc] =
+    isSR5 && draft.priority_selection
+      ? SR5_SKILL_POINTS[draft.priority_selection.skills]
+      : [0, 0];
 
   // Use game data if loaded, otherwise fallback
   const skillSource = gameDataLoaded
@@ -89,6 +100,25 @@ export default function SkillPanel() {
         {draft.edition === "SR4" && (
           <span>
             BP spent: <span className="text-cyber-green">{bpCost}</span>
+          </span>
+        )}
+        {isSR5 && (
+          <span>
+            Skills:{" "}
+            <span
+              className={
+                sr5SkillSpent > sr5SkillAlloc ? "text-cyber-red" : "text-cyber-green"
+              }
+            >
+              {sr5SkillSpent}
+            </span>
+            {" / "}
+            {sr5SkillAlloc}
+            {sr5GroupAlloc > 0 && (
+              <span className="ml-2 text-cyber-text-dim">
+                | Groups: 0/{sr5GroupAlloc}
+              </span>
+            )}
           </span>
         )}
         <span>

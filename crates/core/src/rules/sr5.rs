@@ -158,6 +158,28 @@ impl CharacterRules for SR5Rules {
             });
         }
 
+        // Magic / resonance attribute must be set if a non-Mundane priority is chosen
+        if let Some(max) = sr5_priority::magic_starting_rating(priority.magic_or_resonance) {
+            let awakened_val = draft.attributes.magic.or(draft.attributes.resonance);
+            match awakened_val {
+                None => errors.push(ValidationError {
+                    severity: ValidationSeverity::Error,
+                    field: "attributes.magic".to_string(),
+                    message: format!(
+                        "Magic or resonance attribute is required for a non-Mundane priority (max {max})"
+                    ),
+                }),
+                Some(v) if v > max => errors.push(ValidationError {
+                    severity: ValidationSeverity::Error,
+                    field: "attributes.magic".to_string(),
+                    message: format!(
+                        "Magic/resonance rating {v} exceeds priority maximum {max}"
+                    ),
+                }),
+                _ => {}
+            }
+        }
+
         // Resource limit
         let resource_limit = sr5_priority::resource_nuyen(priority.resources);
         if draft.nuyen_spent > resource_limit {
@@ -555,6 +577,60 @@ mod tests {
         draft.nuyen_spent = 10_000;
         let errors = rules().validate_creation(&draft);
         assert!(errors.iter().any(|e| e.field == "resources"));
+    }
+
+    #[test]
+    fn validate_magic_required_when_magic_priority_set() {
+        let mut draft = make_legal_human_draft();
+        // Switch magic_or_resonance from E (Mundane) to B (Adept 6); adjust
+        // resources away from A to keep all 5 levels distinct: D/A/B/C/E
+        draft.priority_selection = Some(PrioritySelection {
+            metatype: PriorityLevel::D,
+            attributes: PriorityLevel::A,
+            magic_or_resonance: PriorityLevel::B,
+            skills: PriorityLevel::C,
+            resources: PriorityLevel::E,
+        });
+        // magic attribute still None → should error
+        draft.attributes.magic = None;
+        let errors = rules().validate_creation(&draft);
+        assert!(
+            errors.iter().any(|e| e.field == "attributes.magic"),
+            "Expected magic attribute error, got: {errors:?}"
+        );
+    }
+
+    #[test]
+    fn validate_magic_over_priority_max_errors() {
+        let mut draft = make_legal_human_draft();
+        // C = Magician(3), max magic 3; use D/B/C/A/E
+        draft.priority_selection = Some(PrioritySelection {
+            metatype: PriorityLevel::D,
+            attributes: PriorityLevel::B,
+            magic_or_resonance: PriorityLevel::C,
+            skills: PriorityLevel::A,
+            resources: PriorityLevel::E,
+        });
+        draft.attributes.magic = Some(5); // exceeds priority max of 3
+        let errors = rules().validate_creation(&draft);
+        assert!(
+            errors.iter().any(|e| e.field == "attributes.magic"),
+            "Expected magic overage error, got: {errors:?}"
+        );
+    }
+
+    #[test]
+    fn validate_mundane_magic_priority_allows_null_magic() {
+        let draft = make_legal_human_draft(); // uses priority E / magic = None
+        let errors = rules().validate_creation(&draft);
+        let real_errors: Vec<_> = errors
+            .iter()
+            .filter(|e| e.severity == ValidationSeverity::Error)
+            .collect();
+        assert!(
+            real_errors.is_empty(),
+            "Mundane character should have no magic errors, got: {real_errors:?}"
+        );
     }
 
     // -- apply_improvements tests --

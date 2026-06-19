@@ -49,6 +49,17 @@ pub fn resource_nuyen(level: PriorityLevel) -> i64 {
     }
 }
 
+/// Starting magic or resonance rating granted by a magic/resonance priority level.
+/// Returns `None` for E (Mundane — no magic).
+pub fn magic_starting_rating(level: PriorityLevel) -> Option<u8> {
+    match level {
+        PriorityLevel::A | PriorityLevel::B => Some(6),
+        PriorityLevel::C => Some(3),
+        PriorityLevel::D => Some(2),
+        PriorityLevel::E => None,
+    }
+}
+
 /// Validate that a priority selection uses each level exactly once.
 /// Returns a list of error messages (empty if valid).
 pub fn validate_priority_selection(selection: &PrioritySelection) -> Vec<String> {

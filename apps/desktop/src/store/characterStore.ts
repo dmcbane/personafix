@@ -283,6 +283,21 @@ export const PRIORITY_TABLE: Record<
   },
 };
 
+// SR5 priority numeric helpers (mirror Rust sr5_priority.rs constants)
+export const SR5_ATTR_POINTS: Record<PriorityLevel, number> = {
+  A: 24, B: 20, C: 16, D: 14, E: 12,
+};
+export const SR5_SKILL_POINTS: Record<PriorityLevel, [number, number]> = {
+  A: [46, 10], B: [36, 5], C: [28, 2], D: [22, 0], E: [18, 0],
+};
+export const SR5_RESOURCE_NUYEN: Record<PriorityLevel, number> = {
+  A: 450_000, B: 275_000, C: 140_000, D: 50_000, E: 6_000,
+};
+// Starting magic/resonance from magic priority; 0 = Mundane (no magic)
+export const SR5_MAGIC_STARTING: Record<PriorityLevel, number> = {
+  A: 6, B: 6, C: 3, D: 2, E: 0,
+};
+
 interface CharacterState {
   // Current draft being built
   draft: CharacterDraft | null;
@@ -300,6 +315,7 @@ interface CharacterState {
     name: string,
   ) => Promise<void>;
   setAttribute: (attr: AttributeName, value: number) => void;
+  setMagic: (value: number | null) => void;
   addSkill: (skill: Skill) => void;
   removeSkill: (skillId: string) => void;
   updateSkillRating: (skillId: string, rating: number) => void;
@@ -354,7 +370,8 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
         charisma: limits.charisma[0],
         edge: limits.edge[0],
         essence: 600,
-        magic: null,
+        // SR5 default magic priority is C (Magician 3); SR4 starts mundane
+        magic: edition === "SR5" ? SR5_MAGIC_STARTING["C"] : null,
         resonance: null,
       },
       skills: [],
@@ -400,6 +417,17 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       draft: {
         ...draft,
         attributes: { ...draft.attributes, [attr]: value },
+      },
+    });
+  },
+
+  setMagic: (value) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({
+      draft: {
+        ...draft,
+        attributes: { ...draft.attributes, magic: value },
       },
     });
   },
@@ -535,13 +563,22 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   setPriority: (category, level) => {
     const { draft } = get();
     if (!draft || !draft.priority_selection) return;
+    const newSelection = { ...draft.priority_selection, [category]: level };
+    // Auto-sync magic attribute when magic_or_resonance priority changes
+    let newAttrs = draft.attributes;
+    if (category === "magic_or_resonance") {
+      const startingMagic = SR5_MAGIC_STARTING[level];
+      newAttrs = {
+        ...draft.attributes,
+        magic: startingMagic > 0 ? startingMagic : null,
+        resonance: null,
+      };
+    }
     set({
       draft: {
         ...draft,
-        priority_selection: {
-          ...draft.priority_selection,
-          [category]: level,
-        },
+        priority_selection: newSelection,
+        attributes: newAttrs,
       },
     });
   },

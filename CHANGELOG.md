@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2026-06-19
+
+### Added
+- SR5 magic/resonance validation (TDD): `validate_creation` now errors when a non-Mundane
+  magic priority is chosen but `magic`/`resonance` attribute is `None`, and when the magic
+  rating exceeds the priority maximum; 3 new tests (2 error cases + mundane regression)
+- `magic_starting_rating(level)` helper in `sr5_priority.rs` returns `Some(6/3/2)` for
+  A/B/C/D and `None` for E (Mundane)
+- SR5 budget display in **SummaryBar**: Attr X/Y, Skills X/Y, Qual ±Xk, Nuyen ¥X/Y —
+  numbers turn red when over-budget; budget derived from priority selection live
+- SR5 attribute point budget display in **AttributePanel**: "X of Y attr points used"
+  (Edge excluded — comes from metatype special pool per SR5 rules)
+- SR5 skill point budget in **SkillPanel**: "Skills: X/Y | Groups: 0/Y"
+- **Magic slider in AttributePanel** for SR5: shown when magic_or_resonance priority ≠ E;
+  capped at priority maximum (6/6/3/2); "Mundane" note shown when E
+- `SR5_ATTR_POINTS`, `SR5_SKILL_POINTS`, `SR5_RESOURCE_NUYEN`, `SR5_MAGIC_STARTING`
+  exported from `characterStore` (mirror Rust `sr5_priority.rs` constants exactly)
+- `setMagic` store action for the optional magic attribute
+- **Auto-sync magic on priority change**: `setPriority(magic_or_resonance, level)` now
+  sets `draft.attributes.magic` to the starting rating for that level (null if Mundane)
+- **Draft initialization**: SR5 character starts with `magic = SR5_MAGIC_STARTING["C"]`
+  (default priority C = Magician 3) instead of null, so the default draft is valid
+- Bump 0.23.0 → 0.24.0; SR5 end-to-end verification phase begun
+
 ## [0.23.0] - 2026-06-19
 
 ### Added
