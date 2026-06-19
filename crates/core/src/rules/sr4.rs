@@ -158,13 +158,16 @@ impl CharacterRules for SR4Rules {
         for quality in &draft.qualities {
             for incompat_id in &quality.incompatible_with {
                 if quality_ids.contains(&incompat_id.as_str()) {
+                    let other_name = draft
+                        .qualities
+                        .iter()
+                        .find(|q| q.id == *incompat_id)
+                        .map(|q| q.name.as_str())
+                        .unwrap_or(incompat_id.as_str());
                     errors.push(ValidationError {
                         severity: ValidationSeverity::Warning,
                         field: "qualities.incompatible".to_string(),
-                        message: format!(
-                            "{} is incompatible with another selected quality ({})",
-                            quality.name, incompat_id
-                        ),
+                        message: format!("{} is incompatible with {}", quality.name, other_name),
                     });
                     break;
                 }
