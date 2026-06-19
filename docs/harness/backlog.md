@@ -109,6 +109,6 @@ Status: `todo` · `doing` · `done` · `parked`
   desc: UI for skill/attribute improvement (show karma cost from rules engine).
   accept: L3b smoke + L4.
 
-- id: P5-3  status: doing  deps: [P5-1]
+- id: P5-3  status: done   deps: [P5-1]
   desc: Career timeline / ledger view (uses `get_ledger`).
   accept: L3b smoke + L4.

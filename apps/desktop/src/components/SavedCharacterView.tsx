@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useCharacterStore } from "../store/characterStore";
+import { useCallback, useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { useCharacterStore, type LedgerEvent } from "../store/characterStore";
 
 export default function SavedCharacterView() {
   const saved = useCharacterStore((s) => s.savedCharacter);
@@ -13,10 +14,29 @@ export default function SavedCharacterView() {
   const [applying, setApplying] = useState(false);
   const [eventError, setEventError] = useState<string | null>(null);
   const [showImprove, setShowImprove] = useState(false);
+  const [showLedger, setShowLedger] = useState(false);
+  const [ledgerEvents, setLedgerEvents] = useState<LedgerEvent[]>([]);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
 
   if (!saved) return null;
 
   const characterId = saved.base.id;
+
+  const loadLedger = useCallback(async () => {
+    setLedgerLoading(true);
+    try {
+      const events = await invoke<LedgerEvent[]>("get_ledger", { characterId });
+      setLedgerEvents(events);
+    } catch {
+      // non-fatal
+    } finally {
+      setLedgerLoading(false);
+    }
+  }, [characterId]);
+
+  useEffect(() => {
+    if (showLedger) loadLedger();
+  }, [showLedger, loadLedger]);
 
   const handleKarmaReceived = async () => {
     if (karmaAmount <= 0) return;
@@ -26,6 +46,7 @@ export default function SavedCharacterView() {
       await applyEvent(characterId, {
         KarmaReceived: { amount: karmaAmount, reason: karmaReason, run_id: null },
       });
+      if (showLedger) await loadLedger();
     } catch (err) {
       setEventError(String(err));
     } finally {
@@ -55,6 +76,7 @@ export default function SavedCharacterView() {
           description: `${skillName} ${from} → ${to}`,
         },
       });
+      if (showLedger) await loadLedger();
     } catch (err) {
       setEventError(String(err));
     } finally {
@@ -88,6 +110,7 @@ export default function SavedCharacterView() {
           description: `${attr} ${from} → ${to}`,
         },
       });
+      if (showLedger) await loadLedger();
     } catch (err) {
       setEventError(String(err));
     } finally {
@@ -103,6 +126,7 @@ export default function SavedCharacterView() {
       await applyEvent(characterId, {
         NuyenReceived: { amount: nuyenAmount, reason: nuyenReason, run_id: null },
       });
+      if (showLedger) await loadLedger();
     } catch (err) {
       setEventError(String(err));
     } finally {
@@ -293,6 +317,54 @@ export default function SavedCharacterView() {
           </div>
         </div>
 
+        {/* Career timeline / Ledger view (P5-3) */}
+        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mt-4">
+          <button
+            onClick={() => setShowLedger((s) => !s)}
+            className="text-lg font-semibold text-cyber-heading font-mono flex items-center gap-2 w-full text-left"
+          >
+            // Career Timeline
+            <span className="text-xs text-cyber-text-dim ml-auto">
+              {showLedger ? "▲ collapse" : "▼ expand"}
+            </span>
+          </button>
+
+          {showLedger && (
+            <div className="mt-3">
+              {ledgerLoading && (
+                <p className="text-xs text-cyber-text-dim font-mono">
+                  Loading...
+                </p>
+              )}
+              {!ledgerLoading && ledgerEvents.length === 0 && (
+                <p className="text-xs text-cyber-text-dim font-mono">
+                  No events recorded yet.
+                </p>
+              )}
+              {!ledgerLoading && ledgerEvents.length > 0 && (
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  {ledgerEvents.map((evt, i) => {
+                    const { label, detail, color } = formatEvent(evt);
+                    return (
+                      <div
+                        key={i}
+                        className="bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 flex items-center justify-between"
+                      >
+                        <span className={`text-xs font-mono ${color}`}>
+                          {label}
+                        </span>
+                        <span className="text-xs text-cyber-text-dim ml-3 truncate max-w-xs text-right">
+                          {detail}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Karma improvements (P5-2) */}
         <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mt-4">
           <button
@@ -403,6 +475,61 @@ export default function SavedCharacterView() {
       </div>
     </div>
   );
+}
+
+function formatEvent(evt: LedgerEvent): {
+  label: string;
+  detail: string;
+  color: string;
+} {
+  if ("KarmaReceived" in evt) {
+    return {
+      label: `+${evt.KarmaReceived.amount} Karma`,
+      detail: evt.KarmaReceived.reason,
+      color: "text-cyber-green",
+    };
+  }
+  if ("KarmaSpent" in evt) {
+    return {
+      label: `-${evt.KarmaSpent.amount} Karma`,
+      detail: evt.KarmaSpent.description,
+      color: "text-cyber-red",
+    };
+  }
+  if ("NuyenReceived" in evt) {
+    return {
+      label: `+¥${evt.NuyenReceived.amount.toLocaleString()}`,
+      detail: evt.NuyenReceived.reason,
+      color: "text-cyber-green",
+    };
+  }
+  if ("NuyenSpent" in evt) {
+    return {
+      label: `-¥${evt.NuyenSpent.amount.toLocaleString()}`,
+      detail: evt.NuyenSpent.description,
+      color: "text-cyber-red",
+    };
+  }
+  if ("SkillImproved" in evt) {
+    return {
+      label: `Skill: ${evt.SkillImproved.skill_name}`,
+      detail: `${evt.SkillImproved.from} → ${evt.SkillImproved.to} (${evt.SkillImproved.karma_cost}k)`,
+      color: "text-cyber-blue",
+    };
+  }
+  if ("AttributeImproved" in evt) {
+    return {
+      label: `Attr: ${evt.AttributeImproved.attribute}`,
+      detail: `${evt.AttributeImproved.from} → ${evt.AttributeImproved.to} (${evt.AttributeImproved.karma_cost}k)`,
+      color: "text-cyber-blue",
+    };
+  }
+  // Unknown event type — display raw JSON
+  return {
+    label: "Event",
+    detail: JSON.stringify(evt),
+    color: "text-cyber-text-dim",
+  };
 }
 
 function StatBox({

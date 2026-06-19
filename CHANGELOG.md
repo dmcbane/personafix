@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-06-19
+
+### Added
+- Career Timeline panel (P5-3): collapsible ledger view in `SavedCharacterView`
+  loads `get_ledger` on expand and live-reloads after each applied event
+- `formatEvent` renders each `LedgerEvent` variant as a labeled row with color:
+  green for income (karma/nuyen received), red for spending, blue for improvements
+- Unknown event types fall back to raw JSON so no events are silently dropped
+- Bump 0.22.0 → 0.23.0; P5-3 done
+
 ## [0.22.0] - 2026-06-19
 
 ### Added
