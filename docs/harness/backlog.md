@@ -150,3 +150,18 @@ Status: `todo` · `doing` · `done` · `parked`
         priority A/B for Adept or Mystic Adept) need a power point pool and adept power
         list instead of (or alongside) the spell list.
   accept: L4 — adept can add powers, pool consumed correctly.
+
+## P7 — Accessibility & settings
+
+- id: P7-1  status: done  deps: []
+  desc: Settings panel — color theme switcher and font selector with accessibility focus.
+        Themes: Cyber Dark (default), High Contrast, Colorblind R/G safe (Deuteranopia),
+        Colorblind B/Y safe (Tritanopia), Light. Fonts: Fira Code mono (default), System
+        sans-serif, OpenDyslexic (bundled as OTF in public/fonts/). Font size stepper
+        (sm/md/lg/xl). Settings persisted in localStorage. Themes via CSS custom
+        properties on html[data-theme]; opacity variants use rgb-channel format in
+        tailwind.config.js. Settings toggle accessible from both the home screen and the
+        character builder header.
+  accept: settingsStore unit test (theme/font/size set → state + localStorage key);
+          L4 spot-check: switch each theme, verify opacity variants render translucent
+          (bg-cyber-green/20 class), switch to OpenDyslexic, switch font sizes.

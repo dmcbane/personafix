@@ -913,22 +913,24 @@ pub struct GameSpell {
     pub page: String,
 }
 
+type SpellRow = (
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+);
+
 pub async fn query_spells_db(
     pool: &SqlitePool,
     edition: &str,
 ) -> Result<Vec<GameSpell>, AppError> {
-    let rows: Vec<(
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-    )> = sqlx::query_as(
+    let rows: Vec<SpellRow> = sqlx::query_as(
         "SELECT id, name, category, spell_type, range, damage, duration, drain, source, page \
          FROM spells WHERE edition = ? ORDER BY category, name",
     )

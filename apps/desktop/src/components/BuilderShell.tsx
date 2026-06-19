@@ -22,8 +22,10 @@ type Tab =
 
 export default function BuilderShell({
   campaignId,
+  onSettingsOpen,
 }: {
   campaignId: string;
+  onSettingsOpen?: () => void;
 }) {
   const draft = useCharacterStore((s) => s.draft);
   const validationErrors = useCharacterStore((s) => s.validationErrors);
@@ -94,6 +96,16 @@ export default function BuilderShell({
         <div className="flex items-center gap-3">
           {saveError && (
             <span className="text-cyber-red text-sm">{saveError}</span>
+          )}
+          {onSettingsOpen && (
+            <button
+              onClick={onSettingsOpen}
+              className="p-2 rounded border border-cyber-border text-cyber-text-dim hover:text-cyber-text hover:border-cyber-border-bright transition-colors"
+              aria-label="Open settings"
+              title="Settings"
+            >
+              ⚙
+            </button>
           )}
           <button
             onClick={handleSave}

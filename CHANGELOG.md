@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0] - 2026-06-19
+
+### Added
+- P7-1: Accessibility settings panel — color theme switcher and font selector.
+- Five color themes: Cyber Dark (default), High Contrast Dark, Colorblind R/G safe
+  (Deuteranopia/Protanopia), Colorblind B/Y safe (Tritanopia), Light mode.
+- Themes implemented via CSS custom properties (RGB channel format) on `[data-theme]`
+  so Tailwind `/NN` opacity modifiers work correctly at runtime.
+- OpenDyslexic font bundled from system installation (SIL OFL) in `public/fonts/`;
+  `@font-face` declarations in `index.css`.
+- Font selector: Fira Code mono (default), System sans-serif, OpenDyslexic.
+- Font size stepper: Small (13px), Normal (15px), Large (17px), X-Large (20px).
+- `settingsStore.ts` (Zustand persist → localStorage key `personafix-settings`).
+- `SettingsPanel.tsx` modal with theme buttons, font radio, size stepper.
+- Settings gear button in home screen (top-right) and builder header.
+- `index.css`: all hardcoded hex colors migrated to CSS variables; scrollbar,
+  select arrow, focus ring, and inputs all theme-aware.
+- Fixed pre-existing clippy `type_complexity` lint in `commands.rs` (SpellRow type alias).
+- Bump 0.30.0 → 0.31.0; P7-1 done.
+
 ## [0.30.0] - 2026-06-19
 
 ### Added
