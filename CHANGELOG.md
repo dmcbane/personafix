@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0] - 2026-06-19
+
+### Added
+- Game data pipeline (P1-1 + P1-2): both Chummer vendor repos were present;
+  `make migrate` now produces `game_data.db` from SR4 (78 skills, 483 qualities,
+  743 weapons, 192 armor, 439 augmentations, 253 spells) and SR5 data
+- `game_data.db` added to `.gitignore` (contains copyrighted Shadowrun content;
+  not redistributed — decision documented in `docs/dev-journal/2026-06-19-game-data-licensing.md`)
+- L3a data-smoke test (`data_smoke_real_game_data_db`) un-ignored; passes green
+  against the generated DB
+
 ## [0.17.0] - 2026-06-19
 
 ### Added

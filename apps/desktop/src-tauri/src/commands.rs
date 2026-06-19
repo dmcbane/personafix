@@ -1648,14 +1648,10 @@ mod tests {
     // -- L3a data smoke (requires a real game_data.db; blocked on backlog P1-1) --
 
     #[tokio::test]
-    #[ignore = "L3a data smoke — requires a populated game_data.db (backlog P1-1). \
-                Run `make migrate` after completing P1-1 to generate it, then re-run \
-                with: GAME_DATA_DB=/path/to/game_data.db cargo test -p personafix-desktop \
-                -- --ignored data_smoke_real_game_data_db"]
     async fn data_smoke_real_game_data_db() {
         let db_path = std::env::var("GAME_DATA_DB").unwrap_or_else(|_| {
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../../../vendor/game_data.db")
+                .join("../../../game_data.db")
                 .to_string_lossy()
                 .to_string()
         });

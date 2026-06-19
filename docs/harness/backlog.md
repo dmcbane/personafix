@@ -20,18 +20,18 @@ Status: `todo` · `doing` · `done` · `parked`
 
 ## P1 — Game data (unblocks everything UI)
 
-- id: P1-1  status: todo  deps: []
+- id: P1-1  status: done   deps: []
   desc: Locate ChummerGenSR4 data repo; confirm license/redistribution. Document findings.
   accept: a note in `docs/dev-journal/` records the source + license decision; `vendor/`
           and `game_data.db` added to `.gitignore`.
   note: HUMAN CHECKPOINT — licensing is a judgment call; loop should stop and ask if unsure.
 
-- id: P1-2  status: todo  deps: [P1-1]
+- id: P1-2  status: done   deps: [P1-1]
   desc: Clone vendor data into `vendor/`, run `make migrate` to produce `game_data.db`.
   accept: L3a — `game_data.db` exists and the data-smoke test (P0-5) returns non-empty
           SR4 skills + qualities.
 
-- id: P1-2b status: todo  deps: [P1-1]
+- id: P1-2b status: done   deps: [P1-1]
   desc: FALLBACK if P1-2 blocked — hand-author a small SR4 seed dataset (5 metatypes,
         ~40 skills, ~30 common qualities, a few weapons/armor/augs) as a migration or fixture.
   accept: L3a green using the seed.
