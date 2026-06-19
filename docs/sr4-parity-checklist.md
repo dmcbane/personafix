@@ -52,7 +52,7 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` parked (se
 - [x] P4-1: incompatible qualities reported as **Warning** — *gate: L1 (un-ignore seed)*
 - [x] P4-2: essence overage (augs exceed 6.00) reported as **Error** — *gate: L1*
 - [x] P4-3: magic + resonance simultaneously reported as **Error** — *gate: L1*
-- [ ] Conflicts surfaced in the builder UI (severity-colored, non-blocking) — *L3b + L4*
+- [x] Conflicts surfaced in the builder UI (severity-colored, non-blocking) — *L4 verified*
 
 ## Phase 5 — Career play
 - [ ] UI to apply ledger events (karma/nuyen received/spent) — *L2 round-trip + L4*
