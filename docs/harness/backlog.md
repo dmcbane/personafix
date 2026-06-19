@@ -75,7 +75,7 @@ Status: `todo` · `doing` · `done` · `parked`
 
 ## P3 — Builder UI completeness (SR4)
 
-- id: P3-1  status: todo  deps: [P1-2]
+- id: P3-1  status: done   deps: [P1-2]
   desc: Wire Skills + Qualities panels to real `game_data.db` (replace any seeded data).
   accept: L3b smoke: open builder, skill/quality lists are non-empty + L4.
 

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2026-06-19
+
+### Changed
+- Skills and Qualities panels now use real game_data.db data automatically (P3-1):
+  game data loads on app mount and whenever the edition selector changes — no
+  manual "Load Game Data" click required
+- `handleStartBuilder` always loads game data before opening the builder (was
+  conditional on it already being loaded, which left the builder on seed data if
+  "Load Game Data" had never been clicked)
+- Game data status in the new-character form is now a read-only status line
+  ("Game data loaded" / "using built-in data") rather than a manual action panel;
+  the path override and retry controls are collapsed into a `<details>` element
+  shown only when the DB isn't found
+- **Gate note:** L4 required — run `make dev`, open builder, confirm skill and
+  quality lists have 78 / 483 SR4 entries instead of the ~10 seed entries
+
 ## [0.18.0] - 2026-06-19
 
 ### Added

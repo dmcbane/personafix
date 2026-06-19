@@ -29,7 +29,6 @@ function App() {
   const gameDataLoaded = useGameDataStore((s) => s.loaded);
   const gameDataLoading = useGameDataStore((s) => s.loading);
   const gameDataError = useGameDataStore((s) => s.error);
-  const gameDebugInfo = useGameDataStore((s) => s.debugInfo);
   const gameLoadMessage = useGameDataStore((s) => s.loadMessage);
   const loadGameData = useGameDataStore((s) => s.loadGameData);
   const checkFile = useGameDataStore((s) => s.checkFile);
@@ -41,6 +40,12 @@ function App() {
   const [metatype, setMetatype] = useState<MetatypeKey>("Human");
   const [error, setError] = useState<string | null>(null);
   const [gameDataPath, setGameDataPath] = useState("game_data.db");
+
+  // Auto-load game data on mount and whenever the edition selector changes.
+  // Non-fatal: if game_data.db isn't found the panels fall back to seed data.
+  useEffect(() => {
+    loadGameData(gameDataPath, edition).catch(() => {});
+  }, [edition]);
 
   // Refresh character list whenever we return to the campaign screen (draft and
   // savedCharacter both null) so newly saved characters appear immediately.
@@ -98,18 +103,11 @@ function App() {
     }
   };
 
-  const handleDebugCheck = async () => {
-    await checkFile(gameDataPath);
-  };
-
   const handleStartBuilder = async () => {
-    // Reload game data if edition changed
-    if (gameDataLoaded) {
-      try {
-        await loadGameData(gameDataPath, edition);
-      } catch {
-        // Non-fatal — will use fallback data
-      }
+    try {
+      await loadGameData(gameDataPath, edition);
+    } catch {
+      // Non-fatal — panels fall back to seed data if db unavailable
     }
     try {
       await startNewCharacter(edition, metatype, charName);
@@ -246,65 +244,51 @@ function App() {
               </div>
             </div>
 
-            {/* Game data */}
+            {/* Game data status — auto-loaded on mount; override path if needed */}
             <div className="border-t border-cyber-border pt-3">
-              <label className="text-xs text-cyber-text-dim block mb-1 font-mono">
-                Game Data DB
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={gameDataPath}
-                  onChange={(e) => setGameDataPath(e.target.value)}
-                  placeholder="Path to game_data.db"
-                  className="flex-1 bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-xs font-mono"
-                />
-                <button
-                  onClick={handleBrowseGameData}
-                  className="px-3 py-1.5 rounded text-xs font-mono border border-cyber-border bg-cyber-card text-cyber-text-dim hover:border-cyber-border-bright transition-all"
-                  title="Browse for game_data.db"
-                >
-                  Browse
-                </button>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={handleLoadGameData}
-                  disabled={gameDataLoading}
-                  className={`flex-1 px-3 py-1.5 rounded text-xs font-mono border transition-all ${
-                    gameDataLoaded
-                      ? "bg-cyber-green-dim/20 border-cyber-green-dim text-cyber-green"
-                      : "bg-cyber-card border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
-                  }`}
-                >
-                  {gameDataLoading
-                    ? "Loading..."
-                    : gameDataLoaded
-                      ? "Reload"
-                      : "Load Game Data"}
-                </button>
-                <button
-                  onClick={handleDebugCheck}
-                  className="px-3 py-1.5 rounded text-xs font-mono border border-cyber-border bg-cyber-card text-cyber-text-dim hover:border-cyber-border-bright transition-all"
-                  title="Check if file exists and show path info"
-                >
-                  Debug
-                </button>
-              </div>
-              {gameLoadMessage && (
-                <p className="text-cyber-green text-xs font-mono mt-2 whitespace-pre-wrap">
-                  {gameLoadMessage}
+              {gameDataLoading && (
+                <p className="text-cyber-text-dim text-xs font-mono">
+                  Loading game data…
                 </p>
               )}
-              {gameDataError && (
-                <p className="text-cyber-red text-xs font-mono mt-2 whitespace-pre-wrap">
-                  {gameDataError}
+              {gameDataLoaded && !gameDataLoading && (
+                <p className="text-cyber-green text-xs font-mono truncate">
+                  {gameLoadMessage ?? "Game data loaded"}
                 </p>
               )}
-              {gameDebugInfo && (
-                <pre className="text-cyber-blue text-xs font-mono mt-2 bg-cyber-surface border border-cyber-border rounded p-2 whitespace-pre-wrap">
-                  {gameDebugInfo}
-                </pre>
+              {gameDataError && !gameDataLoaded && (
+                <details className="text-cyber-text-dim text-xs font-mono">
+                  <summary className="cursor-pointer text-cyber-yellow">
+                    Game data not found — using built-in data
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={gameDataPath}
+                        onChange={(e) => setGameDataPath(e.target.value)}
+                        placeholder="Path to game_data.db"
+                        className="flex-1 bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-xs font-mono"
+                      />
+                      <button
+                        onClick={handleBrowseGameData}
+                        className="px-3 py-1.5 rounded text-xs font-mono border border-cyber-border bg-cyber-card text-cyber-text-dim hover:border-cyber-border-bright transition-all"
+                      >
+                        Browse
+                      </button>
+                    </div>
+                    <button
+                      onClick={handleLoadGameData}
+                      disabled={gameDataLoading}
+                      className="w-full px-3 py-1.5 rounded text-xs font-mono border border-cyber-border bg-cyber-card text-cyber-text-dim hover:border-cyber-border-bright transition-all"
+                    >
+                      Retry Load
+                    </button>
+                    <pre className="text-cyber-red text-xs font-mono whitespace-pre-wrap">
+                      {gameDataError}
+                    </pre>
+                  </div>
+                </details>
               )}
             </div>
 
