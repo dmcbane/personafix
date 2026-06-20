@@ -88,7 +88,9 @@ export type LedgerEvent =
         loyalty: number;
       };
     }
-  | { ContactLost: { contact_id: string; reason: string } };
+  | { ContactLost: { contact_id: string; reason: string } }
+  | { Initiated: { new_grade: number; karma_cost: number } }
+  | { Submerged: { new_grade: number; karma_cost: number } };
 
 export interface ValidationError {
   severity: "Error" | "Warning";
@@ -163,6 +165,8 @@ export interface ComputedCharacter {
   total_karma_earned: number;
   total_karma_spent: number;
   nuyen: number;
+  initiation_grade: number;
+  submersion_grade: number;
 }
 
 export type AugmentationGrade = "Standard" | "Alpha" | "Beta" | "Delta" | "Used";
@@ -437,6 +441,8 @@ interface CharacterState {
   listCharacters: (campaignId: string) => Promise<void>;
   loadCharacter: (id: string) => Promise<void>;
   applyEvent: (characterId: string, event: LedgerEvent) => Promise<void>;
+  initiate: (characterId: string, currentGrade: number) => Promise<void>;
+  submerge: (characterId: string, currentGrade: number) => Promise<void>;
   updateNotes: (characterId: string, notes: string) => Promise<void>;
   reset: () => void;
 }
@@ -887,6 +893,22 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       characterId,
       event,
     });
+    set({ savedCharacter: computed });
+  },
+
+  initiate: async (characterId, currentGrade) => {
+    const newGrade = currentGrade + 1;
+    const karmaCost = 10 + newGrade * 3;
+    const event: LedgerEvent = { Initiated: { new_grade: newGrade, karma_cost: karmaCost } };
+    const computed = await invoke<ComputedCharacter>("apply_event", { characterId, event });
+    set({ savedCharacter: computed });
+  },
+
+  submerge: async (characterId, currentGrade) => {
+    const newGrade = currentGrade + 1;
+    const karmaCost = 10 + newGrade * 3;
+    const event: LedgerEvent = { Submerged: { new_grade: newGrade, karma_cost: karmaCost } };
+    const computed = await invoke<ComputedCharacter>("apply_event", { characterId, event });
     set({ savedCharacter: computed });
   },
 

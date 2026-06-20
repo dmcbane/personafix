@@ -228,6 +228,8 @@ impl CharacterRules for SR4Rules {
             stun_condition_monitor: stun_cm,
             initiative: init,
             initiative_dice: init_dice,
+            initiation_grade: 0,
+            submersion_grade: 0,
         }
     }
 

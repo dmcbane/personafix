@@ -110,6 +110,10 @@ pub struct ComputedCharacter {
     pub initiative: i32,
     /// Initiative dice.
     pub initiative_dice: u8,
+    /// Current initiation grade (Awakened characters). 0 = not initiated.
+    pub initiation_grade: u8,
+    /// Current submersion grade (Emerged characters). 0 = not submerged.
+    pub submersion_grade: u8,
 }
 
 /// Lightweight summary for list views.

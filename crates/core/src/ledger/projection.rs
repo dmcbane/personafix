@@ -25,6 +25,8 @@ pub fn project(
     let mut karma_earned: i32 = 0;
     let mut karma_spent: i32 = 0;
     let mut nuyen: i64 = 0;
+    let mut initiation_grade: u8 = 0;
+    let mut submersion_grade: u8 = 0;
 
     for event in events {
         match event {
@@ -127,7 +129,7 @@ pub fn project(
                 new_grade,
                 karma_cost,
             } => {
-                // Increase magic if present (initiation grants +1 Magic per grade)
+                initiation_grade = initiation_grade.max(*new_grade);
                 if let Some(ref mut mag) = working.attributes.magic {
                     *mag = (*mag).max(*new_grade);
                 }
@@ -138,6 +140,7 @@ pub fn project(
                 new_grade,
                 karma_cost,
             } => {
+                submersion_grade = submersion_grade.max(*new_grade);
                 if let Some(ref mut res) = working.attributes.resonance {
                     *res = (*res).max(*new_grade);
                 }
@@ -178,6 +181,8 @@ pub fn project(
     computed.total_karma_earned = karma_earned;
     computed.total_karma_spent = karma_spent;
     computed.nuyen = nuyen;
+    computed.initiation_grade = initiation_grade;
+    computed.submersion_grade = submersion_grade;
 
     computed
 }

@@ -35,6 +35,8 @@ export default function SavedCharacterView() {
   const saved = useCharacterStore((s) => s.savedCharacter);
   const reset = useCharacterStore((s) => s.reset);
   const applyEvent = useCharacterStore((s) => s.applyEvent);
+  const initiate = useCharacterStore((s) => s.initiate);
+  const submerge = useCharacterStore((s) => s.submerge);
   const updateNotes = useCharacterStore((s) => s.updateNotes);
 
   const [karmaAmount, setKarmaAmount] = useState(5);
@@ -269,6 +271,8 @@ export default function SavedCharacterView() {
             <StatBox label="Essence" value={(attrs.essence / 100).toFixed(2)} accent="blue" />
             {attrs.magic !== null && <StatBox label="Magic" value={attrs.magic} accent="purple" />}
             {attrs.resonance !== null && <StatBox label="Resonance" value={attrs.resonance} accent="blue" />}
+            {saved.initiation_grade > 0 && <StatBox label="Init. Grade" value={saved.initiation_grade} accent="purple" />}
+            {saved.submersion_grade > 0 && <StatBox label="Subm. Grade" value={saved.submersion_grade} accent="blue" />}
           </div>
         </div>
 
@@ -790,6 +794,34 @@ export default function SavedCharacterView() {
                   </div>
                 </>
               )}
+
+              {/* Initiation / Submersion */}
+              {(saved.initiation_grade > 0 || base.magic_tradition === "Magician" || base.magic_tradition === "MysticAdept" || base.magic_tradition === "Adept") && (
+                <>
+                  <h3 className="text-xs font-mono text-cyber-text-dim mb-2 mt-4">
+                    Initiation (grade {saved.initiation_grade} → {saved.initiation_grade + 1}, cost {10 + (saved.initiation_grade + 1) * 3}k)
+                  </h3>
+                  <button
+                    onClick={async () => { setApplying(true); try { await initiate(base.id, saved.initiation_grade); } finally { setApplying(false); } }}
+                    disabled={applying || saved.total_karma_earned - saved.total_karma_spent < 10 + (saved.initiation_grade + 1) * 3}
+                    className="text-xs px-3 py-1.5 border border-cyber-border hover:border-cyber-green text-cyber-text hover:text-cyber-green rounded transition-colors disabled:opacity-30 font-mono">
+                    Initiate to Grade {saved.initiation_grade + 1}
+                  </button>
+                </>
+              )}
+              {(saved.submersion_grade > 0 || base.magic_tradition === "Technomancer") && (
+                <>
+                  <h3 className="text-xs font-mono text-cyber-text-dim mb-2 mt-4">
+                    Submersion (grade {saved.submersion_grade} → {saved.submersion_grade + 1}, cost {10 + (saved.submersion_grade + 1) * 3}k)
+                  </h3>
+                  <button
+                    onClick={async () => { setApplying(true); try { await submerge(base.id, saved.submersion_grade); } finally { setApplying(false); } }}
+                    disabled={applying || saved.total_karma_earned - saved.total_karma_spent < 10 + (saved.submersion_grade + 1) * 3}
+                    className="text-xs px-3 py-1.5 border border-cyber-border hover:border-cyber-blue text-cyber-text hover:text-cyber-blue rounded transition-colors disabled:opacity-30 font-mono">
+                    Submerge to Grade {saved.submersion_grade + 1}
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
@@ -927,6 +959,8 @@ function formatEvent(evt: LedgerEvent): { label: string; detail: string; color: 
   if ("ContactChanged" in evt) return { label: `Contact updated`, detail: `C${evt.ContactChanged.new_connection}/L${evt.ContactChanged.new_loyalty}`, color: "text-cyber-blue" };
   if ("ContactAdded" in evt) return { label: `Contact: ${evt.ContactAdded.name}`, detail: `C${evt.ContactAdded.connection}/L${evt.ContactAdded.loyalty}`, color: "text-cyber-green" };
   if ("ContactLost" in evt) return { label: `Contact lost`, detail: evt.ContactLost.reason, color: "text-cyber-red" };
+  if ("Initiated" in evt) return { label: `Initiated Grade ${evt.Initiated.new_grade}`, detail: `${evt.Initiated.karma_cost}k`, color: "text-cyber-purple" };
+  if ("Submerged" in evt) return { label: `Submerged Grade ${evt.Submerged.new_grade}`, detail: `${evt.Submerged.karma_cost}k`, color: "text-cyber-blue" };
   return { label: "Event", detail: JSON.stringify(evt), color: "text-cyber-text-dim" };
 }
 

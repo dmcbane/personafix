@@ -225,7 +225,7 @@ Status: `todo` · `doing` · `done` · `parked`
         choice for display/roleplay.
   accept: L0+L2 (roundtrip); L4 — SR5 Magician can select Hermetic, sheet shows it.
 
-- id: P12-2  status: todo  deps: [P5-1]
+- id: P12-2  status: done  deps: [P5-1]
   desc: Initiation & Submersion (career) — Awakened characters can initiate to raise
         Magic above racial limit (cost: 10 + (grade × 3) karma); Emerged characters
         submerge similarly for Resonance. Add an "Initiate/Submerge" button in career

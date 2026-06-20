@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.43.0] - 2026-06-20
+
+### Added
+- P12-2: Initiation & Submersion for career Awakened/Emerged characters.
+  - `initiation_karma_cost(grade)` and `submersion_karma_cost(grade)` default methods on `CharacterRules` trait (formula: 10 + grade × 3)
+  - `initiation_grade: u8` and `submersion_grade: u8` on `ComputedCharacter`
+  - Projection tracks grades from `Initiated`/`Submerged` ledger events
+  - `initiate` and `submerge` store actions
+  - `Initiated` and `Submerged` variants added to TypeScript `LedgerEvent` type
+  - SavedCharacterView: Initiate/Submerge buttons in Karma Improvements panel (shows for Awakened traditions and Technomancers)
+  - Grade displayed in Derived Stats block when > 0
+  - `formatEvent` handles Initiated/Submerged in ledger timeline
+
 ## [0.42.0] - 2026-06-20
 
 ### Added

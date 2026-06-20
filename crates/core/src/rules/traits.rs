@@ -53,4 +53,14 @@ pub trait CharacterRules: Send + Sync {
 
     /// Maximum rating for a skill during career play.
     fn max_skill_rating(&self) -> u8;
+
+    /// Karma cost to initiate to `grade` (Awakened): 10 + (grade × 3).
+    fn initiation_karma_cost(&self, grade: u8) -> u32 {
+        10 + (grade as u32) * 3
+    }
+
+    /// Karma cost to submerge to `grade` (Emerged): 10 + (grade × 3).
+    fn submersion_karma_cost(&self, grade: u8) -> u32 {
+        10 + (grade as u32) * 3
+    }
 }

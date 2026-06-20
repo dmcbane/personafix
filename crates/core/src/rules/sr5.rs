@@ -307,6 +307,8 @@ impl CharacterRules for SR5Rules {
             stun_condition_monitor: stun_cm,
             initiative: init,
             initiative_dice: init_dice,
+            initiation_grade: 0,
+            submersion_grade: 0,
         }
     }
 
@@ -1106,5 +1108,20 @@ mod tests {
             page: "1".to_string(),
             improvements: vec![],
         }
+    }
+
+    #[test]
+    fn initiation_karma_cost_is_10_plus_grade_times_3() {
+        let rules = rules();
+        assert_eq!(rules.initiation_karma_cost(1), 13); // 10 + 1×3
+        assert_eq!(rules.initiation_karma_cost(2), 16); // 10 + 2×3
+        assert_eq!(rules.initiation_karma_cost(5), 25); // 10 + 5×3
+    }
+
+    #[test]
+    fn submersion_karma_cost_is_10_plus_grade_times_3() {
+        let rules = rules();
+        assert_eq!(rules.submersion_karma_cost(1), 13);
+        assert_eq!(rules.submersion_karma_cost(3), 19);
     }
 }
