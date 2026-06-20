@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.0] - 2026-06-19
+
+### Added
+- P10-4: Print/export character sheet.
+- "⎙ Print" button in saved character sheet header triggers `window.print()`.
+- Hidden `#print-sheet` div rendered alongside the main view; hidden on screen,
+  revealed by `@media print` CSS rule which hides all other body content.
+- Print layout includes: attributes grid, derived stats, qualities, augmentations,
+  skills, spells/powers/forms (by tradition), contacts, weapons, armor, vehicles.
+- `@media print` rules in `index.css` with `attr-box`, `item-row`, `grid-2` classes.
+- Bump 0.36.0 → 0.37.0; P10-4 done.
+
 ## [0.36.0] - 2026-06-19
 
 ### Added

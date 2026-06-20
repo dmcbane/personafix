@@ -174,7 +174,7 @@ Status: `todo` · `doing` · `done` · `parked`
         and a basic vehicle browser panel (category, speed, handling, pilot, body).
   accept: L3a smoke asserts vehicles non-empty; panel shows in builder.
 
-- id: P10-4  status: todo  deps: [P9-1]
+- id: P10-4  status: done  deps: [P9-1]
   desc: Print/export character sheet — generate a printable HTML or PDF summary of the
         saved character (name, edition, metatype, attributes, skills, equipment, career
         stats). Tauri shell_open on a temp file, or print via window.print() on a styled

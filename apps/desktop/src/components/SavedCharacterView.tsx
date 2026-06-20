@@ -174,12 +174,21 @@ export default function SavedCharacterView() {
               {tradition && <span className="text-cyber-blue ml-2">[{tradition}]</span>}
             </p>
           </div>
-          <button
-            onClick={reset}
-            className="px-4 py-2 bg-cyber-card border border-cyber-border hover:border-cyber-border-bright rounded text-sm text-cyber-text transition-colors"
-          >
-            ← Characters
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => window.print()}
+              title="Print character sheet"
+              className="px-3 py-2 bg-cyber-card border border-cyber-border hover:border-cyber-blue text-cyber-blue rounded text-sm transition-colors font-mono"
+            >
+              ⎙ Print
+            </button>
+            <button
+              onClick={reset}
+              className="px-4 py-2 bg-cyber-card border border-cyber-border hover:border-cyber-border-bright rounded text-sm text-cyber-text transition-colors"
+            >
+              ← Characters
+            </button>
+          </div>
         </div>
 
         {/* Attributes */}
@@ -643,6 +652,109 @@ export default function SavedCharacterView() {
             </>
           )}
         </div>
+      </div>
+
+      {/* Print-only sheet — hidden on screen, shown via @media print */}
+      <div id="print-sheet" style={{ display: "none" }}>
+        <h1>{base.name}</h1>
+        <p style={{ color: "#555", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
+          {base.edition} · {base.metatype}{tradition ? ` · ${tradition}` : ""}
+        </p>
+
+        <h2>Attributes</h2>
+        <div className="grid-2">
+          {([
+            ["Body", attrs.body], ["Agility", attrs.agility], ["Reaction", attrs.reaction],
+            ["Strength", attrs.strength], ["Willpower", attrs.willpower], ["Logic", attrs.logic],
+            ["Intuition", attrs.intuition], ["Charisma", attrs.charisma], ["Edge", attrs.edge],
+          ] as [string, number][]).map(([label, value]) => (
+            <div key={label} className="attr-box">
+              <div className="attr-label">{label}</div>
+              <div className="attr-value">{value}</div>
+            </div>
+          ))}
+          <div className="attr-box"><div className="attr-label">Essence</div><div className="attr-value">{(attrs.essence / 100).toFixed(2)}</div></div>
+          {attrs.magic !== null && <div className="attr-box"><div className="attr-label">Magic</div><div className="attr-value">{attrs.magic}</div></div>}
+          {attrs.resonance !== null && <div className="attr-box"><div className="attr-label">Resonance</div><div className="attr-value">{attrs.resonance}</div></div>}
+        </div>
+
+        <h2>Derived Stats</h2>
+        <div className="grid-2">
+          <div className="attr-box"><div className="attr-label">Physical CM</div><div className="attr-value">{saved.physical_condition_monitor}</div></div>
+          <div className="attr-box"><div className="attr-label">Stun CM</div><div className="attr-value">{saved.stun_condition_monitor}</div></div>
+          <div className="attr-box"><div className="attr-label">Initiative</div><div className="attr-value">{saved.initiative}+{saved.initiative_dice}d6</div></div>
+          <div className="attr-box"><div className="attr-label">Karma / Nuyen</div><div className="attr-value">{saved.total_karma_earned - saved.total_karma_spent}k / ¥{saved.nuyen.toLocaleString()}</div></div>
+        </div>
+
+        {base.qualities.length > 0 && (<>
+          <h2>Qualities</h2>
+          {base.qualities.map((q) => (
+            <div key={q.id} className="item-row"><span>{q.name}</span><span>{q.quality_type} ({q.cost} BP)</span></div>
+          ))}
+        </>)}
+
+        {base.augmentations.length > 0 && (<>
+          <h2>Augmentations</h2>
+          {base.augmentations.map((a) => (
+            <div key={a.id} className="item-row"><span>{a.name}</span><span>{a.augmentation_type} · {a.grade} · {(a.essence_cost / 100).toFixed(2)}E</span></div>
+          ))}
+        </>)}
+
+        {base.skills.length > 0 && (<>
+          <h2>Skills</h2>
+          {base.skills.map((s) => (
+            <div key={s.name} className="item-row"><span>{s.name}</span><span>{s.rating} ({s.linked_attribute})</span></div>
+          ))}
+        </>)}
+
+        {hasSpells && base.spells.length > 0 && (<>
+          <h2>Spells</h2>
+          {base.spells.map((s) => (
+            <div key={s.id} className="item-row"><span>{s.name}</span><span>{s.category} · {s.drain}</span></div>
+          ))}
+        </>)}
+
+        {hasPowers && base.adept_powers.length > 0 && (<>
+          <h2>Adept Powers</h2>
+          {base.adept_powers.map((p) => (
+            <div key={p.id} className="item-row"><span>{p.name}</span><span>{(p.cost / 100).toFixed(2)} PP</span></div>
+          ))}
+        </>)}
+
+        {hasForms && base.complex_forms.length > 0 && (<>
+          <h2>Complex Forms</h2>
+          {base.complex_forms.map((f) => (
+            <div key={f.id} className="item-row"><span>{f.name}</span><span>{f.target} · {f.fading}</span></div>
+          ))}
+        </>)}
+
+        {base.contacts.length > 0 && (<>
+          <h2>Contacts</h2>
+          {base.contacts.map((c) => (
+            <div key={c.id} className="item-row"><span>{c.name} {c.archetype ? `(${c.archetype})` : ""}</span><span>C{c.connection}/L{c.loyalty}</span></div>
+          ))}
+        </>)}
+
+        {base.weapons.length > 0 && (<>
+          <h2>Weapons</h2>
+          {base.weapons.map((w) => (
+            <div key={w.id} className="item-row"><span>{w.name}</span><span>{w.damage} · {w.mode}</span></div>
+          ))}
+        </>)}
+
+        {base.armor.length > 0 && (<>
+          <h2>Armor</h2>
+          {base.armor.map((a) => (
+            <div key={a.id} className="item-row"><span>{a.name}</span><span>Armor {a.armor_value}</span></div>
+          ))}
+        </>)}
+
+        {base.vehicles.length > 0 && (<>
+          <h2>Vehicles</h2>
+          {base.vehicles.map((v) => (
+            <div key={v.id} className="item-row"><span>{v.name}</span><span>Bod {v.body} / Han {v.handling} / Pil {v.pilot}</span></div>
+          ))}
+        </>)}
       </div>
     </div>
   );
