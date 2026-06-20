@@ -208,6 +208,23 @@ async fn seed_edition(pool: &SqlitePool, data: &ParsedGameData) -> MigrateResult
         .await?;
     }
 
+    // Complex Forms
+    for f in &data.complex_forms {
+        sqlx::query(
+            "INSERT OR REPLACE INTO complex_forms (id, name, target, duration, fading, edition, source, page) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(&f.id)
+        .bind(&f.name)
+        .bind(&f.target)
+        .bind(&f.duration)
+        .bind(&f.fading)
+        .bind(edition)
+        .bind(&f.source)
+        .bind(&f.page)
+        .execute(&mut *tx)
+        .await?;
+    }
+
     tx.commit().await?;
     Ok(())
 }

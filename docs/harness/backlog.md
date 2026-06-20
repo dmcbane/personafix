@@ -151,6 +151,17 @@ Status: `todo` · `doing` · `done` · `parked`
         list instead of (or alongside) the spell list.
   accept: L4 — adept can add powers, pool consumed correctly.
 
+## P8 — SR5 Technomancer
+
+- id: P8-1  status: done  deps: [P6-2]
+  desc: SR5 complex forms panel — Technomancers need a complex form browser.
+        complexforms.xml has 38 entries already in game_data.db schema but table is
+        empty. Pipeline: parse XML (fv → fading field) → seed DB → IPC command →
+        gameDataStore → characterStore → MagicPanel replaces placeholder with real
+        browser. Resonance rating acts as a cap on complex forms learned (SR5 p. 251).
+  accept: L3a smoke extended to assert complex_forms non-empty; L4 — Technomancer
+          can browse and add complex forms, count shown vs Resonance cap.
+
 ## P7 — Accessibility & settings
 
 - id: P7-1  status: done  deps: []

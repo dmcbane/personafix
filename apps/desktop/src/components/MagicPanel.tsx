@@ -3,6 +3,7 @@ import {
   useCharacterStore,
   type DraftSpell,
   type DraftAdeptPower,
+  type DraftComplexForm,
   type MagicTradition,
 } from "../store/characterStore";
 import { useGameDataStore } from "../store/gameDataStore";
@@ -55,8 +56,11 @@ export default function MagicPanel() {
   const removeSpell = useCharacterStore((s) => s.removeSpell);
   const addAdeptPower = useCharacterStore((s) => s.addAdeptPower);
   const removeAdeptPower = useCharacterStore((s) => s.removeAdeptPower);
+  const addComplexForm = useCharacterStore((s) => s.addComplexForm);
+  const removeComplexForm = useCharacterStore((s) => s.removeComplexForm);
   const gameSpells = useGameDataStore((s) => s.spells);
   const gameAdeptPowers = useGameDataStore((s) => s.adeptPowers);
+  const gameComplexForms = useGameDataStore((s) => s.complexForms);
 
   const [catFilter, setCatFilter] = useState<KnownCategory | "All">("All");
   const [typeFilter, setTypeFilter] = useState<"All" | "Physical" | "Mana">("All");
@@ -64,6 +68,8 @@ export default function MagicPanel() {
   const [selected, setSelected] = useState("");
   const [powerSearch, setPowerSearch] = useState("");
   const [selectedPower, setSelectedPower] = useState("");
+  const [formSearch, setFormSearch] = useState("");
+  const [selectedForm, setSelectedForm] = useState("");
 
   if (!draft) return null;
 
@@ -99,6 +105,30 @@ export default function MagicPanel() {
     if (powerSearch && !p.name.toLowerCase().includes(powerSearch.toLowerCase())) return false;
     return true;
   });
+
+  const resonanceRating = draft.attributes.resonance ?? 0;
+  const equippedFormIds = new Set(draft.complex_forms.map((f) => f.id));
+  const availableForms = gameComplexForms.filter((f) => {
+    if (equippedFormIds.has(f.id)) return false;
+    if (formSearch && !f.name.toLowerCase().includes(formSearch.toLowerCase())) return false;
+    return true;
+  });
+
+  const handleAddForm = () => {
+    const gf = availableForms.find((f) => f.name === selectedForm);
+    if (!gf) return;
+    const form: DraftComplexForm = {
+      id: gf.id,
+      name: gf.name,
+      target: gf.target,
+      duration: gf.duration,
+      fading: gf.fading,
+      source: gf.source,
+      page: gf.page,
+    };
+    addComplexForm(form);
+    setSelectedForm("");
+  };
 
   const handleAddSpell = () => {
     const gs = availableSpells.find((s) => s.name === selected);
@@ -239,15 +269,79 @@ export default function MagicPanel() {
         </div>
       )}
 
-      {/* Complex forms placeholder */}
+      {/* Complex forms section */}
       {showComplexForms && (
-        <div className="mb-4 p-3 bg-cyber-card border border-cyber-border rounded">
-          <p className="text-cyber-blue font-mono text-sm font-semibold mb-1">
-            Complex Forms
-          </p>
-          <p className="text-cyber-text-dim text-xs font-mono italic">
-            Technomancer complex forms coming in a future update.
-          </p>
+        <div className="mb-6">
+          <div className="flex items-center gap-4 mb-3">
+            <p className="text-cyber-blue font-mono text-sm font-semibold">Complex Forms</p>
+            <span className={`text-xs font-mono ${draft.complex_forms.length > resonanceRating && resonanceRating > 0 ? "text-cyber-red" : "text-cyber-text-dim"}`}>
+              {draft.complex_forms.length}
+              {resonanceRating > 0 && `/${resonanceRating} (Resonance)`}
+              {draft.complex_forms.length > resonanceRating && resonanceRating > 0 && (
+                <span className="text-cyber-red ml-1">over cap</span>
+              )}
+            </span>
+          </div>
+
+          {/* Search + select + Add */}
+          <div className="flex gap-2 mb-4">
+            <input
+              type="text"
+              value={formSearch}
+              onChange={(e) => { setFormSearch(e.target.value); setSelectedForm(""); }}
+              placeholder="Search forms…"
+              className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm w-40"
+            />
+            <select
+              value={selectedForm}
+              onChange={(e) => setSelectedForm(e.target.value)}
+              className="bg-cyber-card border border-cyber-border rounded px-3 py-1.5 text-sm flex-1 text-cyber-text"
+            >
+              <option value="">Select a complex form…</option>
+              {availableForms.map((f) => (
+                <option key={f.id} value={f.name}>
+                  {f.name} ({f.target}, {f.duration}, {f.fading})
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleAddForm}
+              disabled={!selectedForm}
+              className="px-4 py-1.5 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green rounded text-sm disabled:opacity-50 text-cyber-green font-mono transition-all"
+            >
+              Add
+            </button>
+          </div>
+
+          {/* Equipped complex forms list */}
+          {draft.complex_forms.length === 0 ? (
+            <p className="text-cyber-text-dim text-sm font-mono">No complex forms learned.</p>
+          ) : (
+            <div className="space-y-1">
+              {draft.complex_forms.map((f) => (
+                <div
+                  key={f.id}
+                  className="flex items-center gap-2 bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
+                >
+                  <div className="flex-1 min-w-0">
+                    <span className="text-cyber-text font-medium">{f.name}</span>
+                    <span className="text-cyber-text-dim font-mono text-xs ml-2">
+                      {f.target} · {f.duration}
+                    </span>
+                  </div>
+                  <span className="font-mono text-xs text-cyber-blue shrink-0">
+                    {f.fading}
+                  </span>
+                  <button
+                    onClick={() => removeComplexForm(f.id)}
+                    className="text-cyber-red hover:text-cyber-red/80 transition-colors ml-1 shrink-0"
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

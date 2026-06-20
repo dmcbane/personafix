@@ -16,6 +16,7 @@ pub struct ParsedGameData {
     pub augmentations: Vec<ParsedAugmentation>,
     pub spells: Vec<ParsedSpell>,
     pub adept_powers: Vec<ParsedAdeptPower>,
+    pub complex_forms: Vec<ParsedComplexForm>,
 }
 
 // -- XML root wrappers --
@@ -452,6 +453,49 @@ pub struct ParsedSpell {
     pub damage: String,
     pub duration: String,
     pub drain: String,
+    pub source: String,
+    pub page: String,
+}
+
+/// Complex forms XML wrapper.
+#[derive(Debug, Deserialize)]
+pub struct ChummerComplexForms {
+    #[serde(default)]
+    pub complexforms: ComplexFormItems,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct ComplexFormItems {
+    #[serde(rename = "complexform", default)]
+    pub items: Vec<XmlComplexForm>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct XmlComplexForm {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub target: String,
+    #[serde(default)]
+    pub duration: String,
+    /// Fading value (e.g. "L-2", "L+2").
+    #[serde(rename = "fv", default)]
+    pub fading: String,
+    #[serde(default)]
+    pub source: String,
+    #[serde(default)]
+    pub page: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct ParsedComplexForm {
+    pub id: String,
+    pub name: String,
+    pub target: String,
+    pub duration: String,
+    pub fading: String,
     pub source: String,
     pub page: String,
 }

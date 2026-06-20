@@ -1009,6 +1009,50 @@ pub async fn get_adept_powers(
     query_adept_powers_db(&pool).await
 }
 
+/// Complex form record from the game data DB.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameComplexForm {
+    pub id: String,
+    pub name: String,
+    pub target: String,
+    pub duration: String,
+    /// Fading value (e.g. "L-2").
+    pub fading: String,
+    pub source: String,
+    pub page: String,
+}
+
+pub async fn query_complex_forms_db(
+    pool: &SqlitePool,
+) -> Result<Vec<GameComplexForm>, AppError> {
+    let rows: Vec<(String, String, String, String, String, String, String)> = sqlx::query_as(
+        "SELECT id, name, target, duration, fading, source, page \
+         FROM complex_forms WHERE edition = 'SR5' ORDER BY name",
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(|(id, name, target, duration, fading, source, page)| GameComplexForm {
+            id,
+            name,
+            target,
+            duration,
+            fading,
+            source,
+            page,
+        })
+        .collect())
+}
+
+#[tauri::command]
+pub async fn get_complex_forms(
+    state: State<'_, AppState>,
+) -> Result<Vec<GameComplexForm>, AppError> {
+    let pool = get_game_pool(&state).await?;
+    query_complex_forms_db(&pool).await
+}
+
 // ============================================================
 // Tests
 // ============================================================
@@ -1865,9 +1909,18 @@ mod tests {
         );
         for p in &sr5_powers {
             assert!(!p.name.is_empty(), "Adept power has empty name: {p:?}");
-            // Cost must be a valid non-negative decimal like "0.25" or "0.00"
             let cost: f64 = p.cost.parse().unwrap_or(-1.0);
             assert!(cost >= 0.0, "Adept power '{}' has invalid cost: '{}'", p.name, p.cost);
+        }
+
+        let sr5_complex_forms = query_complex_forms_db(&pool).await.unwrap();
+        assert!(
+            !sr5_complex_forms.is_empty(),
+            "Expected non-empty SR5 complex forms from real game_data.db, got 0 rows"
+        );
+        for f in &sr5_complex_forms {
+            assert!(!f.name.is_empty(), "Complex form has empty name: {f:?}");
+            assert!(!f.fading.is_empty(), "Complex form '{}' has empty fading value", f.name);
         }
     }
 }

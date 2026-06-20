@@ -103,7 +103,7 @@ export interface CharacterDraft {
   augmentations: DraftAugmentation[];
   spells: DraftSpell[];
   adept_powers: DraftAdeptPower[];
-  complex_forms: unknown[];
+  complex_forms: DraftComplexForm[];
   contacts: Contact[];
   weapons: DraftWeapon[];
   armor: DraftArmor[];
@@ -202,6 +202,17 @@ export interface DraftAdeptPower {
   /** Decimal string like "0.25" or "1.00" */
   cost: string;
   levels: boolean;
+  source: string;
+  page: string;
+}
+
+export interface DraftComplexForm {
+  id: string;
+  name: string;
+  target: string;
+  duration: string;
+  /** Fading value, e.g. "L-2" */
+  fading: string;
   source: string;
   page: string;
 }
@@ -349,6 +360,8 @@ interface CharacterState {
   removeSpell: (spellId: string) => void;
   addAdeptPower: (power: DraftAdeptPower) => void;
   removeAdeptPower: (powerId: string) => void;
+  addComplexForm: (form: DraftComplexForm) => void;
+  removeComplexForm: (formId: string) => void;
   addContact: (contact: Contact) => void;
   removeContact: (contactId: string) => void;
   setPriority: (category: PriorityCategory, level: PriorityLevel) => void;
@@ -606,6 +619,23 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       draft: {
         ...draft,
         adept_powers: draft.adept_powers.filter((p) => p.id !== powerId),
+      },
+    });
+  },
+
+  addComplexForm: (form) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({ draft: { ...draft, complex_forms: [...draft.complex_forms, form] } });
+  },
+
+  removeComplexForm: (formId) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({
+      draft: {
+        ...draft,
+        complex_forms: draft.complex_forms.filter((f) => f.id !== formId),
       },
     });
   },

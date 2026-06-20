@@ -24,6 +24,7 @@ pub fn parse_sr5(data_dir: &Path) -> MigrateResult<ParsedGameData> {
 
     data.spells = parse_spells(&data_dir.join("spells.xml"))?;
     data.adept_powers = parse_powers(&data_dir.join("powers.xml"))?;
+    data.complex_forms = parse_complex_forms(&data_dir.join("complexforms.xml"))?;
 
     Ok(data)
 }
@@ -218,6 +219,26 @@ fn parse_spells(path: &Path) -> MigrateResult<Vec<ParsedSpell>> {
         .collect())
 }
 
+fn parse_complex_forms(path: &Path) -> MigrateResult<Vec<ParsedComplexForm>> {
+    let xml = std::fs::read_to_string(path)?;
+    let chummer: ChummerComplexForms = quick_xml::de::from_str(&xml)?;
+    Ok(chummer
+        .complexforms
+        .items
+        .into_iter()
+        .filter(|f| !f.id.is_empty() && !f.name.is_empty())
+        .map(|f| ParsedComplexForm {
+            id: f.id,
+            name: f.name,
+            target: f.target,
+            duration: f.duration,
+            fading: f.fading,
+            source: f.source,
+            page: f.page,
+        })
+        .collect())
+}
+
 fn parse_powers(path: &Path) -> MigrateResult<Vec<ParsedAdeptPower>> {
     let xml = std::fs::read_to_string(path)?;
     let chummer: ChummerPowers = quick_xml::de::from_str(&xml)?;
@@ -343,6 +364,18 @@ mod tests {
 
     #[test]
     #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
+    fn parse_sr5_complex_forms_returns_entries() {
+        let forms = parse_complex_forms(&sr5_data_dir().join("complexforms.xml")).unwrap();
+        assert!(!forms.is_empty(), "should parse at least one complex form");
+        let cleaner = forms.iter().find(|f| f.name == "Cleaner");
+        assert!(cleaner.is_some(), "should find Cleaner complex form");
+        let cleaner = cleaner.unwrap();
+        assert_eq!(cleaner.target, "Persona");
+        assert!(!cleaner.fading.is_empty(), "fading value should be set");
+    }
+
+    #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
     fn parse_sr5_full_succeeds() {
         let data = parse_sr5(&sr5_data_dir()).unwrap();
         assert_eq!(data.edition, "SR5");
@@ -354,5 +387,6 @@ mod tests {
         assert!(!data.armor.is_empty());
         assert!(!data.augmentations.is_empty());
         assert!(!data.spells.is_empty());
+        assert!(!data.complex_forms.is_empty());
     }
 }

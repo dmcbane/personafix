@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.0] - 2026-06-19
+
+### Added
+- P8-1: SR5 complex forms panel for Technomancers.
+- Migration: parses `complexforms.xml` (38 SR5 forms); `ParsedComplexForm`,
+  `ChummerComplexForms`, `XmlComplexForm` types added; `parse_complex_forms()` in sr5.rs.
+- DB seeder seeds `complex_forms` table with id/name/target/duration/fading/edition.
+- `GameComplexForm`, `query_complex_forms_db`, `get_complex_forms` IPC command.
+- `gameDataStore`: `complexForms` state, loaded alongside spells/powers on startup.
+- `characterStore`: `DraftComplexForm` type; `addComplexForm`/`removeComplexForm` actions.
+- `MagicPanel`: Technomancers see a real complex form browser with search + dropdown +
+  Resonance-rating cap tracker; fading value shown per form.
+- L3a smoke test extended: asserts complex_forms non-empty and all fading values present.
+- Bump 0.31.0 → 0.32.0; P8-1 done.
+
 ## [0.31.0] - 2026-06-19
 
 ### Added
