@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::{FromRow, SqlitePool};
 use tauri::State;
 
 use personafix_core::ledger::events::LedgerEvent;
@@ -193,29 +193,32 @@ pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCha
     let metatype = parse_metatype(&metatype_str)?;
 
     // Load all JSON columns from character_base
-    #[allow(clippy::type_complexity)]
-    let row: (
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        Option<String>,
-        Option<String>,
-    ) = sqlx::query_as(
+    #[derive(FromRow)]
+    struct CharacterBaseRow {
+        attributes_json: String,
+        skills_json: String,
+        skill_groups_json: String,
+        knowledge_skills_json: String,
+        qualities_json: String,
+        augmentations_json: String,
+        spells_json: String,
+        adept_powers_json: String,
+        complex_forms_json: String,
+        contacts_json: String,
+        weapons_json: String,
+        armor_json: String,
+        gear_json: String,
+        vehicles_json: String,
+        priority_selection_json: Option<String>,
+        magic_tradition: Option<String>,
+        notes: String,
+    }
+
+    let row: CharacterBaseRow = sqlx::query_as(
         "SELECT attributes_json, skills_json, skill_groups_json, knowledge_skills_json, \
              qualities_json, augmentations_json, spells_json, adept_powers_json, \
              complex_forms_json, contacts_json, weapons_json, armor_json, gear_json, \
-             vehicles_json, priority_selection_json, magic_tradition \
+             vehicles_json, priority_selection_json, magic_tradition, notes \
              FROM character_base WHERE character_id = ?",
     )
     .bind(id)
@@ -228,22 +231,23 @@ pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCha
         name,
         edition,
         metatype,
-        attributes: serde_json::from_str(&row.0)?,
-        skills: serde_json::from_str(&row.1)?,
-        skill_groups: serde_json::from_str(&row.2)?,
-        knowledge_skills: serde_json::from_str(&row.3)?,
-        qualities: serde_json::from_str(&row.4)?,
-        augmentations: serde_json::from_str(&row.5)?,
-        spells: serde_json::from_str(&row.6)?,
-        adept_powers: serde_json::from_str(&row.7)?,
-        complex_forms: serde_json::from_str(&row.8)?,
-        contacts: serde_json::from_str(&row.9)?,
-        weapons: serde_json::from_str(&row.10)?,
-        armor: serde_json::from_str(&row.11)?,
-        gear: serde_json::from_str(&row.12)?,
-        vehicles: serde_json::from_str(&row.13)?,
-        priority_selection: row.14.as_deref().and_then(|s| serde_json::from_str(s).ok()),
-        magic_tradition: row.15.as_deref().and_then(|s| serde_json::from_str(s).ok()),
+        attributes: serde_json::from_str(&row.attributes_json)?,
+        skills: serde_json::from_str(&row.skills_json)?,
+        skill_groups: serde_json::from_str(&row.skill_groups_json)?,
+        knowledge_skills: serde_json::from_str(&row.knowledge_skills_json)?,
+        qualities: serde_json::from_str(&row.qualities_json)?,
+        augmentations: serde_json::from_str(&row.augmentations_json)?,
+        spells: serde_json::from_str(&row.spells_json)?,
+        adept_powers: serde_json::from_str(&row.adept_powers_json)?,
+        complex_forms: serde_json::from_str(&row.complex_forms_json)?,
+        contacts: serde_json::from_str(&row.contacts_json)?,
+        weapons: serde_json::from_str(&row.weapons_json)?,
+        armor: serde_json::from_str(&row.armor_json)?,
+        gear: serde_json::from_str(&row.gear_json)?,
+        vehicles: serde_json::from_str(&row.vehicles_json)?,
+        priority_selection: row.priority_selection_json.as_deref().and_then(|s| serde_json::from_str(s).ok()),
+        magic_tradition: row.magic_tradition.as_deref().and_then(|s| serde_json::from_str(s).ok()),
+        notes: row.notes,
     };
 
     let ledger_rows: Vec<(String,)> =
@@ -362,7 +366,8 @@ pub async fn save_character_base_db(
          knowledge_skills_json = ?, \
          qualities_json = ?, augmentations_json = ?, spells_json = ?, adept_powers_json = ?, \
          complex_forms_json = ?, contacts_json = ?, weapons_json = ?, armor_json = ?, \
-         gear_json = ?, vehicles_json = ?, priority_selection_json = ?, magic_tradition = ? \
+         gear_json = ?, vehicles_json = ?, priority_selection_json = ?, magic_tradition = ?, \
+         notes = ? \
          WHERE character_id = ?",
     )
     .bind(&metatype_str)
@@ -382,11 +387,39 @@ pub async fn save_character_base_db(
     .bind(&vehicles_json)
     .bind(&priority_json)
     .bind(&magic_tradition_json)
+    .bind(&base.notes)
     .bind(&base.id)
     .execute(pool)
     .await?;
 
     Ok(())
+}
+
+// ============================================================
+// Notes update
+// ============================================================
+
+pub async fn update_notes_db(
+    pool: &SqlitePool,
+    character_id: &str,
+    notes: &str,
+) -> Result<(), AppError> {
+    sqlx::query("UPDATE character_base SET notes = ? WHERE character_id = ?")
+        .bind(notes)
+        .bind(character_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn update_notes(
+    character_id: &str,
+    notes: &str,
+    state: tauri::State<'_, AppState>,
+) -> Result<(), AppError> {
+    let pool = get_pool(&state).await?;
+    update_notes_db(&pool, character_id, notes).await
 }
 
 // ============================================================
@@ -1591,6 +1624,7 @@ mod tests {
             knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
+            notes: String::new(),
         };
 
         save_character_base_db(&pool, &base).await.unwrap();
@@ -1694,6 +1728,7 @@ mod tests {
             knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
+            notes: String::new(),
         };
 
         save_character_base_db(&pool, &base).await.unwrap();
@@ -1773,6 +1808,7 @@ mod tests {
                 resources: PriorityLevel::E,
             }),
             magic_tradition: None,
+            notes: String::new(),
         };
 
         save_character_base_db(&pool, &base).await.unwrap();

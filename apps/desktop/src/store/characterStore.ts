@@ -135,6 +135,7 @@ export interface ComputedCharacter {
     armor: DraftArmor[];
     vehicles: DraftVehicle[];
     magic_tradition: MagicTradition | null;
+    notes: string;
   };
   computed_attributes: Attributes;
   physical_condition_monitor: number;
@@ -417,6 +418,7 @@ interface CharacterState {
   listCharacters: (campaignId: string) => Promise<void>;
   loadCharacter: (id: string) => Promise<void>;
   applyEvent: (characterId: string, event: LedgerEvent) => Promise<void>;
+  updateNotes: (characterId: string, notes: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -818,6 +820,7 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       attributes: draft.attributes,
       skills: draft.skills,
       skill_groups: draft.skill_groups,
+      knowledge_skills: draft.knowledge_skills,
       qualities: draft.qualities,
       augmentations: draft.augmentations,
       spells: draft.spells,
@@ -830,6 +833,7 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       vehicles: draft.vehicles,
       priority_selection: draft.priority_selection,
       magic_tradition: draft.magic_tradition,
+      notes: "",
     };
 
     const computed = await invoke<ComputedCharacter>(
@@ -857,6 +861,19 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       event,
     });
     set({ savedCharacter: computed });
+  },
+
+  updateNotes: async (characterId, notes) => {
+    await invoke("update_notes", { characterId, notes });
+    const { savedCharacter } = get();
+    if (savedCharacter) {
+      set({
+        savedCharacter: {
+          ...savedCharacter,
+          base: { ...savedCharacter.base, notes },
+        },
+      });
+    }
   },
 
   reset: () => {

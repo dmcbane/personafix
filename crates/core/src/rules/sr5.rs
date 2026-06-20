@@ -954,6 +954,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             knowledge_skills: vec![],
+            notes: String::new(),
             priority_selection: draft.priority_selection.clone(),
             magic_tradition: draft.magic_tradition,
         };
@@ -1058,6 +1059,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             knowledge_skills: vec![],
+            notes: String::new(),
             priority_selection: None,
             magic_tradition: None,
         }

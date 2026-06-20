@@ -35,6 +35,7 @@ export default function SavedCharacterView() {
   const saved = useCharacterStore((s) => s.savedCharacter);
   const reset = useCharacterStore((s) => s.reset);
   const applyEvent = useCharacterStore((s) => s.applyEvent);
+  const updateNotes = useCharacterStore((s) => s.updateNotes);
 
   const [karmaAmount, setKarmaAmount] = useState(5);
   const [karmaReason, setKarmaReason] = useState("Run reward");
@@ -53,6 +54,9 @@ export default function SavedCharacterView() {
   const diceScrollRef = useRef<HTMLDivElement>(null);
   const [ledgerEvents, setLedgerEvents] = useState<LedgerEvent[]>([]);
   const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
+  const [notesText, setNotesText] = useState<string | null>(null);
+  const [notesSaving, setNotesSaving] = useState(false);
 
   if (!saved) return null;
 
@@ -558,6 +562,46 @@ export default function SavedCharacterView() {
                base.vehicles.length === 0 && (
                 <p className="text-cyber-text-dim text-sm font-mono">No equipment recorded.</p>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Character Notes */}
+        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mb-4">
+          <button
+            onClick={() => {
+              if (!showNotes && notesText === null) setNotesText(base.notes ?? "");
+              setShowNotes((s) => !s);
+            }}
+            className="text-lg font-semibold text-cyber-heading font-mono flex items-center gap-2 w-full text-left"
+          >
+            // Character Notes
+            <span className="text-xs text-cyber-text-dim ml-auto">{showNotes ? "▲ collapse" : "▼ expand"}</span>
+          </button>
+
+          {showNotes && (
+            <div className="mt-3">
+              <textarea
+                value={notesText ?? ""}
+                onChange={(e) => setNotesText(e.target.value)}
+                placeholder="Backstory, run log, contacts encountered…"
+                rows={8}
+                className="w-full bg-cyber-surface border border-cyber-border rounded px-3 py-2 text-sm text-cyber-text placeholder-cyber-text-dim focus:border-cyber-green outline-none resize-y font-mono"
+              />
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  onClick={async () => {
+                    setNotesSaving(true);
+                    try { await updateNotes(characterId, notesText ?? ""); }
+                    finally { setNotesSaving(false); }
+                  }}
+                  disabled={notesSaving}
+                  className="px-3 py-1.5 rounded bg-cyber-green/10 border border-cyber-green text-cyber-green text-sm hover:bg-cyber-green/20 disabled:opacity-40 transition-colors"
+                >
+                  {notesSaving ? "Saving…" : "Save Notes"}
+                </button>
+                <span className="text-xs text-cyber-text-dim">Auto-saved on blur is not enabled — click Save.</span>
+              </div>
             </div>
           )}
         </div>

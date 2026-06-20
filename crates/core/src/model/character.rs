@@ -74,6 +74,8 @@ pub struct CharacterBase {
     pub priority_selection: Option<PrioritySelection>,
     #[serde(default)]
     pub magic_tradition: Option<MagicTradition>,
+    #[serde(default)]
+    pub notes: String,
 }
 
 /// Fully computed character state — the projection of base + all ledger events.

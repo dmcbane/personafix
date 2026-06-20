@@ -192,7 +192,7 @@ Status: `todo` · `doing` · `done` · `parked`
         Categories: Academic, Interest, Language, Professional, Street, Technical.
   accept: L0+L2 (roundtrip save/load); L4 — add a knowledge skill, save, reload, confirm visible.
 
-- id: P11-2  status: todo  deps: []
+- id: P11-2  status: done  deps: []
   desc: Character notes — free-text backstory/run-log field per character. Single
         `notes_json` (or TEXT) column in character_base; textarea in builder and saved
         sheet; saved/loaded with the character.

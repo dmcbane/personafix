@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.39.0] - 2026-06-20
+
+### Added
+- P11-2: Character notes — free-text backstory/run-log field per character.
+- DB migration `00004_notes.sql` adds `notes TEXT NOT NULL DEFAULT ''` to `character_base`.
+- `notes: String` field on `CharacterBase` (with `#[serde(default)]`).
+- `update_notes` IPC command + `update_notes_db` function for efficient note-only saves.
+- TypeScript: `notes` on `ComputedCharacter.base`, `updateNotes` store action.
+- SavedCharacterView: "// Character Notes" collapsible section with textarea + Save button.
+- Bump 0.38.0 → 0.39.0; P11-2 done.
+
 ## [0.38.0] - 2026-06-20
 
 ### Added
