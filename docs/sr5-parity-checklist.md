@@ -44,8 +44,8 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` parked
 
 - [x] Active skills from SR5 data (different list from SR4) — *L3a non-empty*
 - [x] Skill groups (linked skills buy as a block) — *group_json stored; SR5Rules*
-- [ ] Knowledge skills — not tracked (no panel)
-- [ ] Language skills — not tracked (no panel)
+- [x] Knowledge skills — *P11-1 done; KnowledgeSkill model + SkillPanel sub-section*
+- [x] Language skills — *same panel, category "Language"*
 
 ## Qualities
 
@@ -81,13 +81,13 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` parked
 - [x] Karma costs match SR5 table (attribute × 5, active skill × 2) — *SR5Rules done*
 - [ ] Initiation / Submersion — *not implemented*
 - [ ] Metamagic / Echo — *not implemented*
-- [ ] Contact loyalty improvement (karma cost) — *not tracked*
+- [x] Contact loyalty improvement (karma cost) — *P11-3 done; +C/+L buttons in Karma Improvements panel*
 
 ## Character Sheet
 
 - [x] All equipment visible in saved character sheet — *P9-1 done*
 - [x] Dice roller with skill pool shortcuts — *P10-1 done*
-- [ ] Print/export character sheet — *P10-4 todo*
+- [x] Print/export character sheet — *P10-4 done; window.print() + @media print hidden div*
 
 ---
 

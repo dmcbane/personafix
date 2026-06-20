@@ -214,7 +214,7 @@ export default function SavedCharacterView() {
             <h1 className="text-3xl font-bold text-cyber-heading">{base.name}</h1>
             <p className="text-cyber-text-dim font-mono">
               {base.edition} {base.metatype} // Character Sheet
-              {tradition && <span className="text-cyber-blue ml-2">[{tradition}]</span>}
+              {tradition && <span className="text-cyber-blue ml-2">[{tradition}{base.tradition_name ? ` · ${base.tradition_name}` : ""}]</span>}
             </p>
           </div>
           <div className="flex gap-2">
@@ -799,7 +799,7 @@ export default function SavedCharacterView() {
       <div id="print-sheet" style={{ display: "none" }}>
         <h1>{base.name}</h1>
         <p style={{ color: "#555", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
-          {base.edition} · {base.metatype}{tradition ? ` · ${tradition}` : ""}
+          {base.edition} · {base.metatype}{tradition ? ` · ${tradition}${base.tradition_name ? ` (${base.tradition_name})` : ""}` : ""}
         </p>
 
         <h2>Attributes</h2>

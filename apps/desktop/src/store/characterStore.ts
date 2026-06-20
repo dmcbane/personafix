@@ -128,6 +128,7 @@ export interface CharacterDraft {
   vehicles: DraftVehicle[];
   priority_selection: PrioritySelection | null;
   magic_tradition: MagicTradition | null;
+  tradition_name: string | null;
   creation_points_spent: number;
   nuyen_spent: number;
 }
@@ -151,6 +152,7 @@ export interface ComputedCharacter {
     armor: DraftArmor[];
     vehicles: DraftVehicle[];
     magic_tradition: MagicTradition | null;
+    tradition_name: string | null;
     notes: string;
   };
   computed_attributes: Attributes;
@@ -405,6 +407,7 @@ interface CharacterState {
   setAttribute: (attr: AttributeName, value: number) => void;
   setMagic: (value: number | null) => void;
   setMagicTradition: (tradition: MagicTradition | null) => void;
+  setTraditionName: (name: string | null) => void;
   addSkill: (skill: Skill) => void;
   removeSkill: (skillId: string) => void;
   updateSkillRating: (skillId: string, rating: number) => void;
@@ -497,6 +500,7 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
           : null,
       // SR5 default: priority C for magic = Magician. SR4 is mundane.
       magic_tradition: edition === "SR5" ? "Magician" : null,
+      tradition_name: null,
       creation_points_spent: 0,
       nuyen_spent: 0,
     };
@@ -537,6 +541,12 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
     const { draft } = get();
     if (!draft) return;
     set({ draft: { ...draft, magic_tradition: tradition } });
+  },
+
+  setTraditionName: (name) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({ draft: { ...draft, tradition_name: name } });
   },
 
   addSkill: (skill) => {
@@ -849,6 +859,7 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       vehicles: draft.vehicles,
       priority_selection: draft.priority_selection,
       magic_tradition: draft.magic_tradition,
+      tradition_name: draft.tradition_name,
       notes: "",
     };
 

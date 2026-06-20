@@ -42,6 +42,9 @@ pub struct CharacterDraft {
     /// SR5 only. Which awakened tradition the character follows.
     #[serde(default)]
     pub magic_tradition: Option<MagicTradition>,
+    /// Magician sub-tradition (SR5): "Hermetic", "Shaman", "Other", etc.
+    #[serde(default)]
+    pub tradition_name: Option<String>,
     /// SR4: BP total. SR5: karma total.
     pub creation_points_spent: i32,
     pub nuyen_spent: i64,
@@ -74,6 +77,10 @@ pub struct CharacterBase {
     pub priority_selection: Option<PrioritySelection>,
     #[serde(default)]
     pub magic_tradition: Option<MagicTradition>,
+    /// Magician sub-tradition: "Hermetic", "Shaman", "Other", etc.
+    /// SR4 uses totem/tradition qualities instead; leave null for SR4.
+    #[serde(default)]
+    pub tradition_name: Option<String>,
     #[serde(default)]
     pub notes: String,
 }

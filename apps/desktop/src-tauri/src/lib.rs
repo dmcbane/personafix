@@ -32,6 +32,7 @@ pub fn run() {
             commands::get_complex_forms,
             commands::get_vehicles,
             commands::update_notes,
+            commands::update_tradition_name,
             commands::debug_check_file,
         ])
         .run(tauri::generate_context!())

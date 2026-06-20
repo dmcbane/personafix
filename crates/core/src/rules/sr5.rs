@@ -909,6 +909,7 @@ mod tests {
                 resources: PriorityLevel::E,
             }),
             magic_tradition: Some(MagicTradition::Adept),
+            tradition_name: None,
             creation_points_spent: 0,
             nuyen_spent: 5_000,
         };
@@ -954,6 +955,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             knowledge_skills: vec![],
+            tradition_name: None,
             notes: String::new(),
             priority_selection: draft.priority_selection.clone(),
             magic_tradition: draft.magic_tradition,
@@ -1020,6 +1022,7 @@ mod tests {
                 resources: PriorityLevel::A,
             }),
             magic_tradition: None,
+            tradition_name: None,
             creation_points_spent: 0,
             nuyen_spent: 5_000,
         }
@@ -1059,6 +1062,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             knowledge_skills: vec![],
+            tradition_name: None,
             notes: String::new(),
             priority_selection: None,
             magic_tradition: None,

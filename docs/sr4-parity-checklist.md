@@ -62,7 +62,7 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` parked (se
 
 ## Phase 6 — Later editions (only after SR4 sign-off)
 - [x] SR5 priority flow verified end to end against `game_data.db` — *P6-1–P6-5 done*
-- [ ] SR5 parity checklist drafted (separate file)
+- [x] SR5 parity checklist drafted (separate file) — *docs/sr5-parity-checklist.md, P10-2 done*
 
 ---
 

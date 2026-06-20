@@ -211,6 +211,7 @@ pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCha
         vehicles_json: String,
         priority_selection_json: Option<String>,
         magic_tradition: Option<String>,
+        tradition_name: Option<String>,
         notes: String,
     }
 
@@ -218,7 +219,7 @@ pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCha
         "SELECT attributes_json, skills_json, skill_groups_json, knowledge_skills_json, \
              qualities_json, augmentations_json, spells_json, adept_powers_json, \
              complex_forms_json, contacts_json, weapons_json, armor_json, gear_json, \
-             vehicles_json, priority_selection_json, magic_tradition, notes \
+             vehicles_json, priority_selection_json, magic_tradition, tradition_name, notes \
              FROM character_base WHERE character_id = ?",
     )
     .bind(id)
@@ -247,6 +248,7 @@ pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCha
         vehicles: serde_json::from_str(&row.vehicles_json)?,
         priority_selection: row.priority_selection_json.as_deref().and_then(|s| serde_json::from_str(s).ok()),
         magic_tradition: row.magic_tradition.as_deref().and_then(|s| serde_json::from_str(s).ok()),
+        tradition_name: row.tradition_name,
         notes: row.notes,
     };
 
@@ -367,7 +369,7 @@ pub async fn save_character_base_db(
          qualities_json = ?, augmentations_json = ?, spells_json = ?, adept_powers_json = ?, \
          complex_forms_json = ?, contacts_json = ?, weapons_json = ?, armor_json = ?, \
          gear_json = ?, vehicles_json = ?, priority_selection_json = ?, magic_tradition = ?, \
-         notes = ? \
+         tradition_name = ?, notes = ? \
          WHERE character_id = ?",
     )
     .bind(&metatype_str)
@@ -387,6 +389,7 @@ pub async fn save_character_base_db(
     .bind(&vehicles_json)
     .bind(&priority_json)
     .bind(&magic_tradition_json)
+    .bind(&base.tradition_name)
     .bind(&base.notes)
     .bind(&base.id)
     .execute(pool)
@@ -420,6 +423,29 @@ pub async fn update_notes(
 ) -> Result<(), AppError> {
     let pool = get_pool(&state).await?;
     update_notes_db(&pool, character_id, notes).await
+}
+
+pub async fn update_tradition_name_db(
+    pool: &SqlitePool,
+    character_id: &str,
+    tradition_name: Option<&str>,
+) -> Result<(), AppError> {
+    sqlx::query("UPDATE character_base SET tradition_name = ? WHERE character_id = ?")
+        .bind(tradition_name)
+        .bind(character_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn update_tradition_name(
+    character_id: &str,
+    tradition_name: Option<String>,
+    state: tauri::State<'_, AppState>,
+) -> Result<(), AppError> {
+    let pool = get_pool(&state).await?;
+    update_tradition_name_db(&pool, character_id, tradition_name.as_deref()).await
 }
 
 // ============================================================
@@ -1509,6 +1535,7 @@ mod tests {
             knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
+            tradition_name: None,
             creation_points_spent: 0,
             nuyen_spent: 0,
         };
@@ -1558,6 +1585,7 @@ mod tests {
             knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
+            tradition_name: None,
             creation_points_spent: 0,
             nuyen_spent: 0,
         };
@@ -1624,6 +1652,7 @@ mod tests {
             knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
+            tradition_name: None,
             notes: String::new(),
         };
 
@@ -1728,6 +1757,7 @@ mod tests {
             knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
+            tradition_name: None,
             notes: String::new(),
         };
 
@@ -1808,6 +1838,7 @@ mod tests {
                 resources: PriorityLevel::E,
             }),
             magic_tradition: None,
+            tradition_name: None,
             notes: String::new(),
         };
 
@@ -2023,5 +2054,83 @@ mod tests {
         for v in &vehicles {
             assert!(!v.name.is_empty(), "Vehicle has empty name: {v:?}");
         }
+    }
+
+    #[tokio::test]
+    async fn test_tradition_name_roundtrip() {
+        use personafix_core::model::magic::MagicTradition;
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_character_db(&pool, "ch1", "c1", &Edition::SR5, "Magician", &Metatype::Human)
+            .await
+            .unwrap();
+
+        let base = CharacterBase {
+            id: "ch1".to_string(),
+            campaign_id: "c1".to_string(),
+            name: "Magician".to_string(),
+            edition: Edition::SR5,
+            metatype: Metatype::Human,
+            attributes: Attributes {
+                body: 3,
+                agility: 3,
+                reaction: 3,
+                strength: 2,
+                willpower: 4,
+                logic: 4,
+                intuition: 4,
+                charisma: 3,
+                edge: 2,
+                essence: 600,
+                magic: Some(5),
+                resonance: None,
+            },
+            skills: vec![],
+            skill_groups: vec![],
+            qualities: vec![],
+            augmentations: vec![],
+            spells: vec![],
+            adept_powers: vec![],
+            complex_forms: vec![],
+            contacts: vec![],
+            weapons: vec![],
+            armor: vec![],
+            gear: vec![],
+            vehicles: vec![],
+            knowledge_skills: vec![],
+            priority_selection: None,
+            magic_tradition: Some(MagicTradition::Magician),
+            tradition_name: Some("Hermetic".to_string()),
+            notes: String::new(),
+        };
+
+        save_character_base_db(&pool, &base).await.unwrap();
+        let loaded = get_character_db(&pool, "ch1").await.unwrap();
+        assert_eq!(
+            loaded.base.tradition_name.as_deref(),
+            Some("Hermetic"),
+            "tradition_name should roundtrip through save/load"
+        );
+
+        // update via update_tradition_name_db
+        update_tradition_name_db(&pool, "ch1", Some("Shaman"))
+            .await
+            .unwrap();
+        let updated = get_character_db(&pool, "ch1").await.unwrap();
+        assert_eq!(
+            updated.base.tradition_name.as_deref(),
+            Some("Shaman"),
+            "tradition_name should be updatable"
+        );
+
+        // clear tradition name
+        update_tradition_name_db(&pool, "ch1", None)
+            .await
+            .unwrap();
+        let cleared = get_character_db(&pool, "ch1").await.unwrap();
+        assert!(
+            cleared.base.tradition_name.is_none(),
+            "tradition_name should be clearable to None"
+        );
     }
 }

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.42.0] - 2026-06-20
+
+### Added
+- P12-1: Magician tradition sub-selection for SR5 Magicians and Mystic Adepts.
+  - `tradition_name: Option<String>` field on `CharacterDraft` and `CharacterBase`
+  - DB migration `00005_tradition_name.sql` (nullable TEXT column)
+  - `update_tradition_name` Tauri IPC command + `update_tradition_name_db` testable core
+  - L2 roundtrip test `test_tradition_name_roundtrip` verifies save/load/update/clear
+  - MagicPanel shows Hermetic / Shaman / Other toggle buttons for SR5 Magician/MysticAdept
+  - SavedCharacterView header and print sheet display tradition alongside archetype
+  - `setTraditionName` action in `characterStore`
+
 ## [0.41.0] - 2026-06-20
 
 ### Added

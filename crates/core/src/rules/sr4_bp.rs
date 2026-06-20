@@ -170,6 +170,7 @@ mod tests {
             knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
+            tradition_name: None,
             creation_points_spent: 0,
             nuyen_spent: 0,
         }

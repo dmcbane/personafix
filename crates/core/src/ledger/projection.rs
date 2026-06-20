@@ -258,6 +258,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             knowledge_skills: vec![],
+            tradition_name: None,
             notes: String::new(),
             priority_selection: None,
             magic_tradition: None,

@@ -58,6 +58,7 @@ export default function MagicPanel() {
   const removeAdeptPower = useCharacterStore((s) => s.removeAdeptPower);
   const addComplexForm = useCharacterStore((s) => s.addComplexForm);
   const removeComplexForm = useCharacterStore((s) => s.removeComplexForm);
+  const setTraditionName = useCharacterStore((s) => s.setTraditionName);
   const gameSpells = useGameDataStore((s) => s.spells);
   const gameAdeptPowers = useGameDataStore((s) => s.adeptPowers);
   const gameComplexForms = useGameDataStore((s) => s.complexForms);
@@ -177,6 +178,10 @@ export default function MagicPanel() {
     );
   }
 
+  const showTraditionSelector =
+    draft.edition === "SR5" &&
+    (tradition === "Magician" || tradition === "MysticAdept");
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4 text-cyber-heading">
@@ -187,6 +192,25 @@ export default function MagicPanel() {
           </span>
         )}
       </h2>
+
+      {showTraditionSelector && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-xs font-mono text-cyber-text-dim">Tradition:</span>
+          {(["Hermetic", "Shaman", "Other"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTraditionName(draft.tradition_name === t ? null : t)}
+              className={`px-2.5 py-1 rounded text-xs font-mono transition-all ${
+                draft.tradition_name === t
+                  ? "bg-cyber-green-dim border border-cyber-green text-cyber-green shadow-glow"
+                  : "bg-cyber-card border border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Warning if not awakened (SR4 only) */}
       {draft.edition === "SR4" && !isMagic && (

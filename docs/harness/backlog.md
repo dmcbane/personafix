@@ -212,6 +212,45 @@ Status: `todo` · `doing` · `done` · `parked`
         checklist to reflect the finding.
   accept: Journal entry confirming data is pre-halved or documenting the fix applied.
 
+## P12 — Polish & completeness
+
+- id: P12-1  status: done  deps: [P6-2]
+  desc: Magician tradition sub-selection — SR5 Magicians can follow Hermetic or Shaman
+        (or other) traditions affecting drain attribute and linked skills. Currently
+        magic_tradition stores only the archetype (Magician/Adept/etc.); there is no
+        sub-tradition field. Add `tradition_name` to CharacterBase (nullable string),
+        a selector in MagicPanel for SR5 Magicians/Mystic Adepts showing Hermetic/Shaman/
+        Other, and display it on the saved sheet. SR4 has no equivalent (SR4 uses totem/
+        tradition in qualities instead). No rules engine impact for now — just capture the
+        choice for display/roleplay.
+  accept: L0+L2 (roundtrip); L4 — SR5 Magician can select Hermetic, sheet shows it.
+
+- id: P12-2  status: todo  deps: [P5-1]
+  desc: Initiation & Submersion (career) — Awakened characters can initiate to raise
+        Magic above racial limit (cost: 10 + (grade × 3) karma); Emerged characters
+        submerge similarly for Resonance. Add an "Initiate/Submerge" button in career
+        view, apply via a new `Initiated` / `Submerged` ledger event that bumps the
+        grade and deducts karma. Display initiation grade on the character sheet.
+  accept: L1 (karma cost test); L4 — initiate a Magician, confirm grade increments
+          and karma deducted.
+
+- id: P12-3  status: todo  deps: []
+  desc: Effective armor display — SR5 armor stacking: only the highest armor rating
+        counts fully; each additional piece contributes half its rating (rounded down).
+        Currently SavedCharacterView shows raw armor value. Add a derived
+        `effective_armor` display in the stat block that applies the stacking rule.
+        SR4 rule: full stacking allowed (display sum).
+  accept: L1 test in sr5.rs for stacking; L4 — equip two armors, confirm effective
+          total shown correctly.
+
+- id: P12-4  status: todo  deps: []
+  desc: Specializations on existing skills — SkillPanel lets you add skills with a
+        rating, but there is no way to add a specialization (+2 dice) to an already-added
+        skill. Add a "+" specialization button per skill row; a small text input to name
+        it; store in Skill.specializations. SR4 cost: 2 BP; SR5: 5 karma (can add at
+        creation or career). Display as a chip under the skill in the sheet.
+  accept: L0+L2; L4 — add a specialization to Pistols, reload, confirm visible.
+
 ## P8 — SR5 Technomancer
 
 - id: P9-1  status: done  deps: [P8-1]

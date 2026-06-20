@@ -777,6 +777,7 @@ mod tests {
             knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
+            tradition_name: None,
             creation_points_spent: 0,
             nuyen_spent: 200_000, // 40 BP
         };
@@ -828,6 +829,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             knowledge_skills: vec![],
+            tradition_name: None,
             notes: String::new(),
             priority_selection: None,
             magic_tradition: None,
@@ -885,6 +887,7 @@ mod tests {
             knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
+            tradition_name: None,
             creation_points_spent: 0,
             nuyen_spent: 50_000,
         }
@@ -924,6 +927,7 @@ mod tests {
             gear: vec![],
             vehicles: vec![],
             knowledge_skills: vec![],
+            tradition_name: None,
             notes: String::new(),
             priority_selection: None,
             magic_tradition: None,
