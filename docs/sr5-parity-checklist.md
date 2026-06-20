@@ -59,7 +59,7 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` parked
 
 - [x] SR5 cyberware/bioware list loaded from data — *L3a non-empty*
 - [x] Essence cost graded (Standard 1×, Alpha 0.8×, Beta 0.7×, Delta 0.5×, Used 1.25×) — *engine done*
-- [ ] Bioware costs half essence vs. cyberware — *GRADE_MULTIPLIER applies uniformly; bioware halving not yet implemented*
+- [x] Bioware costs half essence vs. cyberware — *Chummer data pre-halves bioware essence (Cat's Eyes `<ess>0.1</ess>` = effective cost); grade-multiplier-only engine is correct. See `docs/dev-journal/2026-06-20-bioware-essence-halving.md`.*
 - [ ] Grade availability restrictions — *not enforced*
 
 ## Weapons / Armor / Gear

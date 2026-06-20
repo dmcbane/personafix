@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.41.0] - 2026-06-20
+
+### Added
+- P11-4: Bioware essence halving audit confirmed — no code fix needed.
+- `docs/dev-journal/2026-06-20-bioware-essence-halving.md` explains that Chummer's bioware
+  XML pre-halves essence costs at the source (Cat's Eyes `<ess>0.1</ess>` is already
+  the effective 0.1E), so the grade-multiplier-only engine is correct for both
+  cyberware and bioware.
+- `docs/sr5-parity-checklist.md` updated: bioware essence halving marked verified.
+- Bump 0.40.0 → 0.41.0; P11-4 done. All P11 items complete.
+
 ## [0.40.0] - 2026-06-20
 
 ### Added

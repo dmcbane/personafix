@@ -204,7 +204,7 @@ Status: `todo` · `doing` · `done` · `parked`
         SavedCharacterView (cost: new rating in karma per the SR5 rulebook).
   accept: L4 — improve a contact, confirm karma deducted and contact updated.
 
-- id: P11-4  status: todo  deps: []
+- id: P11-4  status: done  deps: []
   desc: Bioware essence halving audit — parity checklist flags this as unimplemented,
         but Chummer's bioware XML already stores effective essence (halved), so the
         grade_multiplier-only engine may already be correct. Audit by cross-referencing
