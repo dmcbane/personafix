@@ -54,6 +54,12 @@ pub trait CharacterRules: Send + Sync {
     /// Maximum rating for a skill during career play.
     fn max_skill_rating(&self) -> u8;
 
+    /// Effective armor rating given a list of individual armor ratings.
+    /// SR4: full stacking (sum). SR5: highest + half of each additional (floor).
+    fn effective_armor(&self, ratings: &[u32]) -> u32 {
+        ratings.iter().copied().sum()
+    }
+
     /// Karma cost to initiate to `grade` (Awakened): 10 + (grade × 3).
     fn initiation_karma_cost(&self, grade: u8) -> u32 {
         10 + (grade as u32) * 3

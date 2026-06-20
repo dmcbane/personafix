@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.44.0] - 2026-06-20
+
+### Added
+- P12-3: Effective armor display with edition-specific stacking rules.
+  - `effective_armor(ratings)` method on `CharacterRules` trait; SR4 = full sum, SR5 = highest + floor(each-additional / 2)
+  - `effective_armor: u32` field on `ComputedCharacter`, computed in both SR4 and SR5 `apply_improvements`
+  - L1 tests for both stacking rules (sr4 full-sum, sr5 stacking)
+  - SavedCharacterView Derived Stats shows effective armor when armor is equipped; "(stacked)" label for SR5 multi-armor
+  - Print sheet shows Effective Armor in derived stats block
+
 ## [0.43.0] - 2026-06-20
 
 ### Added

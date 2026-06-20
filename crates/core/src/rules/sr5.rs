@@ -309,6 +309,14 @@ impl CharacterRules for SR5Rules {
             initiative_dice: init_dice,
             initiation_grade: 0,
             submersion_grade: 0,
+            effective_armor: {
+                let ratings: Vec<u32> = base
+                    .armor
+                    .iter()
+                    .filter_map(|a| if a.armor_value > 0 { Some(a.armor_value as u32) } else { None })
+                    .collect();
+                self.effective_armor(&ratings)
+            },
         }
     }
 
@@ -405,6 +413,17 @@ impl CharacterRules for SR5Rules {
 
     fn max_skill_rating(&self) -> u8 {
         12
+    }
+
+    fn effective_armor(&self, ratings: &[u32]) -> u32 {
+        if ratings.is_empty() {
+            return 0;
+        }
+        let mut sorted = ratings.to_vec();
+        sorted.sort_unstable_by(|a, b| b.cmp(a));
+        let highest = sorted[0];
+        let stacked: u32 = sorted[1..].iter().map(|&r| r / 2).sum();
+        highest + stacked
     }
 }
 
@@ -1108,6 +1127,19 @@ mod tests {
             page: "1".to_string(),
             improvements: vec![],
         }
+    }
+
+    #[test]
+    fn effective_armor_sr5_stacking() {
+        let rules = rules();
+        // Single piece: full value
+        assert_eq!(rules.effective_armor(&[12]), 12);
+        // Two pieces: highest + floor(second / 2)
+        assert_eq!(rules.effective_armor(&[12, 9]), 12 + 4); // 9/2 = 4.5 → 4
+        // Three pieces: highest + floor(second/2) + floor(third/2)
+        assert_eq!(rules.effective_armor(&[12, 9, 6]), 12 + 4 + 3);
+        // Empty: 0
+        assert_eq!(rules.effective_armor(&[]), 0);
     }
 
     #[test]

@@ -234,7 +234,7 @@ Status: `todo` · `doing` · `done` · `parked`
   accept: L1 (karma cost test); L4 — initiate a Magician, confirm grade increments
           and karma deducted.
 
-- id: P12-3  status: todo  deps: []
+- id: P12-3  status: done  deps: []
   desc: Effective armor display — SR5 armor stacking: only the highest armor rating
         counts fully; each additional piece contributes half its rating (rounded down).
         Currently SavedCharacterView shows raw armor value. Add a derived

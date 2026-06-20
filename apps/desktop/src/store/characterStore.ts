@@ -167,6 +167,7 @@ export interface ComputedCharacter {
   nuyen: number;
   initiation_grade: number;
   submersion_grade: number;
+  effective_armor: number;
 }
 
 export type AugmentationGrade = "Standard" | "Alpha" | "Beta" | "Delta" | "Used";

@@ -273,6 +273,12 @@ export default function SavedCharacterView() {
             {attrs.resonance !== null && <StatBox label="Resonance" value={attrs.resonance} accent="blue" />}
             {saved.initiation_grade > 0 && <StatBox label="Init. Grade" value={saved.initiation_grade} accent="purple" />}
             {saved.submersion_grade > 0 && <StatBox label="Subm. Grade" value={saved.submersion_grade} accent="blue" />}
+            {base.armor.length > 0 && (
+              <StatBox
+                label={`Armor${base.edition === "SR5" && base.armor.length > 1 ? " (stacked)" : ""}`}
+                value={saved.effective_armor}
+              />
+            )}
           </div>
         </div>
 
@@ -857,6 +863,7 @@ export default function SavedCharacterView() {
           <div className="attr-box"><div className="attr-label">Stun CM</div><div className="attr-value">{saved.stun_condition_monitor}</div></div>
           <div className="attr-box"><div className="attr-label">Initiative</div><div className="attr-value">{saved.initiative}+{saved.initiative_dice}d6</div></div>
           <div className="attr-box"><div className="attr-label">Karma / Nuyen</div><div className="attr-value">{saved.total_karma_earned - saved.total_karma_spent}k / ¥{saved.nuyen.toLocaleString()}</div></div>
+          {base.armor.length > 0 && <div className="attr-box"><div className="attr-label">Effective Armor</div><div className="attr-value">{saved.effective_armor}</div></div>}
         </div>
 
         {base.qualities.length > 0 && (<>

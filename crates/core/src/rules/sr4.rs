@@ -216,6 +216,13 @@ impl CharacterRules for SR4Rules {
         // Validation on current state
         let validation_errors = Vec::new();
 
+        let armor_ratings: Vec<u32> = base
+            .armor
+            .iter()
+            .filter_map(|a| if a.armor_value > 0 { Some(a.armor_value as u32) } else { None })
+            .collect();
+        let effective_armor = self.effective_armor(&armor_ratings);
+
         ComputedCharacter {
             base: base.clone(),
             active_improvements: all_improvements,
@@ -230,6 +237,7 @@ impl CharacterRules for SR4Rules {
             initiative_dice: init_dice,
             initiation_grade: 0,
             submersion_grade: 0,
+            effective_armor,
         }
     }
 
@@ -973,5 +981,14 @@ mod tests {
             page: "1".to_string(),
             improvements: vec![],
         }
+    }
+
+    #[test]
+    fn effective_armor_sr4_is_full_sum() {
+        let rules = SR4Rules;
+        assert_eq!(rules.effective_armor(&[]), 0);
+        assert_eq!(rules.effective_armor(&[12]), 12);
+        assert_eq!(rules.effective_armor(&[12, 9]), 21);
+        assert_eq!(rules.effective_armor(&[12, 9, 6]), 27);
     }
 }

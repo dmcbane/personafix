@@ -114,6 +114,8 @@ pub struct ComputedCharacter {
     pub initiation_grade: u8,
     /// Current submersion grade (Emerged characters). 0 = not submerged.
     pub submersion_grade: u8,
+    /// Effective armor rating after edition-specific stacking rules.
+    pub effective_armor: u32,
 }
 
 /// Lightweight summary for list views.
