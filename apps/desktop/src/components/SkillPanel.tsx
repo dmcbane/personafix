@@ -2,7 +2,9 @@ import { useState } from "react";
 import {
   useCharacterStore,
   SR5_SKILL_POINTS,
+  KNOWLEDGE_SKILL_CATEGORIES,
   type Skill,
+  type KnowledgeSkill,
 } from "../store/characterStore";
 import { useGameDataStore } from "../store/gameDataStore";
 
@@ -34,12 +36,17 @@ export default function SkillPanel() {
   const addSkill = useCharacterStore((s) => s.addSkill);
   const removeSkill = useCharacterStore((s) => s.removeSkill);
   const updateSkillRating = useCharacterStore((s) => s.updateSkillRating);
+  const addKnowledgeSkill = useCharacterStore((s) => s.addKnowledgeSkill);
+  const removeKnowledgeSkill = useCharacterStore((s) => s.removeKnowledgeSkill);
   const validate = useCharacterStore((s) => s.validate);
   const gameSkills = useGameDataStore((s) => s.skills);
   const gameDataLoaded = useGameDataStore((s) => s.loaded);
   const [selectedSkill, setSelectedSkill] = useState("");
   const [search, setSearch] = useState("");
   const [attrFilter, setAttrFilter] = useState<string>("all");
+  const [knowledgeName, setKnowledgeName] = useState("");
+  const [knowledgeCategory, setKnowledgeCategory] = useState<string>(KNOWLEDGE_SKILL_CATEGORIES[0]);
+  const [knowledgeRating, setKnowledgeRating] = useState(1);
 
   if (!draft) return null;
 
@@ -89,6 +96,18 @@ export default function SkillPanel() {
   const handleRatingChange = (skillId: string, rating: number) => {
     updateSkillRating(skillId, rating);
     validate();
+  };
+
+  const handleAddKnowledgeSkill = () => {
+    if (!knowledgeName.trim()) return;
+    const skill: KnowledgeSkill = {
+      name: knowledgeName.trim(),
+      category: knowledgeCategory,
+      rating: knowledgeRating,
+    };
+    addKnowledgeSkill(skill);
+    setKnowledgeName("");
+    setKnowledgeRating(1);
   };
 
   return (
@@ -249,6 +268,77 @@ export default function SkillPanel() {
           ))}
         </div>
       )}
+
+      {/* Knowledge/Language Skills */}
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-3 text-cyber-heading">
+          // Knowledge &amp; Language Skills
+        </h3>
+        <div className="flex gap-2 mb-3 flex-wrap">
+          <input
+            type="text"
+            value={knowledgeName}
+            onChange={(e) => setKnowledgeName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAddKnowledgeSkill()}
+            placeholder="Skill name…"
+            className="bg-cyber-surface border border-cyber-border rounded px-2 py-1 text-sm text-cyber-text placeholder-cyber-text-dim focus:border-cyber-green outline-none flex-1 min-w-[140px]"
+          />
+          <select
+            value={knowledgeCategory}
+            onChange={(e) => setKnowledgeCategory(e.target.value)}
+            className="bg-cyber-surface border border-cyber-border rounded px-2 py-1 text-sm text-cyber-text focus:border-cyber-green outline-none"
+          >
+            {KNOWLEDGE_SKILL_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setKnowledgeRating(Math.max(1, knowledgeRating - 1))}
+              disabled={knowledgeRating <= 1}
+              className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
+            >-</button>
+            <span className="font-mono text-cyber-heading w-4 text-center">{knowledgeRating}</span>
+            <button
+              onClick={() => setKnowledgeRating(Math.min(12, knowledgeRating + 1))}
+              disabled={knowledgeRating >= 12}
+              className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
+            >+</button>
+          </div>
+          <button
+            onClick={handleAddKnowledgeSkill}
+            disabled={!knowledgeName.trim()}
+            className="px-3 py-1 rounded bg-cyber-green/10 border border-cyber-green text-cyber-green text-sm hover:bg-cyber-green/20 disabled:opacity-40 transition-colors"
+          >
+            + Add
+          </button>
+        </div>
+
+        {draft.knowledge_skills.length === 0 ? (
+          <p className="text-cyber-text-dim text-sm italic">No knowledge skills added.</p>
+        ) : (
+          <div className="space-y-1.5">
+            {draft.knowledge_skills.map((k) => (
+              <div
+                key={k.name}
+                className="flex items-center justify-between bg-cyber-surface border border-cyber-border rounded px-3 py-1.5"
+              >
+                <span className="text-cyber-text text-sm">
+                  {k.name}{" "}
+                  <span className="text-cyber-text-dim font-mono text-xs">({k.category})</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-cyber-heading">{k.rating}</span>
+                  <button
+                    onClick={() => removeKnowledgeSkill(k.name)}
+                    className="text-cyber-red hover:text-cyber-red/80 text-sm transition-colors"
+                  >X</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

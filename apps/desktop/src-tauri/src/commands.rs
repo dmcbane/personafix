@@ -208,13 +208,14 @@ pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCha
         String,
         String,
         String,
+        String,
         Option<String>,
         Option<String>,
     ) = sqlx::query_as(
-        "SELECT attributes_json, skills_json, skill_groups_json, qualities_json, \
-             augmentations_json, spells_json, adept_powers_json, complex_forms_json, \
-             contacts_json, weapons_json, armor_json, gear_json, vehicles_json, \
-             priority_selection_json, magic_tradition \
+        "SELECT attributes_json, skills_json, skill_groups_json, knowledge_skills_json, \
+             qualities_json, augmentations_json, spells_json, adept_powers_json, \
+             complex_forms_json, contacts_json, weapons_json, armor_json, gear_json, \
+             vehicles_json, priority_selection_json, magic_tradition \
              FROM character_base WHERE character_id = ?",
     )
     .bind(id)
@@ -230,18 +231,19 @@ pub async fn get_character_db(pool: &SqlitePool, id: &str) -> Result<ComputedCha
         attributes: serde_json::from_str(&row.0)?,
         skills: serde_json::from_str(&row.1)?,
         skill_groups: serde_json::from_str(&row.2)?,
-        qualities: serde_json::from_str(&row.3)?,
-        augmentations: serde_json::from_str(&row.4)?,
-        spells: serde_json::from_str(&row.5)?,
-        adept_powers: serde_json::from_str(&row.6)?,
-        complex_forms: serde_json::from_str(&row.7)?,
-        contacts: serde_json::from_str(&row.8)?,
-        weapons: serde_json::from_str(&row.9)?,
-        armor: serde_json::from_str(&row.10)?,
-        gear: serde_json::from_str(&row.11)?,
-        vehicles: serde_json::from_str(&row.12)?,
-        priority_selection: row.13.as_deref().and_then(|s| serde_json::from_str(s).ok()),
-        magic_tradition: row.14.as_deref().and_then(|s| serde_json::from_str(s).ok()),
+        knowledge_skills: serde_json::from_str(&row.3)?,
+        qualities: serde_json::from_str(&row.4)?,
+        augmentations: serde_json::from_str(&row.5)?,
+        spells: serde_json::from_str(&row.6)?,
+        adept_powers: serde_json::from_str(&row.7)?,
+        complex_forms: serde_json::from_str(&row.8)?,
+        contacts: serde_json::from_str(&row.9)?,
+        weapons: serde_json::from_str(&row.10)?,
+        armor: serde_json::from_str(&row.11)?,
+        gear: serde_json::from_str(&row.12)?,
+        vehicles: serde_json::from_str(&row.13)?,
+        priority_selection: row.14.as_deref().and_then(|s| serde_json::from_str(s).ok()),
+        magic_tradition: row.15.as_deref().and_then(|s| serde_json::from_str(s).ok()),
     };
 
     let ledger_rows: Vec<(String,)> =
@@ -332,6 +334,7 @@ pub async fn save_character_base_db(
     let attributes_json = serde_json::to_string(&base.attributes)?;
     let skills_json = serde_json::to_string(&base.skills)?;
     let skill_groups_json = serde_json::to_string(&base.skill_groups)?;
+    let knowledge_skills_json = serde_json::to_string(&base.knowledge_skills)?;
     let qualities_json = serde_json::to_string(&base.qualities)?;
     let augmentations_json = serde_json::to_string(&base.augmentations)?;
     let spells_json = serde_json::to_string(&base.spells)?;
@@ -356,6 +359,7 @@ pub async fn save_character_base_db(
     sqlx::query(
         "UPDATE character_base SET \
          metatype = ?, attributes_json = ?, skills_json = ?, skill_groups_json = ?, \
+         knowledge_skills_json = ?, \
          qualities_json = ?, augmentations_json = ?, spells_json = ?, adept_powers_json = ?, \
          complex_forms_json = ?, contacts_json = ?, weapons_json = ?, armor_json = ?, \
          gear_json = ?, vehicles_json = ?, priority_selection_json = ?, magic_tradition = ? \
@@ -365,6 +369,7 @@ pub async fn save_character_base_db(
     .bind(&attributes_json)
     .bind(&skills_json)
     .bind(&skill_groups_json)
+    .bind(&knowledge_skills_json)
     .bind(&qualities_json)
     .bind(&augmentations_json)
     .bind(&spells_json)
@@ -1468,6 +1473,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
             creation_points_spent: 0,
@@ -1516,6 +1522,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
             creation_points_spent: 0,
@@ -1581,6 +1588,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
         };
@@ -1683,6 +1691,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
         };
@@ -1755,6 +1764,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: Some(PrioritySelection {
                 metatype: PriorityLevel::D,
                 attributes: PriorityLevel::A,

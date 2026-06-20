@@ -181,6 +181,37 @@ Status: `todo` · `doing` · `done` · `parked`
         hidden div. No Rust changes needed.
   accept: L4 — trigger print from saved sheet view, printable layout renders correctly.
 
+## P11 — Character depth
+
+- id: P11-1  status: done  deps: []
+  desc: Knowledge/language skills — currently absent from the model entirely.
+        Requires a DB migration (knowledge_skills_json column), KnowledgeSkill model
+        type in core, CharacterBase field update, IPC save/load update, TypeScript types,
+        and a UI panel. Knowledge skills are free-form (player-defined name + category +
+        rating); pool = (INT+LOG)/2 rounded down in SR5 as free points at creation.
+        Categories: Academic, Interest, Language, Professional, Street, Technical.
+  accept: L0+L2 (roundtrip save/load); L4 — add a knowledge skill, save, reload, confirm visible.
+
+- id: P11-2  status: todo  deps: []
+  desc: Character notes — free-text backstory/run-log field per character. Single
+        `notes_json` (or TEXT) column in character_base; textarea in builder and saved
+        sheet; saved/loaded with the character.
+  accept: L0+L2; L4 — type notes, save, reload, confirm notes persist.
+
+- id: P11-3  status: todo  deps: [P5-1]
+  desc: Contact karma improvement — career view currently has no way to spend karma
+        improving contact connection or loyalty. Add "Improve" buttons to contacts in
+        SavedCharacterView (cost: new rating in karma per the SR5 rulebook).
+  accept: L4 — improve a contact, confirm karma deducted and contact updated.
+
+- id: P11-4  status: todo  deps: []
+  desc: Bioware essence halving audit — parity checklist flags this as unimplemented,
+        but Chummer's bioware XML already stores effective essence (halved), so the
+        grade_multiplier-only engine may already be correct. Audit by cross-referencing
+        a known bioware (Cat's Eyes 0.1E) vs cyberware equivalent, update the parity
+        checklist to reflect the finding.
+  accept: Journal entry confirming data is pre-halved or documenting the fix applied.
+
 ## P8 — SR5 Technomancer
 
 - id: P9-1  status: done  deps: [P8-1]

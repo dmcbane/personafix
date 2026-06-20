@@ -774,6 +774,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
             creation_points_spent: 0,
@@ -826,6 +827,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
         };
@@ -879,6 +881,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
             creation_points_spent: 0,
@@ -919,6 +922,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
         }

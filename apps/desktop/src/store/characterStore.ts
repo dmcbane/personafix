@@ -99,6 +99,7 @@ export interface CharacterDraft {
   attributes: Attributes;
   skills: Skill[];
   skill_groups: unknown[];
+  knowledge_skills: KnowledgeSkill[];
   qualities: Quality[];
   augmentations: DraftAugmentation[];
   spells: DraftSpell[];
@@ -123,6 +124,7 @@ export interface ComputedCharacter {
     metatype: string;
     attributes: Attributes;
     skills: Skill[];
+    knowledge_skills: KnowledgeSkill[];
     qualities: Quality[];
     augmentations: DraftAugmentation[];
     spells: DraftSpell[];
@@ -191,6 +193,21 @@ export interface DraftArmor {
   cost: number;
   source: string;
   page: string;
+}
+
+export const KNOWLEDGE_SKILL_CATEGORIES = [
+  "Academic",
+  "Interest",
+  "Language",
+  "Professional",
+  "Street",
+  "Technical",
+] as const;
+
+export interface KnowledgeSkill {
+  name: string;
+  category: string;
+  rating: number;
 }
 
 export interface DraftVehicle {
@@ -384,6 +401,8 @@ interface CharacterState {
   removeArmor: (armorId: string) => void;
   addVehicle: (vehicle: DraftVehicle) => void;
   removeVehicle: (vehicleId: string) => void;
+  addKnowledgeSkill: (skill: KnowledgeSkill) => void;
+  removeKnowledgeSkill: (name: string) => void;
   addSpell: (spell: DraftSpell) => void;
   removeSpell: (spellId: string) => void;
   addAdeptPower: (power: DraftAdeptPower) => void;
@@ -437,6 +456,7 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       },
       skills: [],
       skill_groups: [],
+      knowledge_skills: [],
       qualities: [],
       augmentations: [],
       spells: [],
@@ -639,6 +659,24 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
         ...draft,
         vehicles: draft.vehicles.filter((v) => v.id !== vehicleId),
         nuyen_spent: Math.max(0, draft.nuyen_spent - Number(removed?.cost ?? 0)),
+      },
+    });
+  },
+
+  addKnowledgeSkill: (skill) => {
+    const { draft } = get();
+    if (!draft) return;
+    if (draft.knowledge_skills.some((k) => k.name.toLowerCase() === skill.name.toLowerCase())) return;
+    set({ draft: { ...draft, knowledge_skills: [...draft.knowledge_skills, skill] } });
+  },
+
+  removeKnowledgeSkill: (name) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({
+      draft: {
+        ...draft,
+        knowledge_skills: draft.knowledge_skills.filter((k) => k.name !== name),
       },
     });
   },

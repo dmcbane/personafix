@@ -28,3 +28,14 @@ pub struct SkillGroup {
     pub skills: Vec<String>,
     pub rating: u8,
 }
+
+/// A player-defined knowledge or language skill.
+/// Not drawn from a fixed game-data list — the player names it freely.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct KnowledgeSkill {
+    pub name: String,
+    /// "Academic", "Interest", "Language", "Professional", "Street", "Technical"
+    pub category: String,
+    pub rating: u8,
+}

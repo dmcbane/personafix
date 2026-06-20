@@ -57,8 +57,9 @@ fn legal_human_draft() -> CharacterDraft {
         armor: vec![],
         gear: vec![],
         vehicles: vec![],
+        knowledge_skills: vec![],
         priority_selection: None,
-            magic_tradition: None,
+        magic_tradition: None,
         creation_points_spent: 0,
         nuyen_spent: 0,
     }

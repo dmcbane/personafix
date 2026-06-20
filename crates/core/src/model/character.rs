@@ -11,7 +11,7 @@ use super::{
     magic::{AdeptPower, ComplexForm, MagicTradition, Spell},
     priority::PrioritySelection,
     qualities::Quality,
-    skills::{Skill, SkillGroup},
+    skills::{KnowledgeSkill, Skill, SkillGroup},
     validation::ValidationError,
 };
 
@@ -25,6 +25,8 @@ pub struct CharacterDraft {
     pub attributes: Attributes,
     pub skills: Vec<Skill>,
     pub skill_groups: Vec<SkillGroup>,
+    #[serde(default)]
+    pub knowledge_skills: Vec<KnowledgeSkill>,
     pub qualities: Vec<Quality>,
     pub augmentations: Vec<Augmentation>,
     pub spells: Vec<Spell>,
@@ -57,6 +59,8 @@ pub struct CharacterBase {
     pub attributes: Attributes,
     pub skills: Vec<Skill>,
     pub skill_groups: Vec<SkillGroup>,
+    #[serde(default)]
+    pub knowledge_skills: Vec<KnowledgeSkill>,
     pub qualities: Vec<Quality>,
     pub augmentations: Vec<Augmentation>,
     pub spells: Vec<Spell>,

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.0] - 2026-06-20
+
+### Added
+- P11-1: Knowledge/language skills — free-form player-defined skills added to model.
+- `KnowledgeSkill` struct in `crates/core/src/model/skills.rs` (name, category, rating).
+- `knowledge_skills: Vec<KnowledgeSkill>` on `CharacterDraft` and `CharacterBase`.
+- DB migration `00003_knowledge_skills.sql` adding `knowledge_skills_json` column.
+- IPC: `save_character_base_db`/`get_character_db` updated to persist/load knowledge skills.
+- TypeScript: `KnowledgeSkill` interface, `KNOWLEDGE_SKILL_CATEGORIES` constant, store actions.
+- SkillPanel: Knowledge & Language Skills sub-section with name input, category select, rating stepper.
+- SavedCharacterView: knowledge skills section in character sheet and print layout.
+- Bump 0.37.0 → 0.38.0; P11-1 done.
+
 ## [0.37.0] - 2026-06-19
 
 ### Added

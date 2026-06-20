@@ -900,6 +900,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: Some(PrioritySelection {
                 metatype: PriorityLevel::D,
                 attributes: PriorityLevel::A,
@@ -952,6 +953,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: draft.priority_selection.clone(),
             magic_tradition: draft.magic_tradition,
         };
@@ -1008,6 +1010,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: Some(PrioritySelection {
                 metatype: PriorityLevel::D,
                 attributes: PriorityLevel::B,
@@ -1054,6 +1057,7 @@ mod tests {
             armor: vec![],
             gear: vec![],
             vehicles: vec![],
+            knowledge_skills: vec![],
             priority_selection: None,
             magic_tradition: None,
         }

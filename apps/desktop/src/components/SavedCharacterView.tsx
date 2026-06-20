@@ -489,6 +489,21 @@ export default function SavedCharacterView() {
                 </SheetSection>
               )}
 
+              {/* Knowledge Skills */}
+              {base.knowledge_skills && base.knowledge_skills.length > 0 && (
+                <SheetSection title="Knowledge &amp; Language Skills">
+                  <div className="space-y-1">
+                    {base.knowledge_skills.map((k) => (
+                      <div key={k.name} className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm">
+                        <span className="flex-1 text-cyber-text">{k.name}</span>
+                        <span className="text-cyber-text-dim font-mono text-xs shrink-0">{k.category}</span>
+                        <span className="text-cyber-blue font-mono text-xs shrink-0">{k.rating}</span>
+                      </div>
+                    ))}
+                  </div>
+                </SheetSection>
+              )}
+
               {/* Weapons */}
               {base.weapons.length > 0 && (
                 <SheetSection title="Weapons">
@@ -704,6 +719,13 @@ export default function SavedCharacterView() {
           <h2>Skills</h2>
           {base.skills.map((s) => (
             <div key={s.name} className="item-row"><span>{s.name}</span><span>{s.rating} ({s.linked_attribute})</span></div>
+          ))}
+        </>)}
+
+        {base.knowledge_skills && base.knowledge_skills.length > 0 && (<>
+          <h2>Knowledge &amp; Language Skills</h2>
+          {base.knowledge_skills.map((k) => (
+            <div key={k.name} className="item-row"><span>{k.name}</span><span>{k.rating} ({k.category})</span></div>
           ))}
         </>)}
 
