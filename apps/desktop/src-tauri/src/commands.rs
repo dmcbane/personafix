@@ -2057,6 +2057,73 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_skill_specialization_roundtrip() {
+        use personafix_core::model::skills::{Skill, Specialization};
+
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_character_db(&pool, "ch1", "c1", &Edition::SR4, "Sniper", &Metatype::Human)
+            .await
+            .unwrap();
+
+        let base = CharacterBase {
+            id: "ch1".to_string(),
+            campaign_id: "c1".to_string(),
+            name: "Sniper".to_string(),
+            edition: Edition::SR4,
+            metatype: Metatype::Human,
+            attributes: Attributes {
+                body: 4,
+                agility: 5,
+                reaction: 4,
+                strength: 3,
+                willpower: 3,
+                logic: 2,
+                intuition: 4,
+                charisma: 2,
+                edge: 3,
+                essence: 600,
+                magic: None,
+                resonance: None,
+            },
+            skills: vec![Skill {
+                id: "longarms".to_string(),
+                name: "Longarms".to_string(),
+                linked_attribute: "AGI".to_string(),
+                group: Some("Firearms".to_string()),
+                rating: 5,
+                specializations: vec![Specialization {
+                    name: "Sniper Rifles".to_string(),
+                    bonus: 2,
+                }],
+            }],
+            skill_groups: vec![],
+            qualities: vec![],
+            augmentations: vec![],
+            spells: vec![],
+            adept_powers: vec![],
+            complex_forms: vec![],
+            contacts: vec![],
+            weapons: vec![],
+            armor: vec![],
+            gear: vec![],
+            vehicles: vec![],
+            knowledge_skills: vec![],
+            priority_selection: None,
+            magic_tradition: None,
+            tradition_name: None,
+            notes: String::new(),
+        };
+
+        save_character_base_db(&pool, &base).await.unwrap();
+        let loaded = get_character_db(&pool, "ch1").await.unwrap();
+        let skill = loaded.base.skills.iter().find(|s| s.id == "longarms").unwrap();
+        assert_eq!(skill.specializations.len(), 1);
+        assert_eq!(skill.specializations[0].name, "Sniper Rifles");
+        assert_eq!(skill.specializations[0].bonus, 2);
+    }
+
+    #[tokio::test]
     async fn test_tradition_name_roundtrip() {
         use personafix_core::model::magic::MagicTradition;
         let pool = setup_test_db().await;

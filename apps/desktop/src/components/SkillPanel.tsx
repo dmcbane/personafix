@@ -36,6 +36,8 @@ export default function SkillPanel() {
   const addSkill = useCharacterStore((s) => s.addSkill);
   const removeSkill = useCharacterStore((s) => s.removeSkill);
   const updateSkillRating = useCharacterStore((s) => s.updateSkillRating);
+  const addSpecialization = useCharacterStore((s) => s.addSpecialization);
+  const removeSpecialization = useCharacterStore((s) => s.removeSpecialization);
   const addKnowledgeSkill = useCharacterStore((s) => s.addKnowledgeSkill);
   const removeKnowledgeSkill = useCharacterStore((s) => s.removeKnowledgeSkill);
   const validate = useCharacterStore((s) => s.validate);
@@ -44,6 +46,7 @@ export default function SkillPanel() {
   const [selectedSkill, setSelectedSkill] = useState("");
   const [search, setSearch] = useState("");
   const [attrFilter, setAttrFilter] = useState<string>("all");
+  const [specInputs, setSpecInputs] = useState<Record<string, string>>({});
   const [knowledgeName, setKnowledgeName] = useState("");
   const [knowledgeCategory, setKnowledgeCategory] = useState<string>(KNOWLEDGE_SKILL_CATEGORIES[0]);
   const [knowledgeRating, setKnowledgeRating] = useState(1);
@@ -223,47 +226,98 @@ export default function SkillPanel() {
           {draft.skills.map((skill) => (
             <div
               key={skill.id}
-              className="flex items-center gap-3 bg-cyber-card border border-cyber-border rounded px-3 py-2"
+              className="bg-cyber-card border border-cyber-border rounded px-3 py-2"
             >
-              <span className="flex-1 text-sm">
-                {skill.name}{" "}
-                <span className="text-cyber-text-dim font-mono">
-                  ({skill.linked_attribute})
+              <div className="flex items-center gap-3">
+                <span className="flex-1 text-sm">
+                  {skill.name}{" "}
+                  <span className="text-cyber-text-dim font-mono">
+                    ({skill.linked_attribute})
+                  </span>
                 </span>
-              </span>
-              <button
-                onClick={() =>
-                  handleRatingChange(skill.id, Math.max(1, skill.rating - 1))
-                }
-                disabled={skill.rating <= 1}
-                className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
-              >
-                -
-              </button>
-              <span className="font-mono text-lg w-4 text-center text-cyber-heading">
-                {skill.rating}
-              </span>
-              <button
-                onClick={() =>
-                  handleRatingChange(
-                    skill.id,
-                    Math.min(maxRating, skill.rating + 1),
-                  )
-                }
-                disabled={skill.rating >= maxRating}
-                className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
-              >
-                +
-              </button>
-              <button
-                onClick={() => {
-                  removeSkill(skill.id);
-                  validate();
-                }}
-                className="text-cyber-red hover:text-cyber-red/80 text-sm ml-2 transition-colors"
-              >
-                X
-              </button>
+                <button
+                  onClick={() =>
+                    handleRatingChange(skill.id, Math.max(1, skill.rating - 1))
+                  }
+                  disabled={skill.rating <= 1}
+                  className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
+                >
+                  -
+                </button>
+                <span className="font-mono text-lg w-4 text-center text-cyber-heading">
+                  {skill.rating}
+                </span>
+                <button
+                  onClick={() =>
+                    handleRatingChange(
+                      skill.id,
+                      Math.min(maxRating, skill.rating + 1),
+                    )
+                  }
+                  disabled={skill.rating >= maxRating}
+                  className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => {
+                    removeSkill(skill.id);
+                    validate();
+                  }}
+                  className="text-cyber-red hover:text-cyber-red/80 text-sm ml-2 transition-colors"
+                >
+                  X
+                </button>
+              </div>
+              {/* Specialization chips */}
+              {skill.specializations.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5 ml-1">
+                  {skill.specializations.map((sp) => (
+                    <span
+                      key={sp.name}
+                      className="inline-flex items-center gap-1 text-xs font-mono bg-cyber-surface border border-cyber-border rounded px-2 py-0.5 text-cyber-blue"
+                    >
+                      {sp.name} (+{sp.bonus})
+                      <button
+                        onClick={() => removeSpecialization(skill.id, sp.name)}
+                        className="text-cyber-red/70 hover:text-cyber-red ml-0.5"
+                        title="Remove"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* Add specialization */}
+              {skill.specializations.length < 1 && (
+                <div className="flex gap-1 mt-1.5 ml-1">
+                  <input
+                    type="text"
+                    placeholder="Add specialization…"
+                    value={specInputs[skill.id] ?? ""}
+                    onChange={(e) => setSpecInputs((prev) => ({ ...prev, [skill.id]: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && specInputs[skill.id]?.trim()) {
+                        addSpecialization(skill.id, specInputs[skill.id]);
+                        setSpecInputs((prev) => ({ ...prev, [skill.id]: "" }));
+                      }
+                    }}
+                    className="flex-1 text-xs font-mono bg-cyber-surface border border-cyber-border rounded px-2 py-0.5 text-cyber-text placeholder:text-cyber-text-dim/50 focus:border-cyber-green-dim focus:outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      if (specInputs[skill.id]?.trim()) {
+                        addSpecialization(skill.id, specInputs[skill.id]);
+                        setSpecInputs((prev) => ({ ...prev, [skill.id]: "" }));
+                      }
+                    }}
+                    className="text-xs px-2 py-0.5 border border-cyber-border hover:border-cyber-green-dim text-cyber-text-dim hover:text-cyber-text rounded transition-colors"
+                  >
+                    +Spec
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

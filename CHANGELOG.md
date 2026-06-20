@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.45.0] - 2026-06-20
+
+### Added
+- P12-4: Specializations on existing skills — add/display per skill.
+  - `addSpecialization` / `removeSpecialization` store actions
+  - L2 roundtrip test: specializations survive save/load (skills_json roundtrip)
+  - SkillPanel: inline add-specialization input + Enter/button per skill row (capped at 1 per skill); chips with remove button
+  - SavedCharacterView: "Active Skills" SheetSection shows skills with specialization chips (↳ name +2)
+  - Print sheet shows specializations as indented sub-rows under each skill
+
 ## [0.44.0] - 2026-06-20
 
 ### Added

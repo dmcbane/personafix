@@ -439,6 +439,28 @@ export default function SavedCharacterView() {
           {showSheet && (
             <div className="mt-4 space-y-4">
 
+              {/* Active Skills */}
+              {base.skills.length > 0 && (
+                <SheetSection title="Active Skills">
+                  <div className="space-y-1">
+                    {base.skills.map((skill) => (
+                      <div key={skill.id}>
+                        <div className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm">
+                          <span className="flex-1 text-cyber-text">{skill.name}</span>
+                          <span className="text-xs font-mono text-cyber-text-dim">{skill.linked_attribute}</span>
+                          <span className="text-xs font-mono text-cyber-blue font-bold">{skill.rating}</span>
+                        </div>
+                        {skill.specializations.map((sp) => (
+                          <div key={sp.name} className="ml-4 text-xs font-mono text-cyber-blue/70 mt-0.5">
+                            ↳ {sp.name} <span className="text-cyber-green">(+{sp.bonus})</span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </SheetSection>
+              )}
+
               {/* Qualities */}
               {base.qualities.length > 0 && (
                 <SheetSection title="Qualities">
@@ -883,7 +905,12 @@ export default function SavedCharacterView() {
         {base.skills.length > 0 && (<>
           <h2>Skills</h2>
           {base.skills.map((s) => (
-            <div key={s.name} className="item-row"><span>{s.name}</span><span>{s.rating} ({s.linked_attribute})</span></div>
+            <div key={s.name}>
+              <div className="item-row"><span>{s.name}</span><span>{s.rating} ({s.linked_attribute})</span></div>
+              {s.specializations.map((sp) => (
+                <div key={sp.name} style={{ paddingLeft: "1rem", fontSize: "0.8em", color: "#7ec8e3" }}>↳ {sp.name} (+{sp.bonus})</div>
+              ))}
+            </div>
           ))}
         </>)}
 

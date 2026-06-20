@@ -416,6 +416,8 @@ interface CharacterState {
   addSkill: (skill: Skill) => void;
   removeSkill: (skillId: string) => void;
   updateSkillRating: (skillId: string, rating: number) => void;
+  addSpecialization: (skillId: string, specName: string) => void;
+  removeSpecialization: (skillId: string, specName: string) => void;
   addQuality: (quality: Quality) => void;
   removeQuality: (qualityId: string) => void;
   addAugmentation: (aug: DraftAugmentation) => void;
@@ -581,6 +583,38 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
         ...draft,
         skills: draft.skills.map((s) =>
           s.id === skillId ? { ...s, rating } : s,
+        ),
+      },
+    });
+  },
+
+  addSpecialization: (skillId, specName) => {
+    const { draft } = get();
+    if (!draft) return;
+    const trimmed = specName.trim();
+    if (!trimmed) return;
+    set({
+      draft: {
+        ...draft,
+        skills: draft.skills.map((s) =>
+          s.id === skillId && !s.specializations.some((sp) => sp.name === trimmed)
+            ? { ...s, specializations: [...s.specializations, { name: trimmed, bonus: 2 }] }
+            : s,
+        ),
+      },
+    });
+  },
+
+  removeSpecialization: (skillId, specName) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({
+      draft: {
+        ...draft,
+        skills: draft.skills.map((s) =>
+          s.id === skillId
+            ? { ...s, specializations: s.specializations.filter((sp) => sp.name !== specName) }
+            : s,
         ),
       },
     });

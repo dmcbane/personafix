@@ -243,7 +243,7 @@ Status: `todo` · `doing` · `done` · `parked`
   accept: L1 test in sr5.rs for stacking; L4 — equip two armors, confirm effective
           total shown correctly.
 
-- id: P12-4  status: todo  deps: []
+- id: P12-4  status: done  deps: []
   desc: Specializations on existing skills — SkillPanel lets you add skills with a
         rating, but there is no way to add a specialization (+2 dice) to an already-added
         skill. Add a "+" specialization button per skill row; a small text input to name
