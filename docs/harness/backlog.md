@@ -162,7 +162,7 @@ Status: `todo` · `doing` · `done` · `parked`
   accept: L0 (tsc clean); L4 — roll from a skill pool, confirm hits and glitch
           detection correct.
 
-- id: P10-2  status: todo  deps: []
+- id: P10-2  status: done  deps: []
   desc: SR5 parity checklist — draft docs/sr5-parity-checklist.md mirroring the SR4
         file, covering priority creation flow, all panel completeness, contacts, karma
         improvement, complex forms, and any SR5-only checks not in the SR4 list.
