@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.0] - 2026-06-19
+
+### Fixed
+- P9-1: `DraftAdeptPower.cost` was typed as `string` in TypeScript but `i32` in Rust;
+  serde would reject the IPC payload on any save with adept powers. Fixed by storing cost
+  as integer centessences (`number`, e.g. 25 for 0.25 PP) matching the Rust type. Display
+  converts with `ppFromCentessence()`. `handleAddPower` converts from GameAdeptPower's
+  decimal string via `Math.round(parseFloat(gp.cost) * 100)`.
+
+### Added
+- P9-1: `ComputedCharacter.base` now exposes all `CharacterBase` fields: `qualities`,
+  `augmentations`, `spells`, `adept_powers`, `complex_forms`, `contacts`, `weapons`,
+  `armor`, `magic_tradition`. Previously only `skills` was typed, causing the sheet view
+  to show a blank equipment section.
+- P9-1: `SavedCharacterView` now shows collapsible "// Character Sheet" section with
+  Qualities (positive/negative), Augmentations (type badge, grade, essence), Spells
+  (category, type, drain), Adept Powers (PP cost), Complex Forms (target, duration,
+  fading), Contacts (connection/loyalty + archetype), Weapons (category, damage), and
+  Armor (armor value). Section only rendered for the character's tradition.
+- P9-1: Nuyen Spend button in the Career section (alongside Karma and Nuyen Received).
+  Guards against spending more than available balance.
+- SR4 parity checklist updated to reflect phases 1–5 completion.
+
 ## [0.32.0] - 2026-06-19
 
 ### Added

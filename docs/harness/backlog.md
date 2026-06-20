@@ -153,6 +153,19 @@ Status: `todo` · `doing` · `done` · `parked`
 
 ## P8 — SR5 Technomancer
 
+- id: P9-1  status: done  deps: [P8-1]
+  desc: Character sheet completeness — SavedCharacterView currently shows only attributes,
+        derived stats, and career events. Equipment (qualities, augmentations, spells,
+        adept powers, complex forms, contacts, weapons, armor) is saved to the DB but
+        never displayed. Also fixes a silent save bug: DraftAdeptPower.cost was typed
+        as string in TypeScript but i32 in Rust, causing serde rejection on any save
+        with adept powers. Fix cost type to number (centessences), expand
+        ComputedCharacter.base to include all fields, add collapsible sheet sections,
+        and add nuyen-spend event button.
+  accept: L0 (tsc clean); L4 — save an adept character and confirm the sheet shows
+          adept powers (not blank); save/reload a character with spells, contacts, and
+          armor and confirm all visible.
+
 - id: P8-1  status: done  deps: [P6-2]
   desc: SR5 complex forms panel — Technomancers need a complex form browser.
         complexforms.xml has 38 entries already in game_data.db schema but table is

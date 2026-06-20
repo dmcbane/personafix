@@ -45,9 +45,9 @@ function canUseComplexForms(tradition: MagicTradition | null): boolean {
   return tradition === "Technomancer";
 }
 
-/** Parse cost string like "0.25" → 0.25 */
-function parseCost(cost: string): number {
-  return parseFloat(cost) || 0;
+/** Convert centessence integer to PP float (25 → 0.25) */
+function ppFromCentessence(cost: number): number {
+  return cost / 100;
 }
 
 export default function MagicPanel() {
@@ -82,10 +82,10 @@ export default function MagicPanel() {
   const showAdeptPowers = canUseAdeptPowers(tradition);
   const showComplexForms = canUseComplexForms(tradition);
 
-  // Power point pool = magic rating; each power costs its decimal value
+  // Power point pool = magic rating; each power costs centessences / 100
   const totalPowerPoints = magicRating;
   const spentPowerPoints = draft.adept_powers.reduce(
-    (acc, p) => acc + parseCost(p.cost),
+    (acc, p) => acc + ppFromCentessence(p.cost),
     0
   );
   const remainingPP = totalPowerPoints - spentPowerPoints;
@@ -155,7 +155,8 @@ export default function MagicPanel() {
     const power: DraftAdeptPower = {
       id: gp.id,
       name: gp.name,
-      cost: gp.cost,
+      // Convert decimal string "0.25" → centessence integer 25 to match Rust i32
+      cost: Math.round(parseFloat(gp.cost) * 100),
       levels: gp.levels,
       source: gp.source,
       page: gp.page,
@@ -254,7 +255,7 @@ export default function MagicPanel() {
                     )}
                   </div>
                   <span className="font-mono text-xs text-cyber-blue shrink-0">
-                    {p.cost} PP
+                    {ppFromCentessence(p.cost).toFixed(2)} PP
                   </span>
                   <button
                     onClick={() => removeAdeptPower(p.id)}

@@ -9,18 +9,22 @@ export default function SavedCharacterView() {
 
   const [karmaAmount, setKarmaAmount] = useState(5);
   const [karmaReason, setKarmaReason] = useState("Run reward");
-  const [nuyenAmount, setNuyenAmount] = useState(5000);
-  const [nuyenReason, setNuyenReason] = useState("Run reward");
+  const [nuyenReceiveAmount, setNuyenReceiveAmount] = useState(5000);
+  const [nuyenReceiveReason, setNuyenReceiveReason] = useState("Run reward");
+  const [nuyenSpendAmount, setNuyenSpendAmount] = useState(1000);
+  const [nuyenSpendReason, setNuyenSpendReason] = useState("Gear");
   const [applying, setApplying] = useState(false);
   const [eventError, setEventError] = useState<string | null>(null);
   const [showImprove, setShowImprove] = useState(false);
   const [showLedger, setShowLedger] = useState(false);
+  const [showSheet, setShowSheet] = useState(false);
   const [ledgerEvents, setLedgerEvents] = useState<LedgerEvent[]>([]);
   const [ledgerLoading, setLedgerLoading] = useState(false);
 
   if (!saved) return null;
 
   const characterId = saved.base.id;
+  const base = saved.base;
 
   const loadLedger = useCallback(async () => {
     setLedgerLoading(true);
@@ -38,14 +42,11 @@ export default function SavedCharacterView() {
     if (showLedger) loadLedger();
   }, [showLedger, loadLedger]);
 
-  const handleKarmaReceived = async () => {
-    if (karmaAmount <= 0) return;
+  const applyWithReload = async (event: LedgerEvent) => {
     setApplying(true);
     setEventError(null);
     try {
-      await applyEvent(characterId, {
-        KarmaReceived: { amount: karmaAmount, reason: karmaReason, run_id: null },
-      });
+      await applyEvent(characterId, event);
       if (showLedger) await loadLedger();
     } catch (err) {
       setEventError(String(err));
@@ -54,11 +55,24 @@ export default function SavedCharacterView() {
     }
   };
 
+  const handleKarmaReceived = () =>
+    applyWithReload({ KarmaReceived: { amount: karmaAmount, reason: karmaReason, run_id: null } });
+
+  const handleNuyenReceived = () =>
+    applyWithReload({ NuyenReceived: { amount: nuyenReceiveAmount, reason: nuyenReceiveReason, run_id: null } });
+
+  const handleNuyenSpent = () => {
+    if (nuyenSpendAmount <= 0 || nuyenSpendAmount > saved.nuyen) {
+      setEventError(`Cannot spend ¥${nuyenSpendAmount.toLocaleString()} (available: ¥${saved.nuyen.toLocaleString()})`);
+      return;
+    }
+    applyWithReload({ NuyenSpent: { amount: nuyenSpendAmount, description: nuyenSpendReason } });
+  };
+
   const handleSkillImprove = async (skillName: string, from: number) => {
     const to = from + 1;
     const karmaCost = to * 2;
-    const available =
-      saved.total_karma_earned - saved.total_karma_spent;
+    const available = saved.total_karma_earned - saved.total_karma_spent;
     if (available < karmaCost) {
       setEventError(`Not enough karma (need ${karmaCost}, have ${available})`);
       return;
@@ -66,16 +80,8 @@ export default function SavedCharacterView() {
     setApplying(true);
     setEventError(null);
     try {
-      await applyEvent(characterId, {
-        SkillImproved: { skill_name: skillName, from, to, karma_cost: karmaCost },
-      });
-      // Also spend the karma
-      await applyEvent(characterId, {
-        KarmaSpent: {
-          amount: karmaCost,
-          description: `${skillName} ${from} → ${to}`,
-        },
-      });
+      await applyEvent(characterId, { SkillImproved: { skill_name: skillName, from, to, karma_cost: karmaCost } });
+      await applyEvent(characterId, { KarmaSpent: { amount: karmaCost, description: `${skillName} ${from} → ${to}` } });
       if (showLedger) await loadLedger();
     } catch (err) {
       setEventError(String(err));
@@ -87,8 +93,7 @@ export default function SavedCharacterView() {
   const handleAttrImprove = async (attr: string, from: number) => {
     const to = from + 1;
     const karmaCost = to * 5;
-    const available =
-      saved.total_karma_earned - saved.total_karma_spent;
+    const available = saved.total_karma_earned - saved.total_karma_spent;
     if (available < karmaCost) {
       setEventError(`Not enough karma (need ${karmaCost}, have ${available})`);
       return;
@@ -96,36 +101,8 @@ export default function SavedCharacterView() {
     setApplying(true);
     setEventError(null);
     try {
-      await applyEvent(characterId, {
-        AttributeImproved: {
-          attribute: attr,
-          from,
-          to,
-          karma_cost: karmaCost,
-        },
-      });
-      await applyEvent(characterId, {
-        KarmaSpent: {
-          amount: karmaCost,
-          description: `${attr} ${from} → ${to}`,
-        },
-      });
-      if (showLedger) await loadLedger();
-    } catch (err) {
-      setEventError(String(err));
-    } finally {
-      setApplying(false);
-    }
-  };
-
-  const handleNuyenReceived = async () => {
-    if (nuyenAmount <= 0) return;
-    setApplying(true);
-    setEventError(null);
-    try {
-      await applyEvent(characterId, {
-        NuyenReceived: { amount: nuyenAmount, reason: nuyenReason, run_id: null },
-      });
+      await applyEvent(characterId, { AttributeImproved: { attribute: attr, from, to, karma_cost: karmaCost } });
+      await applyEvent(characterId, { KarmaSpent: { amount: karmaCost, description: `${attr} ${from} → ${to}` } });
       if (showLedger) await loadLedger();
     } catch (err) {
       setEventError(String(err));
@@ -135,17 +112,21 @@ export default function SavedCharacterView() {
   };
 
   const attrs = saved.computed_attributes;
+  const tradition = base.magic_tradition;
+  const hasSpells = tradition === "Magician" || tradition === "MysticAdept" || base.edition === "SR4";
+  const hasPowers = tradition === "Adept" || tradition === "MysticAdept";
+  const hasForms = tradition === "Technomancer";
 
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-2xl mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-cyber-heading">
-              {saved.base.name}
-            </h1>
+            <h1 className="text-3xl font-bold text-cyber-heading">{base.name}</h1>
             <p className="text-cyber-text-dim font-mono">
-              {saved.base.edition} {saved.base.metatype} // Character Sheet
+              {base.edition} {base.metatype} // Character Sheet
+              {tradition && <span className="text-cyber-blue ml-2">[{tradition}]</span>}
             </p>
           </div>
           <button
@@ -158,9 +139,7 @@ export default function SavedCharacterView() {
 
         {/* Attributes */}
         <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mb-4">
-          <h2 className="text-lg font-semibold mb-3 text-cyber-heading font-mono">
-            // Attributes
-          </h2>
+          <h2 className="text-lg font-semibold mb-3 text-cyber-heading font-mono">// Attributes</h2>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {(
               [
@@ -175,16 +154,9 @@ export default function SavedCharacterView() {
                 ["EDG", attrs.edge],
               ] as [string, number][]
             ).map(([label, value]) => (
-              <div
-                key={label}
-                className="bg-cyber-surface border border-cyber-border rounded px-3 py-2 text-center"
-              >
-                <div className="text-cyber-blue text-xs font-mono">
-                  {label}
-                </div>
-                <div className="text-xl font-bold text-cyber-heading">
-                  {value}
-                </div>
+              <div key={label} className="bg-cyber-surface border border-cyber-border rounded px-3 py-2 text-center">
+                <div className="text-cyber-blue text-xs font-mono">{label}</div>
+                <div className="text-xl font-bold text-cyber-heading">{value}</div>
               </div>
             ))}
           </div>
@@ -192,89 +164,45 @@ export default function SavedCharacterView() {
 
         {/* Derived Stats */}
         <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mb-4">
-          <h2 className="text-lg font-semibold mb-3 text-cyber-heading font-mono">
-            // Derived Stats
-          </h2>
+          <h2 className="text-lg font-semibold mb-3 text-cyber-heading font-mono">// Derived Stats</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <StatBox
-              label="Physical CM"
-              value={saved.physical_condition_monitor}
-            />
+            <StatBox label="Physical CM" value={saved.physical_condition_monitor} />
             <StatBox label="Stun CM" value={saved.stun_condition_monitor} />
-            <StatBox
-              label="Initiative"
-              value={`${saved.initiative} + ${saved.initiative_dice}d6`}
-            />
-            <StatBox
-              label="Essence"
-              value={(attrs.essence / 100).toFixed(2)}
-              accent="blue"
-            />
-            {attrs.magic !== null && (
-              <StatBox label="Magic" value={attrs.magic} accent="purple" />
-            )}
-            {attrs.resonance !== null && (
-              <StatBox
-                label="Resonance"
-                value={attrs.resonance}
-                accent="blue"
-              />
-            )}
+            <StatBox label="Initiative" value={`${saved.initiative} + ${saved.initiative_dice}d6`} />
+            <StatBox label="Essence" value={(attrs.essence / 100).toFixed(2)} accent="blue" />
+            {attrs.magic !== null && <StatBox label="Magic" value={attrs.magic} accent="purple" />}
+            {attrs.resonance !== null && <StatBox label="Resonance" value={attrs.resonance} accent="blue" />}
           </div>
         </div>
 
         {/* Career */}
-        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-3 text-cyber-heading font-mono">
-            // Career
-          </h2>
+        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mb-4">
+          <h2 className="text-lg font-semibold mb-3 text-cyber-heading font-mono">// Career</h2>
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <StatBox
-              label="Karma Earned"
-              value={saved.total_karma_earned}
-              accent="green"
-            />
+            <StatBox label="Karma Earned" value={saved.total_karma_earned} accent="green" />
             <StatBox label="Karma Spent" value={saved.total_karma_spent} />
-            <StatBox
-              label="Nuyen"
-              value={`¥${saved.nuyen.toLocaleString()}`}
-              accent="green"
-            />
+            <StatBox label="Nuyen" value={`¥${saved.nuyen.toLocaleString()}`} accent="green" />
           </div>
 
-          {/* Event entry */}
           <div className="border-t border-cyber-border pt-3 space-y-3">
-            <h3 className="text-xs font-mono text-cyber-text-dim">
-              Apply Event
-            </h3>
+            <h3 className="text-xs font-mono text-cyber-text-dim">Apply Event</h3>
+
             {/* Karma received */}
             <div className="flex gap-2 items-end">
               <div className="flex-1">
-                <label className="text-xs text-cyber-text-dim font-mono block mb-1">
-                  Karma +
-                </label>
+                <label className="text-xs text-cyber-text-dim font-mono block mb-1">Karma +</label>
                 <div className="flex gap-1">
-                  <input
-                    type="number"
-                    min={1}
-                    value={karmaAmount}
+                  <input type="number" min={1} value={karmaAmount}
                     onChange={(e) => setKarmaAmount(Math.max(1, Number(e.target.value)))}
-                    className="w-16 bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 text-sm text-center"
-                  />
-                  <input
-                    type="text"
-                    value={karmaReason}
+                    className="w-16 bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 text-sm text-center" />
+                  <input type="text" value={karmaReason}
                     onChange={(e) => setKarmaReason(e.target.value)}
                     placeholder="Reason"
-                    className="flex-1 bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 text-sm"
-                  />
+                    className="flex-1 bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 text-sm" />
                 </div>
               </div>
-              <button
-                onClick={handleKarmaReceived}
-                disabled={applying}
-                className="px-3 py-1.5 text-xs font-mono border border-cyber-green text-cyber-green hover:bg-cyber-green/10 rounded transition-colors disabled:opacity-40 shrink-0"
-              >
+              <button onClick={handleKarmaReceived} disabled={applying}
+                className="px-3 py-1.5 text-xs font-mono border border-cyber-green text-cyber-green hover:bg-cyber-green/10 rounded transition-colors disabled:opacity-40 shrink-0">
                 Apply
               </button>
             </div>
@@ -282,80 +210,224 @@ export default function SavedCharacterView() {
             {/* Nuyen received */}
             <div className="flex gap-2 items-end">
               <div className="flex-1">
-                <label className="text-xs text-cyber-text-dim font-mono block mb-1">
-                  Nuyen +
-                </label>
+                <label className="text-xs text-cyber-text-dim font-mono block mb-1">Nuyen +</label>
                 <div className="flex gap-1">
-                  <input
-                    type="number"
-                    min={1}
-                    value={nuyenAmount}
-                    onChange={(e) => setNuyenAmount(Math.max(1, Number(e.target.value)))}
-                    className="w-24 bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 text-sm text-center"
-                  />
-                  <input
-                    type="text"
-                    value={nuyenReason}
-                    onChange={(e) => setNuyenReason(e.target.value)}
+                  <input type="number" min={1} value={nuyenReceiveAmount}
+                    onChange={(e) => setNuyenReceiveAmount(Math.max(1, Number(e.target.value)))}
+                    className="w-24 bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 text-sm text-center" />
+                  <input type="text" value={nuyenReceiveReason}
+                    onChange={(e) => setNuyenReceiveReason(e.target.value)}
                     placeholder="Reason"
-                    className="flex-1 bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 text-sm"
-                  />
+                    className="flex-1 bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 text-sm" />
                 </div>
               </div>
-              <button
-                onClick={handleNuyenReceived}
-                disabled={applying}
-                className="px-3 py-1.5 text-xs font-mono border border-cyber-green text-cyber-green hover:bg-cyber-green/10 rounded transition-colors disabled:opacity-40 shrink-0"
-              >
+              <button onClick={handleNuyenReceived} disabled={applying}
+                className="px-3 py-1.5 text-xs font-mono border border-cyber-green text-cyber-green hover:bg-cyber-green/10 rounded transition-colors disabled:opacity-40 shrink-0">
                 Apply
               </button>
             </div>
 
-            {eventError && (
-              <p className="text-cyber-red text-xs font-mono">{eventError}</p>
-            )}
+            {/* Nuyen spent */}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="text-xs text-cyber-text-dim font-mono block mb-1">Nuyen −</label>
+                <div className="flex gap-1">
+                  <input type="number" min={1} value={nuyenSpendAmount}
+                    onChange={(e) => setNuyenSpendAmount(Math.max(1, Number(e.target.value)))}
+                    className="w-24 bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 text-sm text-center" />
+                  <input type="text" value={nuyenSpendReason}
+                    onChange={(e) => setNuyenSpendReason(e.target.value)}
+                    placeholder="Description"
+                    className="flex-1 bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 text-sm" />
+                </div>
+              </div>
+              <button onClick={handleNuyenSpent} disabled={applying || nuyenSpendAmount > saved.nuyen}
+                className="px-3 py-1.5 text-xs font-mono border border-cyber-red text-cyber-red hover:bg-cyber-red/10 rounded transition-colors disabled:opacity-40 shrink-0">
+                Spend
+              </button>
+            </div>
+
+            {eventError && <p className="text-cyber-red text-xs font-mono">{eventError}</p>}
           </div>
         </div>
 
-        {/* Career timeline / Ledger view (P5-3) */}
-        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mt-4">
-          <button
-            onClick={() => setShowLedger((s) => !s)}
-            className="text-lg font-semibold text-cyber-heading font-mono flex items-center gap-2 w-full text-left"
-          >
+        {/* Full Character Sheet (collapsible) */}
+        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mb-4">
+          <button onClick={() => setShowSheet((s) => !s)}
+            className="text-lg font-semibold text-cyber-heading font-mono flex items-center gap-2 w-full text-left">
+            // Character Sheet
+            <span className="text-xs text-cyber-text-dim ml-auto">{showSheet ? "▲ collapse" : "▼ expand"}</span>
+          </button>
+
+          {showSheet && (
+            <div className="mt-4 space-y-4">
+
+              {/* Qualities */}
+              {base.qualities.length > 0 && (
+                <SheetSection title="Qualities">
+                  <div className="space-y-1">
+                    {base.qualities.map((q) => (
+                      <div key={q.id} className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm">
+                        <span className={`text-xs font-mono px-1.5 py-0.5 rounded shrink-0 ${q.quality_type === "Positive" ? "bg-cyber-green-dim/30 text-cyber-green border border-cyber-green-dim" : "bg-cyber-red-dim/30 text-cyber-red border border-cyber-red-dim"}`}>
+                          {q.quality_type === "Positive" ? "+" : "−"}
+                        </span>
+                        <span className="flex-1 text-cyber-text">{q.name}</span>
+                        <span className="text-cyber-text-dim font-mono text-xs shrink-0">{q.cost} BP</span>
+                      </div>
+                    ))}
+                  </div>
+                </SheetSection>
+              )}
+
+              {/* Augmentations */}
+              {base.augmentations.length > 0 && (
+                <SheetSection title="Augmentations">
+                  <div className="space-y-1">
+                    {base.augmentations.map((a) => (
+                      <div key={a.id} className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm">
+                        <span className="text-xs font-mono px-1.5 py-0.5 rounded shrink-0 bg-cyber-blue/10 border border-cyber-blue/30 text-cyber-blue">
+                          {a.augmentation_type.slice(0, 3)}
+                        </span>
+                        <span className="flex-1 text-cyber-text">{a.name}</span>
+                        <span className="text-cyber-text-dim font-mono text-xs shrink-0">{a.grade}</span>
+                        <span className="text-cyber-yellow font-mono text-xs shrink-0">
+                          {(a.essence_cost / 100).toFixed(2)}E
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </SheetSection>
+              )}
+
+              {/* Spells */}
+              {hasSpells && base.spells.length > 0 && (
+                <SheetSection title="Spells">
+                  <div className="space-y-1">
+                    {base.spells.map((s) => (
+                      <div key={s.id} className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm">
+                        <span className="flex-1 text-cyber-text">{s.name}</span>
+                        <span className="text-cyber-text-dim font-mono text-xs shrink-0">{s.category} · {s.spell_type}</span>
+                        <span className="text-cyber-blue font-mono text-xs shrink-0">{s.drain}</span>
+                      </div>
+                    ))}
+                  </div>
+                </SheetSection>
+              )}
+
+              {/* Adept Powers */}
+              {hasPowers && base.adept_powers.length > 0 && (
+                <SheetSection title="Adept Powers">
+                  <div className="space-y-1">
+                    {base.adept_powers.map((p) => (
+                      <div key={p.id} className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm">
+                        <span className="flex-1 text-cyber-text">{p.name}</span>
+                        {p.levels && <span className="text-cyber-text-dim font-mono text-xs">leveled</span>}
+                        <span className="text-cyber-blue font-mono text-xs shrink-0">
+                          {(p.cost / 100).toFixed(2)} PP
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </SheetSection>
+              )}
+
+              {/* Complex Forms */}
+              {hasForms && base.complex_forms.length > 0 && (
+                <SheetSection title="Complex Forms">
+                  <div className="space-y-1">
+                    {base.complex_forms.map((f) => (
+                      <div key={f.id} className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm">
+                        <span className="flex-1 text-cyber-text">{f.name}</span>
+                        <span className="text-cyber-text-dim font-mono text-xs shrink-0">{f.target} · {f.duration}</span>
+                        <span className="text-cyber-blue font-mono text-xs shrink-0">{f.fading}</span>
+                      </div>
+                    ))}
+                  </div>
+                </SheetSection>
+              )}
+
+              {/* Contacts */}
+              {base.contacts.length > 0 && (
+                <SheetSection title="Contacts">
+                  <div className="space-y-1">
+                    {base.contacts.map((c) => (
+                      <div key={c.id} className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-cyber-text font-medium">{c.name}</span>
+                          {c.archetype && <span className="text-cyber-text-dim font-mono text-xs ml-2">{c.archetype}</span>}
+                        </div>
+                        <span className="text-cyber-blue font-mono text-xs shrink-0">
+                          {c.connection}/{c.loyalty}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </SheetSection>
+              )}
+
+              {/* Weapons */}
+              {base.weapons.length > 0 && (
+                <SheetSection title="Weapons">
+                  <div className="space-y-1">
+                    {base.weapons.map((w) => (
+                      <div key={w.id} className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm">
+                        <span className="flex-1 text-cyber-text">{w.name}</span>
+                        <span className="text-cyber-text-dim font-mono text-xs shrink-0">{w.category}</span>
+                        <span className="text-cyber-yellow font-mono text-xs shrink-0">{w.damage}</span>
+                      </div>
+                    ))}
+                  </div>
+                </SheetSection>
+              )}
+
+              {/* Armor */}
+              {base.armor.length > 0 && (
+                <SheetSection title="Armor">
+                  <div className="space-y-1">
+                    {base.armor.map((a) => (
+                      <div key={a.id} className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm">
+                        <span className="flex-1 text-cyber-text">{a.name}</span>
+                        <span className="text-cyber-blue font-mono text-xs shrink-0">
+                          {a.armor_value} armor
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </SheetSection>
+              )}
+
+              {base.qualities.length === 0 && base.augmentations.length === 0 &&
+               base.spells.length === 0 && base.adept_powers.length === 0 &&
+               base.complex_forms.length === 0 && base.contacts.length === 0 &&
+               base.weapons.length === 0 && base.armor.length === 0 && (
+                <p className="text-cyber-text-dim text-sm font-mono">No equipment recorded.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Career Timeline */}
+        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mb-4">
+          <button onClick={() => setShowLedger((s) => !s)}
+            className="text-lg font-semibold text-cyber-heading font-mono flex items-center gap-2 w-full text-left">
             // Career Timeline
-            <span className="text-xs text-cyber-text-dim ml-auto">
-              {showLedger ? "▲ collapse" : "▼ expand"}
-            </span>
+            <span className="text-xs text-cyber-text-dim ml-auto">{showLedger ? "▲ collapse" : "▼ expand"}</span>
           </button>
 
           {showLedger && (
             <div className="mt-3">
-              {ledgerLoading && (
-                <p className="text-xs text-cyber-text-dim font-mono">
-                  Loading...
-                </p>
-              )}
+              {ledgerLoading && <p className="text-xs text-cyber-text-dim font-mono">Loading...</p>}
               {!ledgerLoading && ledgerEvents.length === 0 && (
-                <p className="text-xs text-cyber-text-dim font-mono">
-                  No events recorded yet.
-                </p>
+                <p className="text-xs text-cyber-text-dim font-mono">No events recorded yet.</p>
               )}
               {!ledgerLoading && ledgerEvents.length > 0 && (
                 <div className="space-y-1 max-h-64 overflow-y-auto">
                   {ledgerEvents.map((evt, i) => {
                     const { label, detail, color } = formatEvent(evt);
                     return (
-                      <div
-                        key={i}
-                        className="bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 flex items-center justify-between"
-                      >
-                        <span className={`text-xs font-mono ${color}`}>
-                          {label}
-                        </span>
-                        <span className="text-xs text-cyber-text-dim ml-3 truncate max-w-xs text-right">
-                          {detail}
-                        </span>
+                      <div key={i} className="bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 flex items-center justify-between">
+                        <span className={`text-xs font-mono ${color}`}>{label}</span>
+                        <span className="text-xs text-cyber-text-dim ml-3 truncate max-w-xs text-right">{detail}</span>
                       </div>
                     );
                   })}
@@ -365,31 +437,20 @@ export default function SavedCharacterView() {
           )}
         </div>
 
-        {/* Karma improvements (P5-2) */}
-        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mt-4">
-          <button
-            onClick={() => setShowImprove((s) => !s)}
-            className="text-lg font-semibold text-cyber-heading font-mono flex items-center gap-2 w-full text-left"
-          >
+        {/* Karma Improvements */}
+        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4">
+          <button onClick={() => setShowImprove((s) => !s)}
+            className="text-lg font-semibold text-cyber-heading font-mono flex items-center gap-2 w-full text-left">
             // Karma Improvements
-            <span className="text-xs text-cyber-text-dim ml-auto">
-              {showImprove ? "▲ collapse" : "▼ expand"}
-            </span>
+            <span className="text-xs text-cyber-text-dim ml-auto">{showImprove ? "▲ collapse" : "▼ expand"}</span>
           </button>
           <p className="text-xs text-cyber-text-dim font-mono mt-1 mb-3">
-            Available:{" "}
-            <span className="text-cyber-green">
-              {saved.total_karma_earned - saved.total_karma_spent}
-            </span>{" "}
-            karma
+            Available: <span className="text-cyber-green">{saved.total_karma_earned - saved.total_karma_spent}</span> karma
           </p>
 
           {showImprove && (
             <>
-              {/* Attribute improvements */}
-              <h3 className="text-xs font-mono text-cyber-text-dim mb-2">
-                Attributes (cost = new rating × 5)
-              </h3>
+              <h3 className="text-xs font-mono text-cyber-text-dim mb-2">Attributes (cost = new rating × 5)</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
                 {(
                   [
@@ -405,22 +466,15 @@ export default function SavedCharacterView() {
                   ] as [string, string, number][]
                 ).map(([label, key, current]) => {
                   const cost = (current + 1) * 5;
-                  const canAfford =
-                    saved.total_karma_earned - saved.total_karma_spent >= cost;
+                  const canAfford = saved.total_karma_earned - saved.total_karma_spent >= cost;
                   return (
-                    <div
-                      key={key}
-                      className="bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 flex items-center justify-between"
-                    >
-                      <span className="text-xs font-mono text-cyber-blue">
-                        {label} {current}
-                      </span>
+                    <div key={key} className="bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 flex items-center justify-between">
+                      <span className="text-xs font-mono text-cyber-blue">{label} {current}</span>
                       <button
                         onClick={() => handleAttrImprove(key, current)}
                         disabled={applying || !canAfford}
                         title={`${cost} karma to reach ${current + 1}`}
-                        className="text-xs px-2 py-0.5 border border-cyber-border hover:border-cyber-green text-cyber-text hover:text-cyber-green rounded transition-colors disabled:opacity-30"
-                      >
+                        className="text-xs px-2 py-0.5 border border-cyber-border hover:border-cyber-green text-cyber-text hover:text-cyber-green rounded transition-colors disabled:opacity-30">
                         +{cost}k
                       </button>
                     </div>
@@ -428,38 +482,23 @@ export default function SavedCharacterView() {
                 })}
               </div>
 
-              {/* Skill improvements */}
-              {saved.base.skills.length > 0 && (
+              {base.skills.length > 0 && (
                 <>
-                  <h3 className="text-xs font-mono text-cyber-text-dim mb-2">
-                    Skills (cost = new rating × 2)
-                  </h3>
+                  <h3 className="text-xs font-mono text-cyber-text-dim mb-2">Skills (cost = new rating × 2)</h3>
                   <div className="space-y-1 max-h-48 overflow-y-auto">
-                    {saved.base.skills.map((skill) => {
+                    {base.skills.map((skill) => {
                       const cost = (skill.rating + 1) * 2;
-                      const canAfford =
-                        saved.total_karma_earned - saved.total_karma_spent >=
-                        cost;
+                      const canAfford = saved.total_karma_earned - saved.total_karma_spent >= cost;
                       return (
-                        <div
-                          key={skill.name}
-                          className="bg-cyber-surface border border-cyber-border rounded px-2 py-1 flex items-center justify-between"
-                        >
-                          <span className="text-sm text-cyber-text">
-                            {skill.name}
-                          </span>
+                        <div key={skill.name} className="bg-cyber-surface border border-cyber-border rounded px-2 py-1 flex items-center justify-between">
+                          <span className="text-sm text-cyber-text">{skill.name}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-cyber-blue">
-                              {skill.rating}
-                            </span>
+                            <span className="text-xs font-mono text-cyber-blue">{skill.rating}</span>
                             <button
-                              onClick={() =>
-                                handleSkillImprove(skill.name, skill.rating)
-                              }
+                              onClick={() => handleSkillImprove(skill.name, skill.rating)}
                               disabled={applying || !canAfford}
                               title={`${cost} karma to reach ${skill.rating + 1}`}
-                              className="text-xs px-2 py-0.5 border border-cyber-border hover:border-cyber-green text-cyber-text hover:text-cyber-green rounded transition-colors disabled:opacity-30"
-                            >
+                              className="text-xs px-2 py-0.5 border border-cyber-border hover:border-cyber-green text-cyber-text hover:text-cyber-green rounded transition-colors disabled:opacity-30">
                               +{cost}k
                             </button>
                           </div>
@@ -477,85 +516,31 @@ export default function SavedCharacterView() {
   );
 }
 
-function formatEvent(evt: LedgerEvent): {
-  label: string;
-  detail: string;
-  color: string;
-} {
-  if ("KarmaReceived" in evt) {
-    return {
-      label: `+${evt.KarmaReceived.amount} Karma`,
-      detail: evt.KarmaReceived.reason,
-      color: "text-cyber-green",
-    };
-  }
-  if ("KarmaSpent" in evt) {
-    return {
-      label: `-${evt.KarmaSpent.amount} Karma`,
-      detail: evt.KarmaSpent.description,
-      color: "text-cyber-red",
-    };
-  }
-  if ("NuyenReceived" in evt) {
-    return {
-      label: `+¥${evt.NuyenReceived.amount.toLocaleString()}`,
-      detail: evt.NuyenReceived.reason,
-      color: "text-cyber-green",
-    };
-  }
-  if ("NuyenSpent" in evt) {
-    return {
-      label: `-¥${evt.NuyenSpent.amount.toLocaleString()}`,
-      detail: evt.NuyenSpent.description,
-      color: "text-cyber-red",
-    };
-  }
-  if ("SkillImproved" in evt) {
-    return {
-      label: `Skill: ${evt.SkillImproved.skill_name}`,
-      detail: `${evt.SkillImproved.from} → ${evt.SkillImproved.to} (${evt.SkillImproved.karma_cost}k)`,
-      color: "text-cyber-blue",
-    };
-  }
-  if ("AttributeImproved" in evt) {
-    return {
-      label: `Attr: ${evt.AttributeImproved.attribute}`,
-      detail: `${evt.AttributeImproved.from} → ${evt.AttributeImproved.to} (${evt.AttributeImproved.karma_cost}k)`,
-      color: "text-cyber-blue",
-    };
-  }
-  // Unknown event type — display raw JSON
-  return {
-    label: "Event",
-    detail: JSON.stringify(evt),
-    color: "text-cyber-text-dim",
-  };
+function SheetSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-sm font-mono text-cyber-text-dim mb-2">// {title}</h3>
+      {children}
+    </div>
+  );
 }
 
-function StatBox({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  accent?: "green" | "blue" | "purple";
-}) {
-  const valueColor =
-    accent === "green"
-      ? "text-cyber-green"
-      : accent === "blue"
-        ? "text-cyber-blue"
-        : accent === "purple"
-          ? "text-cyber-purple"
-          : "text-cyber-heading";
+function formatEvent(evt: LedgerEvent): { label: string; detail: string; color: string } {
+  if ("KarmaReceived" in evt) return { label: `+${evt.KarmaReceived.amount} Karma`, detail: evt.KarmaReceived.reason, color: "text-cyber-green" };
+  if ("KarmaSpent" in evt) return { label: `-${evt.KarmaSpent.amount} Karma`, detail: evt.KarmaSpent.description, color: "text-cyber-red" };
+  if ("NuyenReceived" in evt) return { label: `+¥${evt.NuyenReceived.amount.toLocaleString()}`, detail: evt.NuyenReceived.reason, color: "text-cyber-green" };
+  if ("NuyenSpent" in evt) return { label: `-¥${evt.NuyenSpent.amount.toLocaleString()}`, detail: evt.NuyenSpent.description, color: "text-cyber-red" };
+  if ("SkillImproved" in evt) return { label: `Skill: ${evt.SkillImproved.skill_name}`, detail: `${evt.SkillImproved.from} → ${evt.SkillImproved.to} (${evt.SkillImproved.karma_cost}k)`, color: "text-cyber-blue" };
+  if ("AttributeImproved" in evt) return { label: `Attr: ${evt.AttributeImproved.attribute}`, detail: `${evt.AttributeImproved.from} → ${evt.AttributeImproved.to} (${evt.AttributeImproved.karma_cost}k)`, color: "text-cyber-blue" };
+  return { label: "Event", detail: JSON.stringify(evt), color: "text-cyber-text-dim" };
+}
 
+function StatBox({ label, value, accent }: { label: string; value: string | number; accent?: "green" | "blue" | "purple" }) {
+  const valueColor = accent === "green" ? "text-cyber-green" : accent === "blue" ? "text-cyber-blue" : accent === "purple" ? "text-cyber-purple" : "text-cyber-heading";
   return (
     <div className="bg-cyber-surface border border-cyber-border rounded px-3 py-2 text-center">
       <div className="text-cyber-text-dim text-xs font-mono">{label}</div>
-      <div className={`text-lg font-bold font-mono ${valueColor}`}>
-        {value}
-      </div>
+      <div className={`text-lg font-bold font-mono ${valueColor}`}>{value}</div>
     </div>
   );
 }

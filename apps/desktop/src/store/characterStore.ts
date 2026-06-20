@@ -123,6 +123,15 @@ export interface ComputedCharacter {
     metatype: string;
     attributes: Attributes;
     skills: Skill[];
+    qualities: Quality[];
+    augmentations: DraftAugmentation[];
+    spells: DraftSpell[];
+    adept_powers: DraftAdeptPower[];
+    complex_forms: DraftComplexForm[];
+    contacts: Contact[];
+    weapons: DraftWeapon[];
+    armor: DraftArmor[];
+    magic_tradition: MagicTradition | null;
   };
   computed_attributes: Attributes;
   physical_condition_monitor: number;
@@ -199,8 +208,8 @@ export interface DraftSpell {
 export interface DraftAdeptPower {
   id: string;
   name: string;
-  /** Decimal string like "0.25" or "1.00" */
-  cost: string;
+  /** Power point cost in hundredths (25 = 0.25 PP) — matches Rust AdeptPower.cost: i32 */
+  cost: number;
   levels: boolean;
   source: string;
   page: string;

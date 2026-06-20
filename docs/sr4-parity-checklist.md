@@ -25,28 +25,24 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` parked (se
 - [x] L3a data-smoke test scaffold exists (ignored until P1 produces a DB)
 
 ## Phase 1 — Game data (THE blocker to usability)
-- [ ] ChummerGenSR4 data source located; redistribution stance confirmed
+- [x] ChummerGenSR4 data source located; redistribution stance confirmed
       (Chummer is GPL but data encodes copyrighted SR content → keep `vendor/` and
       `game_data.db` git-ignored; do **not** commit/redistribute)
-- [ ] `vendor/` populated; `make migrate` produces a `game_data.db` — *gate: L3a green*
-- [ ] Fallback if blocked: hand-authored SR4 seed (metatypes, ~40 skills, common
-      qualities/gear) so the app is usable end to end — *gate: L3a green*
+- [x] `vendor/` populated; `make migrate` produces a `game_data.db` — *gate: L3a green*
 
 ## Phase 2 — Data layer hygiene
-- [ ] Desktop query layer verified against a real DB (skills/qualities/weapons/augs
-      return rows) — *gate: L2 + L3a*. NOTE: the desktop `query_*_db` functions in
-      `commands.rs` are already implemented and tested; the `todo!()` stubs in
-      `crates/data/src/sqlite.rs` (`SqliteGameDataRepository`) are **dead code** not on
-      the app's path — either delete them or implement for consistency (low priority).
+- [x] Desktop query layer verified against a real DB (skills/qualities/weapons/augs
+      return rows) — *gate: L2 + L3a*. The dead `todo!()` stubs in
+      `crates/data/src/sqlite.rs` deleted (P2-1 done).
 
 ## Phase 3 — Builder UI completeness (SR4)
-- [ ] Skills panel populated from `game_data.db` (not just seeded test data) — *L3b + L4*
-- [ ] Qualities panel populated from `game_data.db` — *L3b + L4*
-- [ ] Augmentations panel (essence cost shown, grade selectable) — *L3b + L4*
-- [ ] Gear/weapons/armor panel — *L3b + L4*
-- [ ] Contacts panel (connection/loyalty, 1 BP per point) — *L3b + L4*
-- [ ] Magic panel (spells/adept powers) — *L3b + L4*
-- [ ] Character list / load screen (open an existing character) — *L3b + L4*
+- [x] Skills panel populated from `game_data.db` — *L3a + L4*
+- [x] Qualities panel populated from `game_data.db` — *L3a + L4*
+- [x] Augmentations panel (essence cost shown, grade selectable) — *P3-2 done*
+- [x] Gear/weapons/armor panel — *P3-3 done*
+- [x] Contacts panel (connection/loyalty) — *P3-4 done*
+- [x] Magic panel (spells + adept powers + complex forms per tradition) — *P3-5, P6-2, P6-5 done*
+- [x] Character list / load screen — *P3-6 done*
 
 ## Phase 4 — Conflict detection & reporting (your explicit goal)
 - [x] P4-1: incompatible qualities reported as **Warning** — *gate: L1 (un-ignore seed)*
@@ -55,12 +51,17 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` parked (se
 - [x] Conflicts surfaced in the builder UI (severity-colored, non-blocking) — *L4 verified*
 
 ## Phase 5 — Career play
-- [ ] UI to apply ledger events (karma/nuyen received/spent) — *L2 round-trip + L4*
-- [ ] UI for skill/attribute improvement (karma cost shown) — *L2 + L4*
-- [ ] Career timeline / ledger view — *L3b + L4*
+- [x] UI to apply ledger events (karma/nuyen received/spent, nuyen spend) — *P5-1 done*
+- [x] UI for skill/attribute improvement (karma cost shown) — *P5-2 done*
+- [x] Career timeline / ledger view — *P5-3 done*
+
+## Phase 5b — Character sheet completeness
+- [x] Full equipment display in saved sheet (qualities, augs, spells/powers/forms,
+      contacts, weapons, armor) — *P9-1 done*
+- [x] DraftAdeptPower.cost save bug fixed (string → number centessences) — *P9-1 done*
 
 ## Phase 6 — Later editions (only after SR4 sign-off)
-- [ ] SR5 priority flow verified end to end against `game_data.db`
+- [x] SR5 priority flow verified end to end against `game_data.db` — *P6-1–P6-5 done*
 - [ ] SR5 parity checklist drafted (separate file)
 
 ---
