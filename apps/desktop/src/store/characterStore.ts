@@ -72,7 +72,23 @@ export type LedgerEvent =
         to: number;
         karma_cost: number;
       };
-    };
+    }
+  | {
+      ContactChanged: {
+        contact_id: string;
+        new_connection: number;
+        new_loyalty: number;
+      };
+    }
+  | {
+      ContactAdded: {
+        contact_id: string;
+        name: string;
+        connection: number;
+        loyalty: number;
+      };
+    }
+  | { ContactLost: { contact_id: string; reason: string } };
 
 export interface ValidationError {
   severity: "Error" | "Warning";

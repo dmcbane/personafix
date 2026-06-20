@@ -106,6 +106,45 @@ export default function SavedCharacterView() {
     applyWithReload({ NuyenSpent: { amount: nuyenSpendAmount, description: nuyenSpendReason } });
   };
 
+  const handleContactImprove = async (
+    contactId: string,
+    contactName: string,
+    currentConnection: number,
+    currentLoyalty: number,
+    field: "connection" | "loyalty",
+  ) => {
+    const newConnection = field === "connection" ? currentConnection + 1 : currentConnection;
+    const newLoyalty = field === "loyalty" ? currentLoyalty + 1 : currentLoyalty;
+    const karmaCost = field === "connection" ? newConnection : newLoyalty;
+    const available = saved.total_karma_earned - saved.total_karma_spent;
+    if (available < karmaCost) {
+      setEventError(`Not enough karma (need ${karmaCost}, have ${available})`);
+      return;
+    }
+    setApplying(true);
+    setEventError(null);
+    try {
+      await applyEvent(characterId, {
+        ContactChanged: {
+          contact_id: contactId,
+          new_connection: newConnection,
+          new_loyalty: newLoyalty,
+        },
+      });
+      await applyEvent(characterId, {
+        KarmaSpent: {
+          amount: karmaCost,
+          description: `${contactName} ${field} ${field === "connection" ? currentConnection : currentLoyalty} → ${field === "connection" ? newConnection : newLoyalty}`,
+        },
+      });
+      if (showLedger) await loadLedger();
+    } catch (err) {
+      setEventError(String(err));
+    } finally {
+      setApplying(false);
+    }
+  };
+
   const handleSkillImprove = async (skillName: string, from: number) => {
     const to = from + 1;
     const karmaCost = to * 2;
@@ -708,6 +747,49 @@ export default function SavedCharacterView() {
                   </div>
                 </>
               )}
+
+              {base.contacts.length > 0 && (
+                <>
+                  <h3 className="text-xs font-mono text-cyber-text-dim mb-2 mt-4">
+                    Contacts (cost = new rating in karma)
+                  </h3>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {base.contacts.map((c) => {
+                      const connCost = c.connection + 1;
+                      const loyalCost = c.loyalty + 1;
+                      const available = saved.total_karma_earned - saved.total_karma_spent;
+                      const canConn = available >= connCost && c.connection < 6;
+                      const canLoyal = available >= loyalCost && c.loyalty < 6;
+                      return (
+                        <div key={c.id} className="bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm text-cyber-text">{c.name}</span>
+                            {c.archetype && <span className="text-cyber-text-dim font-mono text-xs ml-2">{c.archetype}</span>}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs font-mono text-cyber-text-dim">C{c.connection}</span>
+                            <button
+                              onClick={() => handleContactImprove(c.id, c.name, c.connection, c.loyalty, "connection")}
+                              disabled={applying || !canConn}
+                              title={`${connCost}k → Connection ${c.connection + 1}`}
+                              className="text-xs px-1.5 py-0.5 border border-cyber-border hover:border-cyber-green text-cyber-text hover:text-cyber-green rounded transition-colors disabled:opacity-30">
+                              +C{connCost}k
+                            </button>
+                            <span className="text-xs font-mono text-cyber-text-dim">L{c.loyalty}</span>
+                            <button
+                              onClick={() => handleContactImprove(c.id, c.name, c.connection, c.loyalty, "loyalty")}
+                              disabled={applying || !canLoyal}
+                              title={`${loyalCost}k → Loyalty ${c.loyalty + 1}`}
+                              className="text-xs px-1.5 py-0.5 border border-cyber-border hover:border-cyber-green text-cyber-text hover:text-cyber-green rounded transition-colors disabled:opacity-30">
+                              +L{loyalCost}k
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
@@ -842,6 +924,9 @@ function formatEvent(evt: LedgerEvent): { label: string; detail: string; color: 
   if ("NuyenSpent" in evt) return { label: `-¥${evt.NuyenSpent.amount.toLocaleString()}`, detail: evt.NuyenSpent.description, color: "text-cyber-red" };
   if ("SkillImproved" in evt) return { label: `Skill: ${evt.SkillImproved.skill_name}`, detail: `${evt.SkillImproved.from} → ${evt.SkillImproved.to} (${evt.SkillImproved.karma_cost}k)`, color: "text-cyber-blue" };
   if ("AttributeImproved" in evt) return { label: `Attr: ${evt.AttributeImproved.attribute}`, detail: `${evt.AttributeImproved.from} → ${evt.AttributeImproved.to} (${evt.AttributeImproved.karma_cost}k)`, color: "text-cyber-blue" };
+  if ("ContactChanged" in evt) return { label: `Contact updated`, detail: `C${evt.ContactChanged.new_connection}/L${evt.ContactChanged.new_loyalty}`, color: "text-cyber-blue" };
+  if ("ContactAdded" in evt) return { label: `Contact: ${evt.ContactAdded.name}`, detail: `C${evt.ContactAdded.connection}/L${evt.ContactAdded.loyalty}`, color: "text-cyber-green" };
+  if ("ContactLost" in evt) return { label: `Contact lost`, detail: evt.ContactLost.reason, color: "text-cyber-red" };
   return { label: "Event", detail: JSON.stringify(evt), color: "text-cyber-text-dim" };
 }
 

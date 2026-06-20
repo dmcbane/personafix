@@ -198,7 +198,7 @@ Status: `todo` · `doing` · `done` · `parked`
         sheet; saved/loaded with the character.
   accept: L0+L2; L4 — type notes, save, reload, confirm notes persist.
 
-- id: P11-3  status: todo  deps: [P5-1]
+- id: P11-3  status: done  deps: [P5-1]
   desc: Contact karma improvement — career view currently has no way to spend karma
         improving contact connection or loyalty. Add "Improve" buttons to contacts in
         SavedCharacterView (cost: new rating in karma per the SR5 rulebook).

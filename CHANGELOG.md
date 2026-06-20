@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.40.0] - 2026-06-20
+
+### Added
+- P11-3: Contact karma improvement in career view.
+- `handleContactImprove` in SavedCharacterView: applies `ContactChanged` + `KarmaSpent` events.
+- Contacts section in Karma Improvements panel: +C and +L buttons per contact (cost = new rating).
+- Buttons disabled when not enough karma or at cap (6).
+- `ContactChanged`, `ContactAdded`, `ContactLost` variants added to `LedgerEvent` TypeScript type.
+- `formatEvent` updated to display contact change/add/lost events in career timeline.
+- Bump 0.39.0 → 0.40.0; P11-3 done.
+
 ## [0.39.0] - 2026-06-20
 
 ### Added
