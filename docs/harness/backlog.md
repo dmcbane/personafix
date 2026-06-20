@@ -151,6 +151,36 @@ Status: `todo` · `doing` · `done` · `parked`
         list instead of (or alongside) the spell list.
   accept: L4 — adept can add powers, pool consumed correctly.
 
+## P10 — Gameplay tools
+
+- id: P10-1  status: done  deps: [P9-1]
+  desc: Dice roller / test calculator — SR4/SR5 uses dice pool mechanic (roll N d6,
+        each 5 or 6 is a hit). Roller needs: manual pool entry, one-click roll from
+        a character's skill+attribute pool, individual die face display (hit/miss/one),
+        hit count, glitch detection (>half dice are 1s = glitch; glitch + 0 hits =
+        critical glitch), roll history log. Accessible from saved character sheet.
+  accept: L0 (tsc clean); L4 — roll from a skill pool, confirm hits and glitch
+          detection correct.
+
+- id: P10-2  status: todo  deps: []
+  desc: SR5 parity checklist — draft docs/sr5-parity-checklist.md mirroring the SR4
+        file, covering priority creation flow, all panel completeness, contacts, karma
+        improvement, complex forms, and any SR5-only checks not in the SR4 list.
+  accept: file exists with all SR5-specific items checked or marked todo.
+
+- id: P10-3  status: todo  deps: [P1-2]
+  desc: Vehicles migration — vehicles table exists in schema but is empty. Parse
+        vehicles.xml and vehicles5.xml from vendor/, seed the DB, add query IPC command
+        and a basic vehicle browser panel (category, speed, handling, pilot, body).
+  accept: L3a smoke asserts vehicles non-empty; panel shows in builder.
+
+- id: P10-4  status: todo  deps: [P9-1]
+  desc: Print/export character sheet — generate a printable HTML or PDF summary of the
+        saved character (name, edition, metatype, attributes, skills, equipment, career
+        stats). Tauri shell_open on a temp file, or print via window.print() on a styled
+        hidden div. No Rust changes needed.
+  accept: L4 — trigger print from saved sheet view, printable layout renders correctly.
+
 ## P8 — SR5 Technomancer
 
 - id: P9-1  status: done  deps: [P8-1]

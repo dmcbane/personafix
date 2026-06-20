@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.0] - 2026-06-19
+
+### Added
+- P10-1: Dice roller integrated into saved character sheet (collapsible section).
+- SR4/SR5 dice pool mechanic: roll N d6, each 5/6 is a hit; die faces shown color-coded
+  (green = hit, red = 1, gray = miss); hit count prominent; glitch and critical glitch
+  detection (>half dice are 1s = glitch; glitch + 0 hits = critical glitch).
+- Quick Roll shortcuts: each skill pool (rating + linked attribute) shown as a button;
+  clicking pre-fills pool size and immediately rolls.
+- Edge Roll button: adds the character's edge attribute to the current pool.
+- Roll history: last 10 rolls shown most-recent-first.
+- Backlog extended with P10-1 (done), P10-2 SR5 parity checklist, P10-3 vehicles, P10-4 print.
+- Bump 0.33.0 → 0.34.0
+
 ## [0.33.0] - 2026-06-19
 
 ### Fixed

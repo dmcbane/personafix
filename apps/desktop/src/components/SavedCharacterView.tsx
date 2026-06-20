@@ -1,6 +1,35 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useCharacterStore, type LedgerEvent } from "../store/characterStore";
+
+// ---- Dice roller logic ----
+interface RollResult {
+  dice: number[];
+  hits: number;
+  ones: number;
+  isGlitch: boolean;
+  isCriticalGlitch: boolean;
+  label: string;
+}
+
+function rollPool(count: number, label: string): RollResult {
+  const dice = Array.from({ length: Math.max(1, count) }, () => Math.floor(Math.random() * 6) + 1);
+  const hits = dice.filter((d) => d >= 5).length;
+  const ones = dice.filter((d) => d === 1).length;
+  const isGlitch = ones > dice.length / 2;
+  return { dice, hits, ones, isGlitch, isCriticalGlitch: isGlitch && hits === 0, label };
+}
+
+function DieIcon({ value }: { value: number }) {
+  const isHit = value >= 5;
+  const isOne = value === 1;
+  const color = isHit ? "text-cyber-green bg-cyber-green/10 border-cyber-green/50" : isOne ? "text-cyber-red bg-cyber-red/10 border-cyber-red/50" : "text-cyber-text-dim bg-cyber-surface border-cyber-border";
+  return (
+    <span className={`inline-flex items-center justify-center w-7 h-7 rounded text-xs font-bold font-mono border ${color}`}>
+      {value}
+    </span>
+  );
+}
 
 export default function SavedCharacterView() {
   const saved = useCharacterStore((s) => s.savedCharacter);
@@ -18,6 +47,10 @@ export default function SavedCharacterView() {
   const [showImprove, setShowImprove] = useState(false);
   const [showLedger, setShowLedger] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
+  const [showDice, setShowDice] = useState(false);
+  const [dicePool, setDicePool] = useState(6);
+  const [rollResults, setRollResults] = useState<RollResult[]>([]);
+  const diceScrollRef = useRef<HTMLDivElement>(null);
   const [ledgerEvents, setLedgerEvents] = useState<LedgerEvent[]>([]);
   const [ledgerLoading, setLedgerLoading] = useState(false);
 
@@ -111,8 +144,20 @@ export default function SavedCharacterView() {
     }
   };
 
+  const handleRoll = (pool: number, label: string) => {
+    const result = rollPool(pool, label);
+    setRollResults((prev) => [result, ...prev.slice(0, 9)]);
+    setTimeout(() => diceScrollRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+  };
+
   const attrs = saved.computed_attributes;
   const tradition = base.magic_tradition;
+
+  const skillPools = base.skills.map((skill) => {
+    const attrValue = (attrs as unknown as Record<string, unknown>)[skill.linked_attribute.toLowerCase()] as number | undefined;
+    const pool = skill.rating + (attrValue ?? 0);
+    return { skill, pool };
+  }).filter((sp) => sp.pool > 0).sort((a, b) => a.skill.name.localeCompare(b.skill.name));
   const hasSpells = tradition === "Magician" || tradition === "MysticAdept" || base.edition === "SR4";
   const hasPowers = tradition === "Adept" || tradition === "MysticAdept";
   const hasForms = tradition === "Technomancer";
@@ -249,6 +294,76 @@ export default function SavedCharacterView() {
 
             {eventError && <p className="text-cyber-red text-xs font-mono">{eventError}</p>}
           </div>
+        </div>
+
+        {/* Dice Roller */}
+        <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mb-4">
+          <button onClick={() => setShowDice((s) => !s)}
+            className="text-lg font-semibold text-cyber-heading font-mono flex items-center gap-2 w-full text-left">
+            // Dice Roller
+            <span className="text-xs text-cyber-text-dim ml-auto">{showDice ? "▲ collapse" : "▼ expand"}</span>
+          </button>
+
+          {showDice && (
+            <div className="mt-4">
+              {/* Manual pool */}
+              <div className="flex gap-2 items-end mb-3">
+                <div>
+                  <label className="text-xs font-mono text-cyber-text-dim block mb-1">Pool</label>
+                  <input type="number" min={1} max={40} value={dicePool}
+                    onChange={(e) => setDicePool(Math.min(40, Math.max(1, Number(e.target.value))))}
+                    className="w-16 bg-cyber-surface border border-cyber-border rounded px-2 py-1.5 text-sm text-center" />
+                </div>
+                <button onClick={() => handleRoll(dicePool, `${dicePool}d6`)}
+                  className="px-4 py-1.5 text-sm font-mono border border-cyber-green text-cyber-green hover:bg-cyber-green/10 rounded transition-colors">
+                  Roll
+                </button>
+                <button onClick={() => handleRoll(dicePool + (attrs.edge ?? 0), `${dicePool + (attrs.edge ?? 0)}d6 (edge)`)}
+                  title={`Roll with +${attrs.edge} Edge`}
+                  className="px-4 py-1.5 text-sm font-mono border border-cyber-yellow text-cyber-yellow hover:bg-cyber-yellow/10 rounded transition-colors">
+                  Edge ({attrs.edge})
+                </button>
+              </div>
+
+              {/* Skill pool shortcuts */}
+              {skillPools.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs font-mono text-cyber-text-dim mb-2">Quick Roll</p>
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+                    {skillPools.map(({ skill, pool }) => (
+                      <button key={skill.name}
+                        onClick={() => { setDicePool(pool); handleRoll(pool, `${skill.name} (${pool})`); }}
+                        className="px-2 py-1 text-xs font-mono border border-cyber-border hover:border-cyber-blue hover:text-cyber-blue rounded transition-colors">
+                        {skill.name} ({pool})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Roll results */}
+              <div ref={diceScrollRef} className="space-y-3">
+                {rollResults.map((r, i) => (
+                  <div key={i} className={`bg-cyber-surface border rounded px-3 py-2 ${r.isCriticalGlitch ? "border-cyber-red" : r.isGlitch ? "border-cyber-yellow" : "border-cyber-border"}`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-mono text-cyber-text-dim">{r.label}</span>
+                      <span className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-cyber-green font-mono">{r.hits} hit{r.hits !== 1 ? "s" : ""}</span>
+                        {r.isCriticalGlitch && <span className="text-xs font-mono text-cyber-red font-bold">CRITICAL GLITCH</span>}
+                        {!r.isCriticalGlitch && r.isGlitch && <span className="text-xs font-mono text-cyber-yellow font-bold">GLITCH</span>}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {r.dice.map((d, j) => <DieIcon key={j} value={d} />)}
+                    </div>
+                  </div>
+                ))}
+                {rollResults.length === 0 && (
+                  <p className="text-xs font-mono text-cyber-text-dim">No rolls yet.</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Full Character Sheet (collapsible) */}
