@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.0] - 2026-06-19
+
+### Added
+- P10-3: Vehicles migration and builder panel.
+- SR4 (483 vehicles) and SR5 (380 vehicles) parsed from `vehicles.xml` via
+  `ChummerVehicles`/`XmlVehicle`/`ParsedVehicle` types; seeded into `vehicles` table.
+- `get_vehicles` IPC command; `query_vehicles_db` in commands.rs.
+- `GameVehicle` in gameDataStore; loaded in parallel on startup alongside other data.
+- `DraftVehicle` in characterStore; `addVehicle`/`removeVehicle` actions; 
+  `CharacterDraft.vehicles` typed as `DraftVehicle[]` (was `unknown[]`).
+- GearPanel extended with "Vehicles" section tab (alongside Weapons/Armor).
+- SavedCharacterView: Vehicles section in character sheet; `base.vehicles` typed.
+- L3a smoke test extended: asserts vehicles non-empty from real game_data.db.
+- SR5 parity checklist updated: vehicles checked.
+- Bump 0.35.0 → 0.36.0
+
 ## [0.35.0] - 2026-06-19
 
 ### Added

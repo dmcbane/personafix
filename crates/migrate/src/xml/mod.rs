@@ -17,6 +17,7 @@ pub struct ParsedGameData {
     pub spells: Vec<ParsedSpell>,
     pub adept_powers: Vec<ParsedAdeptPower>,
     pub complex_forms: Vec<ParsedComplexForm>,
+    pub vehicles: Vec<ParsedVehicle>,
 }
 
 // -- XML root wrappers --
@@ -538,6 +539,66 @@ pub struct ParsedAdeptPower {
     /// Cost in hundredths (25 = 0.25 PP).
     pub cost: i32,
     pub levels: bool,
+    pub source: String,
+    pub page: String,
+}
+
+/// Vehicle XML wrapper.
+#[derive(Debug, Deserialize)]
+pub struct ChummerVehicles {
+    #[serde(default)]
+    pub vehicles: Vehicles,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct Vehicles {
+    #[serde(rename = "vehicle", default)]
+    pub items: Vec<XmlVehicle>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct XmlVehicle {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub handling: String,
+    #[serde(default)]
+    pub speed: String,
+    #[serde(default)]
+    pub accel: String,
+    #[serde(default)]
+    pub body: String,
+    #[serde(default)]
+    pub armor: String,
+    #[serde(default)]
+    pub pilot: String,
+    #[serde(default)]
+    pub sensor: String,
+    #[serde(default)]
+    pub avail: String,
+    #[serde(default)]
+    pub cost: String,
+    #[serde(default)]
+    pub source: String,
+    #[serde(default)]
+    pub page: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct ParsedVehicle {
+    pub id: String,
+    pub name: String,
+    pub handling: String,
+    pub speed: String,
+    pub acceleration: String,
+    pub body: String,
+    pub armor: String,
+    pub pilot: String,
+    pub sensor: String,
+    pub availability: String,
+    pub cost: String,
     pub source: String,
     pub page: String,
 }

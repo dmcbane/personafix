@@ -26,6 +26,10 @@ pub fn parse_sr5(data_dir: &Path) -> MigrateResult<ParsedGameData> {
     data.adept_powers = parse_powers(&data_dir.join("powers.xml"))?;
     data.complex_forms = parse_complex_forms(&data_dir.join("complexforms.xml"))?;
 
+    if data_dir.join("vehicles.xml").exists() {
+        data.vehicles = parse_vehicles(&data_dir.join("vehicles.xml"))?;
+    }
+
     Ok(data)
 }
 
@@ -258,6 +262,33 @@ fn parse_powers(path: &Path) -> MigrateResult<Vec<ParsedAdeptPower>> {
         .collect())
 }
 
+fn parse_vehicles(path: &Path) -> MigrateResult<Vec<ParsedVehicle>> {
+    let xml = std::fs::read_to_string(path)?;
+    let chummer: ChummerVehicles = quick_xml::de::from_str(&xml)?;
+    Ok(chummer
+        .vehicles
+        .items
+        .into_iter()
+        .filter(|v| !v.name.is_empty())
+        .map(|v| ParsedVehicle {
+            id: v.id,
+            name: v.name,
+            handling: v.handling,
+            speed: v.speed,
+            acceleration: v.accel,
+            body: v.body,
+            armor: v.armor,
+            pilot: v.pilot,
+            sensor: v.sensor,
+            availability: v.avail,
+            cost: v.cost,
+            source: v.source,
+            page: v.page,
+        })
+        .filter(|v| !v.id.is_empty())
+        .collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -388,5 +419,17 @@ mod tests {
         assert!(!data.augmentations.is_empty());
         assert!(!data.spells.is_empty());
         assert!(!data.complex_forms.is_empty());
+        assert!(!data.vehicles.is_empty(), "SR5 vehicles should be non-empty");
+    }
+
+    #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
+    fn parse_sr5_vehicles_returns_entries_with_stats() {
+        let vehicles = parse_vehicles(&sr5_data_dir().join("vehicles.xml")).unwrap();
+        assert!(!vehicles.is_empty());
+        let all_have_names = vehicles.iter().all(|v| !v.name.is_empty());
+        assert!(all_have_names, "all SR5 vehicles should have names");
+        let dodge_scoot = vehicles.iter().find(|v| v.name.contains("Dodge Scoot"));
+        assert!(dodge_scoot.is_some(), "should find Dodge Scoot");
     }
 }

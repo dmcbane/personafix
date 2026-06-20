@@ -168,7 +168,7 @@ Status: `todo` · `doing` · `done` · `parked`
         improvement, complex forms, and any SR5-only checks not in the SR4 list.
   accept: file exists with all SR5-specific items checked or marked todo.
 
-- id: P10-3  status: todo  deps: [P1-2]
+- id: P10-3  status: done  deps: [P1-2]
   desc: Vehicles migration — vehicles table exists in schema but is empty. Parse
         vehicles.xml and vehicles5.xml from vendor/, seed the DB, add query IPC command
         and a basic vehicle browser panel (category, speed, handling, pilot, body).

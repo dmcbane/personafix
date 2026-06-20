@@ -511,10 +511,27 @@ export default function SavedCharacterView() {
                 </SheetSection>
               )}
 
+              {/* Vehicles */}
+              {base.vehicles.length > 0 && (
+                <SheetSection title="Vehicles">
+                  <div className="space-y-1">
+                    {base.vehicles.map((v) => (
+                      <div key={v.id} className="flex items-center gap-2 bg-cyber-surface border border-cyber-border rounded px-3 py-1.5 text-sm">
+                        <span className="flex-1 text-cyber-text">{v.name}</span>
+                        <span className="text-cyber-text-dim font-mono text-xs shrink-0">
+                          Bod {v.body} / Han {v.handling} / Pil {v.pilot}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </SheetSection>
+              )}
+
               {base.qualities.length === 0 && base.augmentations.length === 0 &&
                base.spells.length === 0 && base.adept_powers.length === 0 &&
                base.complex_forms.length === 0 && base.contacts.length === 0 &&
-               base.weapons.length === 0 && base.armor.length === 0 && (
+               base.weapons.length === 0 && base.armor.length === 0 &&
+               base.vehicles.length === 0 && (
                 <p className="text-cyber-text-dim text-sm font-mono">No equipment recorded.</p>
               )}
             </div>

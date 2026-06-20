@@ -35,6 +35,10 @@ pub fn parse_sr4(data_dir: &Path) -> MigrateResult<ParsedGameData> {
 
     data.spells = parse_spells(&data_dir.join("spells.xml"))?;
 
+    if data_dir.join("vehicles.xml").exists() {
+        data.vehicles = parse_vehicles(&data_dir.join("vehicles.xml"), "SR4")?;
+    }
+
     Ok(data)
 }
 
@@ -247,6 +251,32 @@ fn parse_spells(path: &Path) -> MigrateResult<Vec<ParsedSpell>> {
         .collect())
 }
 
+fn parse_vehicles(path: &Path, _edition: &str) -> MigrateResult<Vec<ParsedVehicle>> {
+    let xml = std::fs::read_to_string(path)?;
+    let chummer: ChummerVehicles = quick_xml::de::from_str(&xml)?;
+    Ok(chummer
+        .vehicles
+        .items
+        .into_iter()
+        .filter(|v| !v.name.is_empty())
+        .map(|v| ParsedVehicle {
+            id: ensure_id(&v.id, &v.name),
+            name: v.name,
+            handling: v.handling,
+            speed: v.speed,
+            acceleration: v.accel,
+            body: v.body,
+            armor: v.armor,
+            pilot: v.pilot,
+            sensor: v.sensor,
+            availability: v.avail,
+            cost: v.cost,
+            source: if v.source.is_empty() { "SR4".to_string() } else { v.source },
+            page: v.page,
+        })
+        .collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -299,5 +329,17 @@ mod tests {
         assert!(!data.metatypes.is_empty());
         assert!(!data.skills.is_empty());
         assert!(!data.weapons.is_empty());
+        assert!(!data.vehicles.is_empty(), "SR4 vehicles should be non-empty");
+    }
+
+    #[test]
+    #[ignore = "requires vendor/ Chummer data — run with: cargo test -- --ignored"]
+    fn parse_sr4_vehicles_returns_entries_with_stats() {
+        let vehicles = parse_vehicles(&sr4_data_dir().join("vehicles.xml"), "SR4").unwrap();
+        assert!(!vehicles.is_empty());
+        let all_have_names = vehicles.iter().all(|v| !v.name.is_empty());
+        assert!(all_have_names, "all vehicles should have names");
+        let all_have_ids = vehicles.iter().all(|v| !v.id.is_empty());
+        assert!(all_have_ids, "all vehicles should have IDs");
     }
 }

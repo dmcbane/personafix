@@ -1053,6 +1053,51 @@ pub async fn get_complex_forms(
     query_complex_forms_db(&pool).await
 }
 
+/// Vehicle record from the game data DB.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameVehicle {
+    pub id: String,
+    pub name: String,
+    pub handling: String,
+    pub speed: String,
+    pub acceleration: String,
+    pub body: String,
+    pub armor: String,
+    pub pilot: String,
+    pub sensor: String,
+    pub availability: String,
+    pub cost: String,
+    pub edition: String,
+    pub source: String,
+    pub page: String,
+}
+
+pub async fn query_vehicles_db(pool: &SqlitePool) -> Result<Vec<GameVehicle>, AppError> {
+    type VehicleRow = (String, String, String, String, String, String, String, String, String, String, String, String, String);
+    let rows: Vec<VehicleRow> = sqlx::query_as(
+        "SELECT id, name, handling, speed, acceleration, body, armor, pilot, sensor, \
+         availability, cost, source, page FROM vehicles ORDER BY name",
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(
+            |(id, name, handling, speed, acceleration, body, armor, pilot, sensor, availability, cost, source, page)| {
+                GameVehicle { id, name, handling, speed, acceleration, body, armor, pilot, sensor, availability, cost, edition: String::new(), source, page }
+            },
+        )
+        .collect())
+}
+
+#[tauri::command]
+pub async fn get_vehicles(
+    state: State<'_, AppState>,
+) -> Result<Vec<GameVehicle>, AppError> {
+    let pool = get_game_pool(&state).await?;
+    query_vehicles_db(&pool).await
+}
+
 // ============================================================
 // Tests
 // ============================================================
@@ -1921,6 +1966,16 @@ mod tests {
         for f in &sr5_complex_forms {
             assert!(!f.name.is_empty(), "Complex form has empty name: {f:?}");
             assert!(!f.fading.is_empty(), "Complex form '{}' has empty fading value", f.name);
+        }
+
+        let vehicles = query_vehicles_db(&pool).await.unwrap();
+        assert!(
+            !vehicles.is_empty(),
+            "Expected non-empty vehicles from real game_data.db, got 0 rows.\n\
+             Run `make migrate` to re-seed the DB with vehicle data."
+        );
+        for v in &vehicles {
+            assert!(!v.name.is_empty(), "Vehicle has empty name: {v:?}");
         }
     }
 }

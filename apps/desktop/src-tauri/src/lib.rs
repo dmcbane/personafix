@@ -30,6 +30,7 @@ pub fn run() {
             commands::get_spells,
             commands::get_adept_powers,
             commands::get_complex_forms,
+            commands::get_vehicles,
             commands::debug_check_file,
         ])
         .run(tauri::generate_context!())

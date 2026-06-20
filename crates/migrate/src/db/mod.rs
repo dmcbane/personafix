@@ -225,6 +225,28 @@ async fn seed_edition(pool: &SqlitePool, data: &ParsedGameData) -> MigrateResult
         .await?;
     }
 
+    for v in &data.vehicles {
+        sqlx::query(
+            "INSERT OR REPLACE INTO vehicles (id, name, handling, speed, acceleration, body, armor, pilot, sensor, availability, cost, edition, source, page) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(&v.id)
+        .bind(&v.name)
+        .bind(&v.handling)
+        .bind(&v.speed)
+        .bind(&v.acceleration)
+        .bind(&v.body)
+        .bind(&v.armor)
+        .bind(&v.pilot)
+        .bind(&v.sensor)
+        .bind(&v.availability)
+        .bind(&v.cost)
+        .bind(edition)
+        .bind(&v.source)
+        .bind(&v.page)
+        .execute(&mut *tx)
+        .await?;
+    }
+
     tx.commit().await?;
     Ok(())
 }

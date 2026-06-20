@@ -108,7 +108,7 @@ export interface CharacterDraft {
   weapons: DraftWeapon[];
   armor: DraftArmor[];
   gear: unknown[];
-  vehicles: unknown[];
+  vehicles: DraftVehicle[];
   priority_selection: PrioritySelection | null;
   magic_tradition: MagicTradition | null;
   creation_points_spent: number;
@@ -131,6 +131,7 @@ export interface ComputedCharacter {
     contacts: Contact[];
     weapons: DraftWeapon[];
     armor: DraftArmor[];
+    vehicles: DraftVehicle[];
     magic_tradition: MagicTradition | null;
   };
   computed_attributes: Attributes;
@@ -188,6 +189,22 @@ export interface DraftArmor {
   armor_value: number;
   availability: string;
   cost: number;
+  source: string;
+  page: string;
+}
+
+export interface DraftVehicle {
+  id: string;
+  name: string;
+  handling: string;
+  speed: string;
+  acceleration: string;
+  body: string;
+  armor: string;
+  pilot: string;
+  sensor: string;
+  availability: string;
+  cost: string;
   source: string;
   page: string;
 }
@@ -365,6 +382,8 @@ interface CharacterState {
   removeWeapon: (weaponId: string) => void;
   addArmor: (armor: DraftArmor) => void;
   removeArmor: (armorId: string) => void;
+  addVehicle: (vehicle: DraftVehicle) => void;
+  removeVehicle: (vehicleId: string) => void;
   addSpell: (spell: DraftSpell) => void;
   removeSpell: (spellId: string) => void;
   addAdeptPower: (power: DraftAdeptPower) => void;
@@ -594,6 +613,32 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
         ...draft,
         armor: draft.armor.filter((a) => a.id !== armorId),
         nuyen_spent: Math.max(0, draft.nuyen_spent - (removed?.cost ?? 0)),
+      },
+    });
+  },
+
+  addVehicle: (vehicle) => {
+    const { draft } = get();
+    if (!draft) return;
+    if (draft.vehicles.some((v) => v.id === vehicle.id)) return;
+    set({
+      draft: {
+        ...draft,
+        vehicles: [...draft.vehicles, vehicle],
+        nuyen_spent: draft.nuyen_spent + Number(vehicle.cost),
+      },
+    });
+  },
+
+  removeVehicle: (vehicleId) => {
+    const { draft } = get();
+    if (!draft) return;
+    const removed = draft.vehicles.find((v) => v.id === vehicleId);
+    set({
+      draft: {
+        ...draft,
+        vehicles: draft.vehicles.filter((v) => v.id !== vehicleId),
+        nuyen_spent: Math.max(0, draft.nuyen_spent - Number(removed?.cost ?? 0)),
       },
     });
   },

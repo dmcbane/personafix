@@ -91,6 +91,23 @@ export interface GameComplexForm {
   page: string;
 }
 
+export interface GameVehicle {
+  id: string;
+  name: string;
+  handling: string;
+  speed: string;
+  acceleration: string;
+  body: string;
+  armor: string;
+  pilot: string;
+  sensor: string;
+  availability: string;
+  cost: string;
+  edition: string;
+  source: string;
+  page: string;
+}
+
 interface GameDataState {
   loaded: boolean;
   loading: boolean;
@@ -105,6 +122,7 @@ interface GameDataState {
   spells: GameSpell[];
   adeptPowers: GameAdeptPower[];
   complexForms: GameComplexForm[];
+  vehicles: GameVehicle[];
 
   loadGameData: (dbPath: string, edition: string) => Promise<void>;
   checkFile: (path: string) => Promise<void>;
@@ -124,6 +142,7 @@ export const useGameDataStore = create<GameDataState>((set) => ({
   spells: [],
   adeptPowers: [],
   complexForms: [],
+  vehicles: [],
 
   loadGameData: async (dbPath, edition) => {
     set({ loading: true, error: null, debugInfo: null, loadMessage: null });
@@ -131,7 +150,7 @@ export const useGameDataStore = create<GameDataState>((set) => ({
       // load_game_data now returns a status message
       const msg = await invoke<string>("load_game_data", { path: dbPath });
 
-      const [skills, qualities, weapons, armor, augmentations, spells, adeptPowers, complexForms] =
+      const [skills, qualities, weapons, armor, augmentations, spells, adeptPowers, complexForms, vehicles] =
         await Promise.all([
           invoke<GameSkill[]>("get_skills", { edition }),
           invoke<GameQuality[]>("get_qualities", { edition }),
@@ -141,12 +160,13 @@ export const useGameDataStore = create<GameDataState>((set) => ({
           invoke<GameSpell[]>("get_spells", { edition }),
           invoke<GameAdeptPower[]>("get_adept_powers"),
           invoke<GameComplexForm[]>("get_complex_forms"),
+          invoke<GameVehicle[]>("get_vehicles"),
         ]);
 
       set({
         loaded: true,
         loading: false,
-        loadMessage: `${msg} | ${skills.length} skills, ${qualities.length} qualities, ${weapons.length} weapons, ${armor.length} armor, ${augmentations.length} augmentations, ${spells.length} spells, ${adeptPowers.length} powers, ${complexForms.length} complex forms for ${edition}`,
+        loadMessage: `${msg} | ${skills.length} skills, ${qualities.length} qualities, ${weapons.length} weapons, ${armor.length} armor, ${augmentations.length} augmentations, ${spells.length} spells, ${adeptPowers.length} powers, ${complexForms.length} complex forms, ${vehicles.length} vehicles for ${edition}`,
         skills,
         qualities,
         weapons,
@@ -155,6 +175,7 @@ export const useGameDataStore = create<GameDataState>((set) => ({
         spells,
         adeptPowers,
         complexForms,
+        vehicles,
       });
     } catch (err: unknown) {
       // Extract the error message — Tauri wraps errors in objects
