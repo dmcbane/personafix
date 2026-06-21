@@ -398,7 +398,7 @@ export const SR5_RESOURCE_NUYEN: Record<PriorityLevel, number> = {
 };
 // Starting magic/resonance from magic priority; 0 = Mundane (no magic)
 export const SR5_MAGIC_STARTING: Record<PriorityLevel, number> = {
-  A: 6, B: 6, C: 3, D: 2, E: 0,
+  A: 6, B: 4, C: 3, D: 2, E: 0,
 };
 // Special attribute points from metatype priority (for raising Magic/Edge above starting/min)
 export const SR5_SPECIAL_ATTR_POINTS: Record<PriorityLevel, number> = {
@@ -423,6 +423,7 @@ interface CharacterState {
   ) => Promise<void>;
   setAttribute: (attr: AttributeName, value: number) => void;
   setMagic: (value: number | null) => void;
+  setResonance: (value: number | null) => void;
   setMagicTradition: (tradition: MagicTradition | null) => void;
   setTraditionName: (name: string | null) => void;
   addSkill: (skill: Skill) => void;
@@ -558,10 +559,35 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
     });
   },
 
+  setResonance: (value) => {
+    const { draft } = get();
+    if (!draft) return;
+    set({
+      draft: {
+        ...draft,
+        attributes: { ...draft.attributes, resonance: value },
+      },
+    });
+  },
+
   setMagicTradition: (tradition) => {
     const { draft } = get();
     if (!draft) return;
-    set({ draft: { ...draft, magic_tradition: tradition } });
+    const startingVal = draft.priority_selection
+      ? SR5_MAGIC_STARTING[draft.priority_selection.magic_or_resonance]
+      : 0;
+    const isTech = tradition === "Technomancer";
+    set({
+      draft: {
+        ...draft,
+        magic_tradition: tradition,
+        attributes: {
+          ...draft.attributes,
+          magic: !isTech && tradition && startingVal > 0 ? startingVal : null,
+          resonance: isTech && startingVal > 0 ? startingVal : null,
+        },
+      },
+    });
   },
 
   setTraditionName: (name) => {
@@ -839,10 +865,11 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
     let newTradition = draft.magic_tradition;
     if (category === "magic_or_resonance") {
       const startingMagic = SR5_MAGIC_STARTING[level];
+      const isTech = draft.magic_tradition === "Technomancer";
       newAttrs = {
         ...draft.attributes,
-        magic: startingMagic > 0 ? startingMagic : null,
-        resonance: null,
+        magic: !isTech && startingMagic > 0 ? startingMagic : null,
+        resonance: isTech && startingMagic > 0 ? startingMagic : null,
       };
       // Reset tradition when switching to Mundane (E)
       if (level === "E") {

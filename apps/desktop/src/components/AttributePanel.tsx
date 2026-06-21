@@ -24,6 +24,7 @@ export default function AttributePanel() {
   const limits = useCharacterStore((s) => s.racialLimits);
   const setAttribute = useCharacterStore((s) => s.setAttribute);
   const setMagic = useCharacterStore((s) => s.setMagic);
+  const setResonance = useCharacterStore((s) => s.setResonance);
   const validate = useCharacterStore((s) => s.validate);
 
   if (!draft || !limits) return null;
@@ -129,36 +130,37 @@ export default function AttributePanel() {
       </div>
 
       {/* SR5 Magic / Resonance row */}
-      {isSR5 && magicPriorityMax > 0 && (
+      {isSR5 && magicPriorityMax > 0 && (() => {
+        const isTech = draft.magic_tradition === "Technomancer";
+        const attrLabel = isTech ? "RES" : "MAG";
+        const curVal = isTech
+          ? (draft.attributes.resonance ?? magicStarting)
+          : (draft.attributes.magic ?? magicStarting);
+        const setter = isTech
+          ? (v: number) => { setResonance(v); validate(); }
+          : (v: number) => { setMagic(v); validate(); };
+        return (
         <div className="mt-4">
           <h3 className="text-sm font-mono text-cyber-text-dim mb-2">
-            Magic — starting {magicStarting}, max {magicPriorityMax} (raises above {magicStarting} cost special attribute points)
+            {isTech ? "Resonance" : "Magic"} — starting {magicStarting}, max {magicPriorityMax} (raises above {magicStarting} cost special attribute points)
           </h3>
           <div className="flex items-center gap-3 bg-cyber-card border border-cyber-border rounded px-3 py-2">
             <span className="text-cyber-purple font-mono w-10 text-sm font-semibold">
-              MAG
+              {attrLabel}
             </span>
             <button
-              onClick={() => {
-                const cur = draft.attributes.magic ?? magicStarting;
-                setMagic(Math.max(magicStarting, cur - 1));
-                validate();
-              }}
-              disabled={(draft.attributes.magic ?? magicStarting) <= magicStarting}
+              onClick={() => setter(Math.max(magicStarting, curVal - 1))}
+              disabled={curVal <= magicStarting}
               className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
             >
               -
             </button>
             <span className="font-mono text-lg w-6 text-center text-cyber-heading">
-              {draft.attributes.magic ?? magicStarting}
+              {curVal}
             </span>
             <button
-              onClick={() => {
-                const cur = draft.attributes.magic ?? magicStarting;
-                setMagic(Math.min(magicPriorityMax, cur + 1));
-                validate();
-              }}
-              disabled={(draft.attributes.magic ?? magicStarting) >= magicPriorityMax}
+              onClick={() => setter(Math.min(magicPriorityMax, curVal + 1))}
+              disabled={curVal >= magicPriorityMax}
               className="w-7 h-7 rounded bg-cyber-surface border border-cyber-border hover:border-cyber-green-dim disabled:opacity-30 text-sm text-cyber-text transition-colors"
             >
               +
@@ -180,7 +182,8 @@ export default function AttributePanel() {
             </p>
           )}
         </div>
-      )}
+        );
+      })()}
       {isSR5 && magicPriorityMax === 0 && (
         <p className="mt-3 text-xs text-cyber-text-dim font-mono">
           Mundane priority — no magic or resonance attribute

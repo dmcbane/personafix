@@ -58,19 +58,22 @@ export default function SummaryBar() {
     : 0;
   const [sr5SkillAlloc] = isSR5 && sel ? SR5_SKILL_POINTS[sel.skills] : [0, 0];
   const sr5NuyenBudget = isSR5 && sel ? SR5_RESOURCE_NUYEN[sel.resources] : 0;
-  const sr5QualKarma = isSR5
-    ? draft.qualities.reduce(
-        (sum, q) =>
-          sum + (q.quality_type === "Positive" ? q.cost : -q.cost),
-        0,
-      )
+  const sr5QualPosCost = isSR5
+    ? draft.qualities.filter((q) => q.quality_type === "Positive").reduce((s, q) => s + q.cost, 0)
     : 0;
+  const sr5QualNegCost = isSR5
+    ? draft.qualities.filter((q) => q.quality_type === "Negative").reduce((s, q) => s + q.cost, 0)
+    : 0;
+  const sr5QualKarma = sr5QualPosCost - sr5QualNegCost;
 
-  // SR5 special attribute pool: magic above starting + edge above racial min
+  // SR5 special attribute pool: magic/resonance above starting + edge above racial min
   const sr5MagicStarting = isSR5 && sel ? SR5_MAGIC_STARTING[sel.magic_or_resonance] : 0;
   const sr5SpecialPool = isSR5 && sel ? SR5_SPECIAL_ATTR_POINTS[sel.metatype] : 0;
-  const sr5MagicSpecial = isSR5 && draft.attributes.magic != null && draft.magic_tradition
-    ? Math.max(0, draft.attributes.magic - sr5MagicStarting)
+  const isTechnomancer = draft.magic_tradition === "Technomancer";
+  const sr5MagicSpecial = isSR5 && draft.magic_tradition
+    ? isTechnomancer
+      ? Math.max(0, (draft.attributes.resonance ?? 0) - sr5MagicStarting)
+      : Math.max(0, (draft.attributes.magic ?? 0) - sr5MagicStarting)
     : 0;
   const sr5EdgeSpecial = isSR5 ? Math.max(0, draft.attributes.edge - limits.edge[0]) : 0;
   const sr5SpecialSpent = sr5MagicSpecial + sr5EdgeSpecial;
@@ -111,7 +114,7 @@ export default function SummaryBar() {
             <div className="text-cyber-border">|</div>
             <div className="text-cyber-text-dim">
               Qual:{" "}
-              <span className={Math.abs(sr5QualKarma) > 25 ? "text-cyber-red" : "text-cyber-text"}>
+              <span className={sr5QualPosCost > 25 || sr5QualNegCost > 25 ? "text-cyber-red" : "text-cyber-text"}>
                 {sr5QualKarma > 0 ? "+" : ""}{sr5QualKarma}k
               </span>
             </div>

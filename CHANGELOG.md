@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.48.3] - 2026-06-21
+
+### Fixed
+- SR5 Technomancer: `setPriority` / `setMagicTradition` now correctly routes the
+  starting value to `attributes.resonance` (not `magic`) when tradition is Technomancer;
+  added `setResonance` store action; AttributePanel magic/resonance slider now shows
+  "RES" label and calls `setResonance` for Technomancers.
+- SR5 Technomancer: SummaryBar SAP calculation now reads `attributes.resonance` instead
+  of `attributes.magic` when computing points spent above starting value.
+- SR5 quality karma limit: SummaryBar now checks positive and negative pools separately
+  (both must stay ≤ 25k) instead of `|net| > 25` which missed balanced-but-over-limit builds.
+- SR5 priority table: `SR5_MAGIC_STARTING["B"]` corrected from 6 to 4 (SR5 CRB p. 65).
+
 ## [0.48.1] - 2026-06-21
 
 ### Fixed
