@@ -52,7 +52,9 @@ export default function QualityPanel() {
   const qualitySource: Omit<Quality, "id">[] = gameDataLoaded
     ? gameQualities.map((gq) => ({
         name: gq.name,
-        quality_type: gq.quality_type,
+        // Chummer5a XML uses "Metatype Positive" / "Metatype Negative" as category names
+        // in addition to plain "Positive" / "Negative" — normalize to the two canonical values.
+        quality_type: (gq.quality_type.includes("Positive") ? "Positive" : "Negative") as "Positive" | "Negative",
         cost: gq.cost,
         source: gq.source,
         page: gq.page,

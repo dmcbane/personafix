@@ -10,6 +10,7 @@ export default function ContactPanel() {
   const draft = useCharacterStore((s) => s.draft);
   const addContact = useCharacterStore((s) => s.addContact);
   const removeContact = useCharacterStore((s) => s.removeContact);
+  const validate = useCharacterStore((s) => s.validate);
 
   const [name, setName] = useState("");
   const [archetype, setArchetype] = useState(ARCHETYPES[0]);
@@ -41,6 +42,7 @@ export default function ContactPanel() {
       notes: "",
     };
     addContact(contact);
+    validate();
     setName("");
     setConnection(2);
     setLoyalty(2);
@@ -101,7 +103,7 @@ export default function ContactPanel() {
                 </span>
               </div>
               <button
-                onClick={() => removeContact(c.id)}
+                onClick={() => { removeContact(c.id); validate(); }}
                 className="text-cyber-red hover:text-cyber-red/80 transition-colors ml-1"
               >
                 X
