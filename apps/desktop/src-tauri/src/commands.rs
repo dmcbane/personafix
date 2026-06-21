@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
@@ -879,6 +879,51 @@ pub async fn query_augmentations_db(
 // Tauri command wrappers — thin layer over core logic
 // ============================================================
 
+fn campaigns_dir() -> PathBuf {
+    dirs::data_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("personafix")
+        .join("campaigns")
+}
+
+/// Returns the path where .srx campaign files are stored.
+#[tauri::command]
+pub async fn get_campaigns_dir() -> Result<String, AppError> {
+    let dir = campaigns_dir();
+    std::fs::create_dir_all(&dir).ok();
+    Ok(dir.to_string_lossy().into_owned())
+}
+
+/// Returns true if any .srx file in `dir` has a campaign named `check`.
+async fn campaign_name_exists(dir: &Path, check: &str) -> bool {
+    let Ok(entries) = std::fs::read_dir(dir) else { return false };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("srx") { continue; }
+        let url = format!("sqlite:{}?mode=ro", path.display());
+        if let Ok(pool) = SqlitePool::connect(&url).await {
+            let row: Option<(String,)> = sqlx::query_as("SELECT name FROM campaigns LIMIT 1")
+                .fetch_optional(&pool)
+                .await
+                .unwrap_or(None);
+            pool.close().await;
+            if matches!(&row, Some((n,)) if n == check) { return true; }
+        }
+    }
+    false
+}
+
+/// Returns `desired` if unique, else `desired (2)`, `desired (3)`, ...
+async fn pick_unique_name(dir: &Path, desired: &str) -> String {
+    if !campaign_name_exists(dir, desired).await { return desired.to_string(); }
+    let mut n = 2u32;
+    loop {
+        let candidate = format!("{desired} ({n})");
+        if !campaign_name_exists(dir, &candidate).await { return candidate; }
+        n += 1;
+    }
+}
+
 #[tauri::command]
 pub async fn create_campaign(
     name: String,
@@ -886,20 +931,19 @@ pub async fn create_campaign(
 ) -> Result<Campaign, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
 
-    let db_dir = dirs::data_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("personafix")
-        .join("campaigns");
+    let db_dir = campaigns_dir();
     std::fs::create_dir_all(&db_dir).map_err(|e| AppError {
         kind: "io".to_string(),
         message: e.to_string(),
     })?;
 
+    let unique_name = pick_unique_name(&db_dir, &name).await;
+
     let db_path = db_dir.join(format!("{id}.srx"));
     let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
     let pool = SqlitePool::connect(&db_url).await?;
 
-    let campaign = create_campaign_db(&pool, &id, &name).await?;
+    let campaign = create_campaign_db(&pool, &id, &unique_name).await?;
 
     record_recent_campaign_sync(&db_path.to_string_lossy(), &campaign.name);
 

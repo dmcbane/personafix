@@ -49,6 +49,8 @@ function App() {
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [recents, setRecents] = useState<RecentCampaign[]>([]);
+  const [recentErrors, setRecentErrors] = useState<Record<string, string>>({});
+  const [campaignsDir, setCampaignsDir] = useState<string | null>(null);
   const [campaignName, setCampaignName] = useState("My Campaign");
   const [charName, setCharName] = useState("Street Samurai");
   const [edition, setEdition] = useState<Edition>("SR4");
@@ -68,11 +70,10 @@ function App() {
     html.style.fontSize = FONT_SIZE_PX[fontSize];
   }, [theme, font, fontSize]);
 
-  // Load recent campaigns on mount.
+  // Load recent campaigns and campaigns directory on mount.
   useEffect(() => {
-    invoke<RecentCampaign[]>("get_recent_campaigns")
-      .then(setRecents)
-      .catch(() => {});
+    invoke<RecentCampaign[]>("get_recent_campaigns").then(setRecents).catch(() => {});
+    invoke<string>("get_campaigns_dir").then(setCampaignsDir).catch(() => {});
   }, []);
 
   // Auto-load game data on mount and whenever the edition selector changes.
@@ -119,6 +120,7 @@ function App() {
         filters: [{ name: "Campaign File", extensions: ["srx"] }],
         multiple: false,
         directory: false,
+        ...(campaignsDir ? { defaultPath: campaignsDir } : {}),
       });
       if (!selected) return;
       const result = await invoke<Campaign>("open_campaign", { path: selected });
@@ -133,13 +135,14 @@ function App() {
 
   const handleOpenRecent = async (path: string) => {
     try {
+      setRecentErrors((prev) => { const n = { ...prev }; delete n[path]; return n; });
       const result = await invoke<Campaign>("open_campaign", { path });
       setCampaign(result);
       await listCharacters(result.id);
       invoke<RecentCampaign[]>("get_recent_campaigns").then(setRecents).catch(() => {});
       setError(null);
     } catch (err) {
-      setError(fmtErr(err));
+      setRecentErrors((prev) => ({ ...prev, [path]: fmtErr(err) }));
     }
   };
 
@@ -282,6 +285,7 @@ function App() {
                   type="text"
                   value={campaignName}
                   onChange={(e) => setCampaignName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleCreateCampaign()}
                   placeholder="Campaign name"
                   className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
                 />
@@ -299,28 +303,51 @@ function App() {
                     Open...
                   </button>
                 </div>
+                {campaignsDir && (
+                  <p className="text-xs text-cyber-text-dim font-mono truncate" title={campaignsDir}>
+                    Campaigns saved to: {campaignsDir}
+                  </p>
+                )}
               </div>
 
               {recents.length > 0 && (
                 <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 space-y-2">
                   <h3 className="text-xs font-mono text-cyber-text-dim">// Recent</h3>
                   {recents.map((r) => (
-                    <button
-                      key={r.path}
-                      onClick={() => handleOpenRecent(r.path)}
-                      className="w-full text-left px-3 py-2 rounded border border-cyber-border text-cyber-text-dim hover:text-cyber-text hover:border-cyber-border-bright transition-colors text-sm truncate"
-                    >
-                      {r.name}
-                    </button>
+                    <div key={r.path}>
+                      <button
+                        onClick={() => handleOpenRecent(r.path)}
+                        className="w-full text-left px-3 py-2 rounded border border-cyber-border text-cyber-text-dim hover:text-cyber-text hover:border-cyber-border-bright transition-colors text-sm"
+                      >
+                        <div className="font-medium text-cyber-text truncate">{r.name}</div>
+                        <div className="text-xs font-mono text-cyber-text-dim truncate mt-0.5">{r.path}</div>
+                      </button>
+                      {recentErrors[r.path] && (
+                        <p className="text-cyber-red text-xs font-mono px-3 pb-1">
+                          {recentErrors[r.path]}
+                        </p>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Campaign header with back button */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-mono text-cyber-text-dim">// {campaign.name}</h2>
+                <button
+                  onClick={() => setCampaign(null)}
+                  className="text-xs font-mono text-cyber-text-dim hover:text-cyber-text transition-colors"
+                >
+                  ← Home
+                </button>
+              </div>
+
               {/* Character list */}
               <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 space-y-3">
-                <h2 className="text-sm font-semibold text-cyber-heading font-mono">
+                <h2 className="text-sm font-semibold text-cyber-heading font-mono sr-only">
                   // {campaign.name}
                 </h2>
                 {characters.length > 0 && (

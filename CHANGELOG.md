@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.49.0] - 2026-06-21
+
+### Added
+- Open Campaign dialog now starts in the campaigns storage directory (`~/.local/share/personafix/campaigns/` on Linux) instead of the home root, eliminating the multi-minute freeze on first open.
+- New `get_campaigns_dir` IPC command; campaigns directory path is shown on the home screen so users know where files are stored.
+- Recent campaigns list now shows the full file path beneath the name so duplicate-named campaigns are distinguishable.
+- Per-entry error display: if a recent campaign fails to open, the error appears inline next to that entry (rather than replacing the page-level error).
+- Campaign name deduplication: creating a campaign with an existing name auto-appends ` (2)`, ` (3)`, etc. instead of silently overwriting.
+- "← Home" button in the campaign character-list screen to return to campaign selection.
+- "← Back" button in BuilderShell header to discard the draft and return to the campaign screen.
+- `cancelDraft` store action: clears `draft` and `validationErrors`.
+
 ## [0.48.3] - 2026-06-21
 
 ### Fixed

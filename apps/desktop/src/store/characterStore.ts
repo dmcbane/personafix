@@ -452,6 +452,7 @@ interface CharacterState {
   addContact: (contact: Contact) => void;
   removeContact: (contactId: string) => void;
   setPriority: (category: PriorityCategory, level: PriorityLevel) => void;
+  cancelDraft: () => void;
   validate: () => Promise<void>;
   saveCharacter: (campaignId: string) => Promise<void>;
   listCharacters: (campaignId: string) => Promise<void>;
@@ -888,6 +889,8 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       },
     });
   },
+
+  cancelDraft: () => set({ draft: null, validationErrors: [] }),
 
   validate: async () => {
     const { draft } = get();

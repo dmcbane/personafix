@@ -30,6 +30,7 @@ export default function BuilderShell({
   const draft = useCharacterStore((s) => s.draft);
   const validationErrors = useCharacterStore((s) => s.validationErrors);
   const saveCharacter = useCharacterStore((s) => s.saveCharacter);
+  const cancelDraft = useCharacterStore((s) => s.cancelDraft);
   const validate = useCharacterStore((s) => s.validate);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -97,6 +98,13 @@ export default function BuilderShell({
           {saveError && (
             <span className="text-cyber-red text-sm">{saveError}</span>
           )}
+          <button
+            onClick={cancelDraft}
+            className="px-3 py-2 border border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright hover:text-cyber-text rounded text-sm font-mono transition-colors"
+            title="Discard and return to campaign"
+          >
+            ← Back
+          </button>
           {onSettingsOpen && (
             <button
               onClick={onSettingsOpen}
