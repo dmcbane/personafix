@@ -25,6 +25,13 @@ pub struct Campaign {
     pub name: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RecentCampaign {
+    pub path: String,
+    pub name: String,
+    pub last_opened: String,
+}
+
 // -- Helpers --
 
 async fn get_pool(state: &State<'_, AppState>) -> Result<SqlitePool, AppError> {
@@ -64,6 +71,224 @@ pub fn parse_metatype(s: &str) -> Result<Metatype, AppError> {
 // ============================================================
 // Core logic functions — testable without Tauri runtime
 // ============================================================
+
+// -- Recent campaigns helpers (filesystem, no pool needed) --
+
+fn recent_campaigns_path() -> Option<PathBuf> {
+    dirs::data_dir().map(|d| d.join("personafix").join("recent_campaigns.json"))
+}
+
+fn unix_now_string() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
+        .to_string()
+}
+
+pub fn get_recent_campaigns_sync() -> Vec<RecentCampaign> {
+    let path = match recent_campaigns_path() {
+        Some(p) => p,
+        None => return vec![],
+    };
+    if !path.exists() {
+        return vec![];
+    }
+    std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default()
+}
+
+pub fn record_recent_campaign_sync(path: &str, name: &str) {
+    let json_path = match recent_campaigns_path() {
+        Some(p) => p,
+        None => return,
+    };
+    let mut recents = get_recent_campaigns_sync();
+    recents.retain(|r| r.path != path);
+    recents.insert(
+        0,
+        RecentCampaign {
+            path: path.to_string(),
+            name: name.to_string(),
+            last_opened: unix_now_string(),
+        },
+    );
+    recents.truncate(10);
+    if let Some(parent) = json_path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    if let Ok(json) = serde_json::to_string_pretty(&recents) {
+        let _ = std::fs::write(&json_path, json);
+    }
+}
+
+// -- Open campaign (testable core) --
+
+pub async fn open_campaign_db(pool: &SqlitePool) -> Result<Campaign, AppError> {
+    let row: (String, String) = sqlx::query_as("SELECT id, name FROM campaigns LIMIT 1")
+        .fetch_one(pool)
+        .await?;
+    Ok(Campaign { id: row.0, name: row.1 })
+}
+
+// -- JSON character backup / restore --
+
+pub async fn export_character_json_db(
+    pool: &SqlitePool,
+    character_id: &str,
+    out_path: &str,
+) -> Result<(), AppError> {
+    let computed = get_character_db(pool, character_id).await?;
+    let events = get_ledger_db(pool, character_id).await?;
+
+    #[derive(Serialize)]
+    struct CharacterExport<'a> {
+        version: u8,
+        character: &'a CharacterBase,
+        ledger: &'a [LedgerEvent],
+    }
+
+    let export = CharacterExport {
+        version: 1,
+        character: &computed.base,
+        ledger: &events,
+    };
+    let json = serde_json::to_string_pretty(&export)?;
+    std::fs::write(out_path, json).map_err(|e| AppError {
+        kind: "io".to_string(),
+        message: e.to_string(),
+    })?;
+    Ok(())
+}
+
+pub async fn import_character_json_db(
+    pool: &SqlitePool,
+    campaign_id: &str,
+    file_path: &str,
+) -> Result<String, AppError> {
+    #[derive(Deserialize)]
+    struct CharacterImport {
+        #[allow(dead_code)]
+        version: u8,
+        character: CharacterBase,
+        ledger: Vec<LedgerEvent>,
+    }
+
+    let json = std::fs::read_to_string(file_path).map_err(|e| AppError {
+        kind: "io".to_string(),
+        message: e.to_string(),
+    })?;
+    let import: CharacterImport = serde_json::from_str(&json).map_err(|e| AppError {
+        kind: "json_parse".to_string(),
+        message: e.to_string(),
+    })?;
+
+    let new_id = uuid::Uuid::new_v4().to_string();
+    let mut new_base = import.character;
+
+    create_character_db(
+        pool,
+        &new_id,
+        campaign_id,
+        &new_base.edition,
+        &new_base.name,
+        &new_base.metatype,
+    )
+    .await?;
+
+    new_base.id = new_id.clone();
+    new_base.campaign_id = campaign_id.to_string();
+    save_character_base_db(pool, &new_base).await?;
+
+    for event in import.ledger {
+        apply_event_db(pool, &new_id, &event).await?;
+    }
+
+    Ok(new_id)
+}
+
+// -- Chummer character import / export --
+
+pub async fn import_chummer_character_db(
+    campaign_pool: &SqlitePool,
+    game_data_pool: &SqlitePool,
+    campaign_id: &str,
+    chum_path: &str,
+) -> Result<String, AppError> {
+    use personafix_import_export::sr5;
+
+    let path = std::path::Path::new(chum_path);
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+
+    let new_id = uuid::Uuid::new_v4().to_string();
+
+    match ext.as_str() {
+        "chum5" => {
+            let chum = sr5::parse_file(path).map_err(|e| AppError {
+                kind: "import".to_string(),
+                message: e.to_string(),
+            })?;
+            // Create a placeholder record first so create_character_db sets up the row,
+            // then import_sr5 builds the full CharacterBase and we overwrite with save.
+            let metatype = match chum.metatype.as_str() {
+                "Elf" => Metatype::Elf,
+                "Dwarf" => Metatype::Dwarf,
+                "Ork" | "Orc" => Metatype::Ork,
+                "Troll" => Metatype::Troll,
+                _ => Metatype::Human,
+            };
+            let char_name = if chum.name.is_empty() { "Imported Character".to_string() } else { chum.name.clone() };
+            create_character_db(campaign_pool, &new_id, campaign_id, &Edition::SR5, &char_name, &metatype).await?;
+
+            let base = sr5::map::import_sr5(&chum, game_data_pool, campaign_id, &new_id)
+                .await
+                .map_err(|e| AppError {
+                    kind: "import".to_string(),
+                    message: e.to_string(),
+                })?;
+            save_character_base_db(campaign_pool, &base).await?;
+        }
+        "chum" => {
+            return Err(AppError {
+                kind: "unsupported".to_string(),
+                message: "SR4 .chum import is not yet supported".to_string(),
+            });
+        }
+        _ => {
+            return Err(AppError {
+                kind: "unsupported".to_string(),
+                message: format!("Unsupported file type: .{ext}"),
+            });
+        }
+    }
+
+    Ok(new_id)
+}
+
+pub async fn export_chummer_character_db(
+    campaign_pool: &SqlitePool,
+    game_data_pool: &SqlitePool,
+    character_id: &str,
+    out_path: &str,
+) -> Result<(), AppError> {
+    use personafix_import_export::export::sr5::export_sr5;
+
+    let computed = get_character_db(campaign_pool, character_id).await?;
+    let xml = export_sr5(&computed.base, game_data_pool)
+        .await
+        .map_err(|e| AppError {
+            kind: "export".to_string(),
+            message: e.to_string(),
+        })?;
+    std::fs::write(out_path, xml).map_err(|e| AppError {
+        kind: "io".to_string(),
+        message: e.to_string(),
+    })?;
+    Ok(())
+}
 
 /// Create a new campaign database at the given path, run migrations, insert record.
 pub async fn create_campaign_db(
@@ -676,6 +901,8 @@ pub async fn create_campaign(
 
     let campaign = create_campaign_db(&pool, &id, &name).await?;
 
+    record_recent_campaign_sync(&db_path.to_string_lossy(), &campaign.name);
+
     *state.campaign_pool.write().await = Some(pool);
     *state.campaign_path.write().await = Some(db_path);
 
@@ -691,6 +918,8 @@ pub async fn open_campaign(path: String, state: State<'_, AppState>) -> Result<C
     let row: (String, String) = sqlx::query_as("SELECT id, name FROM campaigns LIMIT 1")
         .fetch_one(&pool)
         .await?;
+
+    record_recent_campaign_sync(&path, &row.1);
 
     *state.campaign_pool.write().await = Some(pool);
     *state.campaign_path.write().await = Some(db_path);
@@ -1160,6 +1389,59 @@ pub async fn get_vehicles(
 ) -> Result<Vec<GameVehicle>, AppError> {
     let pool = get_game_pool(&state).await?;
     query_vehicles_db(&pool).await
+}
+
+#[tauri::command]
+pub async fn get_recent_campaigns() -> Result<Vec<RecentCampaign>, AppError> {
+    Ok(get_recent_campaigns_sync())
+}
+
+#[tauri::command]
+pub async fn record_recent_campaign(path: String, name: String) -> Result<(), AppError> {
+    record_recent_campaign_sync(&path, &name);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn export_character_json(
+    character_id: String,
+    out_path: String,
+    state: State<'_, AppState>,
+) -> Result<(), AppError> {
+    let pool = get_pool(&state).await?;
+    export_character_json_db(&pool, &character_id, &out_path).await
+}
+
+#[tauri::command]
+pub async fn import_character_json(
+    campaign_id: String,
+    file_path: String,
+    state: State<'_, AppState>,
+) -> Result<String, AppError> {
+    let pool = get_pool(&state).await?;
+    import_character_json_db(&pool, &campaign_id, &file_path).await
+}
+
+#[tauri::command]
+pub async fn import_chummer_character(
+    campaign_id: String,
+    chum_path: String,
+    state: State<'_, AppState>,
+) -> Result<String, AppError> {
+    let pool = get_pool(&state).await?;
+    let game_pool = get_game_pool(&state).await?;
+    import_chummer_character_db(&pool, &game_pool, &campaign_id, &chum_path).await
+}
+
+#[tauri::command]
+pub async fn export_chummer_character(
+    character_id: String,
+    out_path: String,
+    state: State<'_, AppState>,
+) -> Result<(), AppError> {
+    let pool = get_pool(&state).await?;
+    let game_pool = get_game_pool(&state).await?;
+    export_chummer_character_db(&pool, &game_pool, &character_id, &out_path).await
 }
 
 // ============================================================
@@ -2198,6 +2480,136 @@ mod tests {
         assert!(
             cleared.base.tradition_name.is_none(),
             "tradition_name should be clearable to None"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_open_campaign_roundtrip() {
+        let tmp_path = std::env::temp_dir()
+            .join(format!("pf_test_{}.srx", uuid::Uuid::new_v4()));
+        let db_url = format!("sqlite:{}?mode=rwc", tmp_path.display());
+
+        {
+            let pool = SqlitePool::connect(&db_url).await.unwrap();
+            create_campaign_db(&pool, "c1", "My Campaign").await.unwrap();
+            pool.close().await;
+        }
+
+        let reopen_url = format!("sqlite:{}?mode=rw", tmp_path.display());
+        let pool2 = SqlitePool::connect(&reopen_url).await.unwrap();
+        let campaign = open_campaign_db(&pool2).await.unwrap();
+        assert_eq!(campaign.name, "My Campaign");
+        assert_eq!(campaign.id, "c1");
+        pool2.close().await;
+        let _ = std::fs::remove_file(&tmp_path);
+    }
+
+    #[tokio::test]
+    async fn test_export_import_json_roundtrip() {
+        use personafix_core::model::skills::Skill;
+
+        let pool = setup_test_db().await;
+        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_character_db(&pool, "ch1", "c1", &Edition::SR5, "Razor", &Metatype::Elf)
+            .await
+            .unwrap();
+
+        let mut computed = get_character_db(&pool, "ch1").await.unwrap();
+        computed.base.skills.push(Skill {
+            id: "pistols".to_string(),
+            name: "Pistols".to_string(),
+            linked_attribute: "AGI".to_string(),
+            group: None,
+            rating: 6,
+            specializations: vec![],
+        });
+        save_character_base_db(&pool, &computed.base).await.unwrap();
+
+        apply_event_db(
+            &pool,
+            "ch1",
+            &LedgerEvent::KarmaReceived {
+                amount: 10,
+                reason: "Run".to_string(),
+                run_id: None,
+            },
+        )
+        .await
+        .unwrap();
+
+        let tmp_path = std::env::temp_dir()
+            .join(format!("pf_test_{}.json", uuid::Uuid::new_v4()));
+        export_character_json_db(&pool, "ch1", &tmp_path.to_string_lossy())
+            .await
+            .unwrap();
+
+        let new_id = import_character_json_db(&pool, "c1", &tmp_path.to_string_lossy())
+            .await
+            .unwrap();
+        assert_ne!(new_id, "ch1");
+
+        let imported = get_character_db(&pool, &new_id).await.unwrap();
+        assert_eq!(imported.base.name, "Razor");
+        assert_eq!(imported.base.metatype, Metatype::Elf);
+        assert_eq!(imported.base.edition, Edition::SR5);
+        assert!(
+            imported.base.skills.iter().any(|s| s.name == "Pistols" && s.rating == 6),
+            "imported character should have Pistols at rating 6"
+        );
+        assert_eq!(imported.total_karma_earned, 10);
+
+        let _ = std::fs::remove_file(&tmp_path);
+    }
+
+    #[tokio::test]
+    async fn test_import_chummer_sr5_minimal() {
+        use personafix_import_export::sr5;
+
+        const XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<character>
+  <name>Street Samurai</name>
+  <metatype>Human</metatype>
+  <adept>false</adept>
+  <magician>false</magician>
+  <technomancer>false</technomancer>
+  <attributes>
+    <attribute><name>BOD</name><base>4</base><karma>0</karma></attribute>
+    <attribute><name>AGI</name><base>5</base><karma>0</karma></attribute>
+  </attributes>
+  <newskills>
+    <skills>
+      <skill>
+        <suid></suid>
+        <name>Pistols</name>
+        <base>5</base>
+        <karma>0</karma>
+      </skill>
+    </skills>
+    <knoskills></knoskills>
+  </newskills>
+  <qualities></qualities>
+  <cyberwares></cyberwares>
+  <spells></spells>
+  <powers></powers>
+  <complexforms></complexforms>
+  <contacts></contacts>
+  <weapons></weapons>
+  <armors></armors>
+  <gears></gears>
+  <vehicles></vehicles>
+</character>"#;
+
+        let chum = sr5::parse_str(XML).expect("minimal XML should parse");
+        let game_pool = setup_game_data_db().await;
+        let base = sr5::map::import_sr5(&chum, &game_pool, "c1", "ch1")
+            .await
+            .expect("import_sr5 should succeed with seeded game data");
+
+        assert_eq!(base.name, "Street Samurai");
+        assert_eq!(base.metatype, Metatype::Human);
+        assert!(
+            base.skills.iter().any(|s| s.rating > 0),
+            "should have at least one skill with rating > 0"
         );
     }
 }

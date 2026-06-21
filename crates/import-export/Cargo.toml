@@ -1,25 +1,18 @@
 [package]
-name = "personafix-desktop"
-description = "Shadowrun character manager desktop application"
+name = "personafix-import-export"
+description = "Chummer character file import/export for personafix"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
-[build-dependencies]
-tauri-build = { version = "2", features = [] }
-
 [dependencies]
 personafix-core = { workspace = true }
-personafix-data = { workspace = true }
-personafix-import-export = { workspace = true }
+quick-xml = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }
 tokio = { workspace = true }
+encoding_rs = { workspace = true }
 thiserror = { workspace = true }
-tauri = { version = "2", features = [] }
-tauri-plugin-shell = "2"
-tauri-plugin-dialog = "2"
 uuid = { version = "1", features = ["v4"] }
-dirs = "6"

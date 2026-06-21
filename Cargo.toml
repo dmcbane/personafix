@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/core", "crates/data", "crates/migrate", "apps/desktop/src-tauri"]
+members = ["crates/core", "crates/data", "crates/migrate", "crates/import-export", "apps/desktop/src-tauri"]
 resolver = "3"
 
 [workspace.package]
@@ -21,8 +21,9 @@ sqlx = { version = "0.8", features = [
 ] }
 tokio = { version = "1", features = ["full"] }
 
-# XML parsing (migration)
+# XML parsing (migration + Chummer import/export)
 quick-xml = { version = "0.39", features = ["serialize"] }
+encoding_rs = "0.8"
 
 # Error handling
 thiserror = "2.0"
@@ -33,3 +34,4 @@ ts-rs = "11"
 # Internal crates
 personafix-core = { path = "crates/core" }
 personafix-data = { path = "crates/data" }
+personafix-import-export = { path = "crates/import-export" }

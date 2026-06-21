@@ -152,6 +152,7 @@ export interface ComputedCharacter {
     contacts: Contact[];
     weapons: DraftWeapon[];
     armor: DraftArmor[];
+    gear: GearItem[];
     vehicles: DraftVehicle[];
     magic_tradition: MagicTradition | null;
     tradition_name: string | null;
@@ -213,6 +214,17 @@ export interface DraftArmor {
   id: string;
   name: string;
   armor_value: number;
+  availability: string;
+  cost: number;
+  source: string;
+  page: string;
+}
+
+export interface GearItem {
+  id: string;
+  name: string;
+  category: string;
+  rating: number | null;
   availability: string;
   cost: number;
   source: string;

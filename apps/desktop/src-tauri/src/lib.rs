@@ -34,6 +34,12 @@ pub fn run() {
             commands::update_notes,
             commands::update_tradition_name,
             commands::debug_check_file,
+            commands::get_recent_campaigns,
+            commands::record_recent_campaign,
+            commands::export_character_json,
+            commands::import_character_json,
+            commands::import_chummer_character,
+            commands::export_chummer_character,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,37 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { save } from "@tauri-apps/plugin-dialog";
 import { useCharacterStore, type LedgerEvent } from "../store/characterStore";
+import { type RollResult, rollPool, DieIcon } from "./DiceRoller";
 
-// ---- Dice roller logic ----
-interface RollResult {
-  dice: number[];
-  hits: number;
-  ones: number;
-  isGlitch: boolean;
-  isCriticalGlitch: boolean;
-  label: string;
+interface Props {
+  onPlayMode?: () => void;
 }
 
-function rollPool(count: number, label: string): RollResult {
-  const dice = Array.from({ length: Math.max(1, count) }, () => Math.floor(Math.random() * 6) + 1);
-  const hits = dice.filter((d) => d >= 5).length;
-  const ones = dice.filter((d) => d === 1).length;
-  const isGlitch = ones > dice.length / 2;
-  return { dice, hits, ones, isGlitch, isCriticalGlitch: isGlitch && hits === 0, label };
-}
-
-function DieIcon({ value }: { value: number }) {
-  const isHit = value >= 5;
-  const isOne = value === 1;
-  const color = isHit ? "text-cyber-green bg-cyber-green/10 border-cyber-green/50" : isOne ? "text-cyber-red bg-cyber-red/10 border-cyber-red/50" : "text-cyber-text-dim bg-cyber-surface border-cyber-border";
-  return (
-    <span className={`inline-flex items-center justify-center w-7 h-7 rounded text-xs font-bold font-mono border ${color}`}>
-      {value}
-    </span>
-  );
-}
-
-export default function SavedCharacterView() {
+export default function SavedCharacterView({ onPlayMode }: Props) {
   const saved = useCharacterStore((s) => s.savedCharacter);
   const reset = useCharacterStore((s) => s.reset);
   const applyEvent = useCharacterStore((s) => s.applyEvent);
@@ -59,6 +36,7 @@ export default function SavedCharacterView() {
   const [showNotes, setShowNotes] = useState(false);
   const [notesText, setNotesText] = useState<string | null>(null);
   const [notesSaving, setNotesSaving] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   if (!saved) return null;
 
@@ -80,6 +58,36 @@ export default function SavedCharacterView() {
   useEffect(() => {
     if (showLedger) loadLedger();
   }, [showLedger, loadLedger]);
+
+  const handleExportJson = async () => {
+    setExportError(null);
+    try {
+      const outPath = await save({
+        title: "Export Character JSON",
+        filters: [{ name: "JSON", extensions: ["json"] }],
+        defaultPath: `${base.name.replace(/\s+/g, "_")}.json`,
+      });
+      if (!outPath) return;
+      await invoke("export_character_json", { characterId: base.id, outPath });
+    } catch (err) {
+      setExportError(String(err));
+    }
+  };
+
+  const handleExportChummer = async () => {
+    setExportError(null);
+    try {
+      const outPath = await save({
+        title: "Export to Chummer",
+        filters: [{ name: "Chummer5 File", extensions: ["chum5"] }],
+        defaultPath: `${base.name.replace(/\s+/g, "_")}.chum5`,
+      });
+      if (!outPath) return;
+      await invoke("export_chummer_character", { characterId: base.id, outPath });
+    } catch (err) {
+      setExportError(String(err));
+    }
+  };
 
   const applyWithReload = async (event: LedgerEvent) => {
     setApplying(true);
@@ -219,7 +227,30 @@ export default function SavedCharacterView() {
               {tradition && <span className="text-cyber-blue ml-2">[{tradition}{base.tradition_name ? ` · ${base.tradition_name}` : ""}]</span>}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {onPlayMode && (
+              <button
+                onClick={onPlayMode}
+                title="Switch to Play Mode"
+                className="px-3 py-2 bg-cyber-card border border-cyber-border hover:border-cyber-green text-cyber-green rounded text-sm transition-colors font-mono"
+              >
+                ⚔ Play
+              </button>
+            )}
+            <button
+              onClick={handleExportJson}
+              title="Export character as JSON"
+              className="px-3 py-2 bg-cyber-card border border-cyber-border hover:border-cyber-border-bright text-cyber-text-dim hover:text-cyber-text rounded text-sm transition-colors font-mono"
+            >
+              ↓ JSON
+            </button>
+            <button
+              onClick={handleExportChummer}
+              title="Export to Chummer5a"
+              className="px-3 py-2 bg-cyber-card border border-cyber-border hover:border-cyber-border-bright text-cyber-text-dim hover:text-cyber-text rounded text-sm transition-colors font-mono"
+            >
+              ↓ Chummer
+            </button>
             <button
               onClick={() => window.print()}
               title="Print character sheet"
@@ -235,6 +266,12 @@ export default function SavedCharacterView() {
             </button>
           </div>
         </div>
+
+        {exportError && (
+          <div className="bg-cyber-red-dim/30 border border-cyber-red/50 rounded p-3 text-cyber-red text-sm mb-4">
+            {exportError}
+          </div>
+        )}
 
         {/* Attributes */}
         <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 mb-4">
@@ -968,6 +1005,21 @@ export default function SavedCharacterView() {
           {base.vehicles.map((v) => (
             <div key={v.id} className="item-row"><span>{v.name}</span><span>Bod {v.body} / Han {v.handling} / Pil {v.pilot}</span></div>
           ))}
+        </>)}
+
+        {base.gear.length > 0 && (<>
+          <h2>Gear</h2>
+          {base.gear.map((g) => (
+            <div key={g.id} className="item-row">
+              <span>{g.name}</span>
+              <span>{g.category}{g.rating !== null && g.rating !== undefined ? ` R${g.rating}` : ""}</span>
+            </div>
+          ))}
+        </>)}
+
+        {base.notes && (<>
+          <h2>Notes</h2>
+          <p style={{ whiteSpace: "pre-wrap", fontSize: "0.85rem" }}>{base.notes}</p>
         </>)}
       </div>
     </div>

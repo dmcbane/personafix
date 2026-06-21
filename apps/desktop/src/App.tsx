@@ -10,11 +10,18 @@ import { useGameDataStore } from "./store/gameDataStore";
 import { useSettingsStore, FONT_SIZE_PX } from "./store/settingsStore";
 import BuilderShell from "./components/BuilderShell";
 import SavedCharacterView from "./components/SavedCharacterView";
+import PlayView from "./components/PlayView";
 import SettingsPanel from "./components/SettingsPanel";
 
 interface Campaign {
   id: string;
   name: string;
+}
+
+interface RecentCampaign {
+  path: string;
+  name: string;
+  last_opened: string;
 }
 
 const EDITIONS: Edition[] = ["SR4", "SR5"];
@@ -37,8 +44,10 @@ function App() {
 
   const { theme, font, fontSize } = useSettingsStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [playMode, setPlayMode] = useState(false);
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [recents, setRecents] = useState<RecentCampaign[]>([]);
   const [campaignName, setCampaignName] = useState("My Campaign");
   const [charName, setCharName] = useState("Street Samurai");
   const [edition, setEdition] = useState<Edition>("SR4");
@@ -58,6 +67,13 @@ function App() {
     html.style.fontSize = FONT_SIZE_PX[fontSize];
   }, [theme, font, fontSize]);
 
+  // Load recent campaigns on mount.
+  useEffect(() => {
+    invoke<RecentCampaign[]>("get_recent_campaigns")
+      .then(setRecents)
+      .catch(() => {});
+  }, []);
+
   // Auto-load game data on mount and whenever the edition selector changes.
   useEffect(() => {
     loadGameData(gameDataPath, edition).catch(() => {});
@@ -66,16 +82,21 @@ function App() {
   // Refresh character list whenever we return to the campaign screen.
   useEffect(() => {
     if (campaign && !draft && !savedCharacter) {
+      setPlayMode(false);
       listCharacters(campaign.id).catch(() => {});
     }
   }, [campaign, draft, savedCharacter]);
 
   // All hooks must be above this line — React requires consistent hook order.
 
+  if (playMode && savedCharacter) {
+    return <PlayView onBack={() => setPlayMode(false)} />;
+  }
+
   if (savedCharacter) {
     return (
       <>
-        <SavedCharacterView />
+        <SavedCharacterView onPlayMode={() => setPlayMode(true)} />
         {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
       </>
     );
@@ -90,6 +111,79 @@ function App() {
     );
   }
 
+  const handleOpenCampaign = async () => {
+    try {
+      const selected = await open({
+        title: "Open Campaign",
+        filters: [{ name: "Campaign File", extensions: ["srx"] }],
+        multiple: false,
+        directory: false,
+      });
+      if (!selected) return;
+      const result = await invoke<Campaign>("open_campaign", { path: selected });
+      setCampaign(result);
+      await listCharacters(result.id);
+      invoke<RecentCampaign[]>("get_recent_campaigns").then(setRecents).catch(() => {});
+      setError(null);
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+
+  const handleOpenRecent = async (path: string) => {
+    try {
+      const result = await invoke<Campaign>("open_campaign", { path });
+      setCampaign(result);
+      await listCharacters(result.id);
+      invoke<RecentCampaign[]>("get_recent_campaigns").then(setRecents).catch(() => {});
+      setError(null);
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+
+  const handleImportCharacter = async () => {
+    if (!campaign) return;
+    try {
+      const selected = await open({
+        title: "Import Character JSON",
+        filters: [{ name: "JSON File", extensions: ["json"] }],
+        multiple: false,
+        directory: false,
+      });
+      if (!selected) return;
+      await invoke<string>("import_character_json", {
+        campaignId: campaign.id,
+        filePath: selected,
+      });
+      await listCharacters(campaign.id);
+      setError(null);
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+
+  const handleImportChummer = async () => {
+    if (!campaign) return;
+    try {
+      const selected = await open({
+        title: "Import Chummer Character",
+        filters: [{ name: "Chummer File", extensions: ["chum5", "chum"] }],
+        multiple: false,
+        directory: false,
+      });
+      if (!selected) return;
+      await invoke<string>("import_chummer_character", {
+        campaignId: campaign.id,
+        chumPath: selected,
+      });
+      await listCharacters(campaign.id);
+      setError(null);
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+
   const handleCreateCampaign = async () => {
     try {
       const result = await invoke<Campaign>("create_campaign", {
@@ -97,6 +191,7 @@ function App() {
       });
       setCampaign(result);
       await listCharacters(result.id);
+      invoke<RecentCampaign[]>("get_recent_campaigns").then(setRecents).catch(() => {});
       setError(null);
     } catch (err) {
       setError(String(err));
@@ -177,32 +272,57 @@ function App() {
           </div>
 
           {!campaign ? (
-            <div className="bg-cyber-card border border-cyber-border rounded-lg p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-cyber-heading">
-                Create Campaign
-              </h2>
-              <input
-                type="text"
-                value={campaignName}
-                onChange={(e) => setCampaignName(e.target.value)}
-                placeholder="Campaign name"
-                className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
-              />
-              <button
-                onClick={handleCreateCampaign}
-                className="w-full px-4 py-2 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green rounded text-sm font-medium text-cyber-green transition-all shadow-glow"
-              >
-                Create Campaign
-              </button>
+            <div className="space-y-4">
+              <div className="bg-cyber-card border border-cyber-border rounded-lg p-6 space-y-4">
+                <h2 className="text-lg font-semibold text-cyber-heading">
+                  Campaign
+                </h2>
+                <input
+                  type="text"
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  placeholder="Campaign name"
+                  className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCreateCampaign}
+                    className="flex-1 px-4 py-2 bg-cyber-green-dim hover:bg-cyber-green/20 border border-cyber-green-dim hover:border-cyber-green rounded text-sm font-medium text-cyber-green transition-all shadow-glow"
+                  >
+                    Create
+                  </button>
+                  <button
+                    onClick={handleOpenCampaign}
+                    className="flex-1 px-4 py-2 border border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright hover:text-cyber-text rounded text-sm font-medium transition-all"
+                  >
+                    Open...
+                  </button>
+                </div>
+              </div>
+
+              {recents.length > 0 && (
+                <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 space-y-2">
+                  <h3 className="text-xs font-mono text-cyber-text-dim">// Recent</h3>
+                  {recents.map((r) => (
+                    <button
+                      key={r.path}
+                      onClick={() => handleOpenRecent(r.path)}
+                      className="w-full text-left px-3 py-2 rounded border border-cyber-border text-cyber-text-dim hover:text-cyber-text hover:border-cyber-border-bright transition-colors text-sm truncate"
+                    >
+                      {r.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
               {/* Character list */}
-              {characters.length > 0 && (
-                <div className="bg-cyber-card border border-cyber-border rounded-lg p-4">
-                  <h2 className="text-sm font-semibold text-cyber-heading font-mono mb-3">
-                    // {campaign.name}
-                  </h2>
+              <div className="bg-cyber-card border border-cyber-border rounded-lg p-4 space-y-3">
+                <h2 className="text-sm font-semibold text-cyber-heading font-mono">
+                  // {campaign.name}
+                </h2>
+                {characters.length > 0 && (
                   <div className="space-y-1">
                     {characters.map((c) => (
                       <div
@@ -226,8 +346,22 @@ function App() {
                       </div>
                     ))}
                   </div>
+                )}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={handleImportCharacter}
+                    className="flex-1 px-3 py-1.5 border border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright hover:text-cyber-text rounded text-xs font-mono transition-colors"
+                  >
+                    Import JSON…
+                  </button>
+                  <button
+                    onClick={handleImportChummer}
+                    className="flex-1 px-3 py-1.5 border border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright hover:text-cyber-text rounded text-xs font-mono transition-colors"
+                  >
+                    Import Chummer…
+                  </button>
                 </div>
-              )}
+              </div>
 
               <div className="bg-cyber-card border border-cyber-border rounded-lg p-6 space-y-4">
                 <div className="text-sm text-cyber-text-dim font-mono">
