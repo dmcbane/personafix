@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import { fmtErr } from "./utils";
 import {
   useCharacterStore,
   type Edition,
@@ -126,7 +127,7 @@ function App() {
       invoke<RecentCampaign[]>("get_recent_campaigns").then(setRecents).catch(() => {});
       setError(null);
     } catch (err) {
-      setError(String(err));
+      setError(fmtErr(err));
     }
   };
 
@@ -138,7 +139,7 @@ function App() {
       invoke<RecentCampaign[]>("get_recent_campaigns").then(setRecents).catch(() => {});
       setError(null);
     } catch (err) {
-      setError(String(err));
+      setError(fmtErr(err));
     }
   };
 
@@ -159,7 +160,7 @@ function App() {
       await listCharacters(campaign.id);
       setError(null);
     } catch (err) {
-      setError(String(err));
+      setError(fmtErr(err));
     }
   };
 
@@ -180,7 +181,7 @@ function App() {
       await listCharacters(campaign.id);
       setError(null);
     } catch (err) {
-      setError(String(err));
+      setError(fmtErr(err));
     }
   };
 
@@ -194,7 +195,7 @@ function App() {
       invoke<RecentCampaign[]>("get_recent_campaigns").then(setRecents).catch(() => {});
       setError(null);
     } catch (err) {
-      setError(String(err));
+      setError(fmtErr(err));
     }
   };
 
@@ -218,7 +219,7 @@ function App() {
         await checkFile(selected);
       }
     } catch (err) {
-      setError(String(err));
+      setError(fmtErr(err));
     }
   };
 
@@ -232,7 +233,7 @@ function App() {
       await startNewCharacter(edition, metatype, charName);
       setError(null);
     } catch (err) {
-      setError(String(err));
+      setError(fmtErr(err));
     }
   };
 
@@ -241,7 +242,7 @@ function App() {
       await loadCharacter(id);
       setError(null);
     } catch (err) {
-      setError(String(err));
+      setError(fmtErr(err));
     }
   };
 

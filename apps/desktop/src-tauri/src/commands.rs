@@ -915,19 +915,13 @@ pub async fn open_campaign(path: String, state: State<'_, AppState>) -> Result<C
     let db_url = format!("sqlite:{}?mode=rw", db_path.display());
     let pool = SqlitePool::connect(&db_url).await?;
 
-    let row: (String, String) = sqlx::query_as("SELECT id, name FROM campaigns LIMIT 1")
-        .fetch_one(&pool)
-        .await?;
-
-    record_recent_campaign_sync(&path, &row.1);
+    let campaign = open_campaign_db(&pool).await?;
+    record_recent_campaign_sync(&path, &campaign.name);
 
     *state.campaign_pool.write().await = Some(pool);
     *state.campaign_path.write().await = Some(db_path);
 
-    Ok(Campaign {
-        id: row.0,
-        name: row.1,
-    })
+    Ok(campaign)
 }
 
 #[tauri::command]

@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
 import { useCharacterStore, type LedgerEvent } from "../store/characterStore";
 import { type RollResult, rollPool, DieIcon } from "./DiceRoller";
+import { fmtErr } from "../utils";
 
 interface Props {
   onPlayMode?: () => void;
@@ -70,7 +71,7 @@ export default function SavedCharacterView({ onPlayMode }: Props) {
       if (!outPath) return;
       await invoke("export_character_json", { characterId: base.id, outPath });
     } catch (err) {
-      setExportError(String(err));
+      setExportError(fmtErr(err));
     }
   };
 
@@ -85,7 +86,7 @@ export default function SavedCharacterView({ onPlayMode }: Props) {
       if (!outPath) return;
       await invoke("export_chummer_character", { characterId: base.id, outPath });
     } catch (err) {
-      setExportError(String(err));
+      setExportError(fmtErr(err));
     }
   };
 
@@ -96,7 +97,7 @@ export default function SavedCharacterView({ onPlayMode }: Props) {
       await applyEvent(characterId, event);
       if (showLedger) await loadLedger();
     } catch (err) {
-      setEventError(String(err));
+      setEventError(fmtErr(err));
     } finally {
       setApplying(false);
     }
@@ -149,7 +150,7 @@ export default function SavedCharacterView({ onPlayMode }: Props) {
       });
       if (showLedger) await loadLedger();
     } catch (err) {
-      setEventError(String(err));
+      setEventError(fmtErr(err));
     } finally {
       setApplying(false);
     }
@@ -170,7 +171,7 @@ export default function SavedCharacterView({ onPlayMode }: Props) {
       await applyEvent(characterId, { KarmaSpent: { amount: karmaCost, description: `${skillName} ${from} → ${to}` } });
       if (showLedger) await loadLedger();
     } catch (err) {
-      setEventError(String(err));
+      setEventError(fmtErr(err));
     } finally {
       setApplying(false);
     }
@@ -191,7 +192,7 @@ export default function SavedCharacterView({ onPlayMode }: Props) {
       await applyEvent(characterId, { KarmaSpent: { amount: karmaCost, description: `${attr} ${from} → ${to}` } });
       if (showLedger) await loadLedger();
     } catch (err) {
-      setEventError(String(err));
+      setEventError(fmtErr(err));
     } finally {
       setApplying(false);
     }

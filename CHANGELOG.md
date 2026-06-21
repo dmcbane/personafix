@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.48.1] - 2026-06-21
+
+### Fixed
+- Tauri error objects now display the human-readable `.message` field instead of `[object Object]`
+  - Added `fmtErr()` helper in `src/utils.ts`; replaced all `String(err)` catch clauses in `App.tsx` and `SavedCharacterView.tsx`
+  - Fixed dead-code warning: `open_campaign` Tauri wrapper now delegates to `open_campaign_db` helper
+
+## [0.48.0] - 2026-06-21
+
+### Added
+- P16: Play Mode — full-screen `PlayView` with condition monitors, wound modifier, initiative roller, edge tracker, and dice roller
+  - `DiceRoller.tsx`: reusable `rollPool()`, `DieIcon`, `DiceRollerPanel`
+  - "⚔ Play" button in character sheet header; "← Sheet" returns
+- P15: Print sheet now includes Gear and Notes sections
+- P14: Chummer 5 import/export
+  - New `crates/import-export` crate: parses `.chum5` XML via `quick-xml`/serde, maps to `CharacterBase`
+  - `import_chummer_character` / `export_chummer_character` IPC commands
+  - "Import Chummer…" button in campaign character list; "↓ Chummer" export in character sheet header
+- P13: Campaign persistence layer
+  - "Open…" file-picker button to open existing `.srx` campaign files
+  - Recent campaigns list (LRU JSON at `{data_dir}/personafix/recent_campaigns.json`)
+  - JSON character backup/restore: `export_character_json` / `import_character_json` IPC + UI buttons
+
 ## [0.45.0] - 2026-06-20
 
 ### Added
