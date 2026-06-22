@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.50.0] - 2026-06-21
+
+### Changed
+- Edition (SR4/SR5) is now a campaign-level setting, not a per-character setting.
+  - `campaigns` table gains an `edition` column (migration 00006).
+  - `create_campaign` IPC now requires an `edition` argument; it is stored on the campaign row.
+  - `Campaign` struct and TypeScript interface both expose `edition`.
+  - The edition selector moved from the "New Character" form to the "New Campaign" form on the home screen (toggle buttons instead of a dropdown).
+  - When a campaign is created or opened the edition state syncs automatically, triggering game-data reload for the correct ruleset.
+  - The campaign character-list screen shows the edition as a badge; character creation inherits it without offering an override.
+
 ## [0.49.0] - 2026-06-21
 
 ### Added

@@ -17,6 +17,7 @@ import SettingsPanel from "./components/SettingsPanel";
 interface Campaign {
   id: string;
   name: string;
+  edition: Edition;
 }
 
 interface RecentCampaign {
@@ -125,6 +126,7 @@ function App() {
       if (!selected) return;
       const result = await invoke<Campaign>("open_campaign", { path: selected });
       setCampaign(result);
+      setEdition(result.edition);
       await listCharacters(result.id);
       invoke<RecentCampaign[]>("get_recent_campaigns").then(setRecents).catch(() => {});
       setError(null);
@@ -138,6 +140,7 @@ function App() {
       setRecentErrors((prev) => { const n = { ...prev }; delete n[path]; return n; });
       const result = await invoke<Campaign>("open_campaign", { path });
       setCampaign(result);
+      setEdition(result.edition);
       await listCharacters(result.id);
       invoke<RecentCampaign[]>("get_recent_campaigns").then(setRecents).catch(() => {});
       setError(null);
@@ -192,8 +195,10 @@ function App() {
     try {
       const result = await invoke<Campaign>("create_campaign", {
         name: campaignName,
+        edition,
       });
       setCampaign(result);
+      setEdition(result.edition);
       await listCharacters(result.id);
       invoke<RecentCampaign[]>("get_recent_campaigns").then(setRecents).catch(() => {});
       setError(null);
@@ -227,13 +232,14 @@ function App() {
   };
 
   const handleStartBuilder = async () => {
+    const characterEdition = campaign?.edition ?? edition;
     try {
-      await loadGameData(gameDataPath, edition);
+      await loadGameData(gameDataPath, characterEdition);
     } catch {
       // Non-fatal — panels fall back to seed data if db unavailable
     }
     try {
-      await startNewCharacter(edition, metatype, charName);
+      await startNewCharacter(characterEdition, metatype, charName);
       setError(null);
     } catch (err) {
       setError(fmtErr(err));
@@ -279,7 +285,7 @@ function App() {
             <div className="space-y-4">
               <div className="bg-cyber-card border border-cyber-border rounded-lg p-6 space-y-4">
                 <h2 className="text-lg font-semibold text-cyber-heading">
-                  Campaign
+                  New Campaign
                 </h2>
                 <input
                   type="text"
@@ -289,6 +295,26 @@ function App() {
                   placeholder="Campaign name"
                   className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
                 />
+                <div>
+                  <label className="text-xs text-cyber-text-dim block mb-1 font-mono">
+                    Edition
+                  </label>
+                  <div className="flex gap-2">
+                    {EDITIONS.map((e) => (
+                      <button
+                        key={e}
+                        onClick={() => setEdition(e)}
+                        className={`flex-1 py-2 rounded border text-sm font-mono transition-colors ${
+                          edition === e
+                            ? "border-cyber-green text-cyber-green bg-cyber-green/10"
+                            : "border-cyber-border text-cyber-text-dim hover:border-cyber-border-bright hover:text-cyber-text"
+                        }`}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handleCreateCampaign}
@@ -392,9 +418,11 @@ function App() {
               </div>
 
               <div className="bg-cyber-card border border-cyber-border rounded-lg p-6 space-y-4">
-                <div className="text-sm text-cyber-text-dim font-mono">
-                  Campaign:{" "}
+                <div className="text-sm text-cyber-text-dim font-mono flex items-center gap-2">
                   <span className="text-cyber-green">{campaign.name}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-cyber-surface border border-cyber-border text-cyber-blue text-xs">
+                    {campaign.edition}
+                  </span>
                 </div>
                 <h2 className="text-lg font-semibold text-cyber-heading">
                   New Character
@@ -403,42 +431,25 @@ function App() {
                   type="text"
                   value={charName}
                   onChange={(e) => setCharName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleStartBuilder()}
                   placeholder="Character name"
                   className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
                 />
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-cyber-text-dim block mb-1 font-mono">
-                      Edition
-                    </label>
-                    <select
-                      value={edition}
-                      onChange={(e) => setEdition(e.target.value as Edition)}
-                      className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
-                    >
-                      {EDITIONS.map((e) => (
-                        <option key={e} value={e}>
-                          {e}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-cyber-text-dim block mb-1 font-mono">
-                      Metatype
-                    </label>
-                    <select
-                      value={metatype}
-                      onChange={(e) => setMetatype(e.target.value as MetatypeKey)}
-                      className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
-                    >
-                      {METATYPES.map((m) => (
-                        <option key={m} value={m}>
-                          {m}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <label className="text-xs text-cyber-text-dim block mb-1 font-mono">
+                    Metatype
+                  </label>
+                  <select
+                    value={metatype}
+                    onChange={(e) => setMetatype(e.target.value as MetatypeKey)}
+                    className="w-full bg-cyber-card border border-cyber-border rounded px-3 py-2 text-sm"
+                  >
+                    {METATYPES.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Game data status */}

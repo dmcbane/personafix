@@ -23,6 +23,7 @@ use crate::state::AppState;
 pub struct Campaign {
     pub id: String,
     pub name: String,
+    pub edition: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -128,10 +129,11 @@ pub fn record_recent_campaign_sync(path: &str, name: &str) {
 // -- Open campaign (testable core) --
 
 pub async fn open_campaign_db(pool: &SqlitePool) -> Result<Campaign, AppError> {
-    let row: (String, String) = sqlx::query_as("SELECT id, name FROM campaigns LIMIT 1")
-        .fetch_one(pool)
-        .await?;
-    Ok(Campaign { id: row.0, name: row.1 })
+    let row: (String, String, String) =
+        sqlx::query_as("SELECT id, name, edition FROM campaigns LIMIT 1")
+            .fetch_one(pool)
+            .await?;
+    Ok(Campaign { id: row.0, name: row.1, edition: row.2 })
 }
 
 // -- JSON character backup / restore --
@@ -295,21 +297,24 @@ pub async fn create_campaign_db(
     pool: &SqlitePool,
     id: &str,
     name: &str,
+    edition: &str,
 ) -> Result<Campaign, AppError> {
     let migrations =
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../crates/data/migrations");
     let migrator = sqlx::migrate::Migrator::new(migrations).await?;
     migrator.run(pool).await?;
 
-    sqlx::query("INSERT INTO campaigns (id, name) VALUES (?, ?)")
+    sqlx::query("INSERT INTO campaigns (id, name, edition) VALUES (?, ?, ?)")
         .bind(id)
         .bind(name)
+        .bind(edition)
         .execute(pool)
         .await?;
 
     Ok(Campaign {
         id: id.to_string(),
         name: name.to_string(),
+        edition: edition.to_string(),
     })
 }
 
@@ -927,8 +932,11 @@ async fn pick_unique_name(dir: &Path, desired: &str) -> String {
 #[tauri::command]
 pub async fn create_campaign(
     name: String,
+    edition: String,
     state: State<'_, AppState>,
 ) -> Result<Campaign, AppError> {
+    parse_edition(&edition)?;
+
     let id = uuid::Uuid::new_v4().to_string();
 
     let db_dir = campaigns_dir();
@@ -943,7 +951,7 @@ pub async fn create_campaign(
     let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
     let pool = SqlitePool::connect(&db_url).await?;
 
-    let campaign = create_campaign_db(&pool, &id, &unique_name).await?;
+    let campaign = create_campaign_db(&pool, &id, &unique_name, &edition).await?;
 
     record_recent_campaign_sync(&db_path.to_string_lossy(), &campaign.name);
 
@@ -1503,11 +1511,12 @@ mod tests {
     #[tokio::test]
     async fn test_create_campaign_db() {
         let pool = setup_test_db().await;
-        let campaign = create_campaign_db(&pool, "c1", "Test Campaign")
+        let campaign = create_campaign_db(&pool, "c1", "Test Campaign", "SR5")
             .await
             .unwrap();
         assert_eq!(campaign.id, "c1");
         assert_eq!(campaign.name, "Test Campaign");
+        assert_eq!(campaign.edition, "SR5");
 
         // Verify it's in the database
         let (name,): (String,) = sqlx::query_as("SELECT name FROM campaigns WHERE id = 'c1'")
@@ -1520,7 +1529,7 @@ mod tests {
     #[tokio::test]
     async fn test_create_and_list_characters() {
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
 
         // Create two characters
         create_character_db(
@@ -1548,7 +1557,7 @@ mod tests {
     #[tokio::test]
     async fn test_create_character_sets_racial_minimum_attributes() {
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
 
         // Create an Ork (SR4: BOD 3-8, STR 3-8)
         create_character_db(
@@ -1571,7 +1580,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_character_computes_derived_stats() {
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
         create_character_db(
             &pool,
             "ch1",
@@ -1598,7 +1607,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_character_not_found() {
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
 
         let result = get_character_db(&pool, "nonexistent").await;
         assert!(result.is_err());
@@ -1609,7 +1618,7 @@ mod tests {
     #[tokio::test]
     async fn test_apply_event_and_get_character() {
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
         create_character_db(
             &pool,
             "ch1",
@@ -1645,7 +1654,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_ledger_returns_events_in_order() {
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
         create_character_db(
             &pool,
             "ch1",
@@ -1693,7 +1702,7 @@ mod tests {
     #[tokio::test]
     async fn test_apply_event_persists_and_projects() {
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
         create_character_db(
             &pool,
             "ch1",
@@ -1729,7 +1738,7 @@ mod tests {
     #[tokio::test]
     async fn test_full_career_round_trip() {
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
         create_character_db(
             &pool,
             "ch1",
@@ -1916,7 +1925,7 @@ mod tests {
     #[tokio::test]
     async fn test_save_character_base_persists_skills() {
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
         create_character_db(
             &pool,
             "ch1",
@@ -1992,7 +2001,7 @@ mod tests {
         use personafix_core::model::skills::Skill;
 
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
         create_character_db(
             &pool,
             "ch1",
@@ -2105,7 +2114,7 @@ mod tests {
         use personafix_core::model::skills::Skill;
 
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
         create_character_db(&pool, "ch1", "c1", &Edition::SR5, "Adept", &Metatype::Human)
             .await
             .unwrap();
@@ -2381,7 +2390,7 @@ mod tests {
         use personafix_core::model::skills::{Skill, Specialization};
 
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
         create_character_db(&pool, "ch1", "c1", &Edition::SR4, "Sniper", &Metatype::Human)
             .await
             .unwrap();
@@ -2447,7 +2456,7 @@ mod tests {
     async fn test_tradition_name_roundtrip() {
         use personafix_core::model::magic::MagicTradition;
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
         create_character_db(&pool, "ch1", "c1", &Edition::SR5, "Magician", &Metatype::Human)
             .await
             .unwrap();
@@ -2529,7 +2538,7 @@ mod tests {
 
         {
             let pool = SqlitePool::connect(&db_url).await.unwrap();
-            create_campaign_db(&pool, "c1", "My Campaign").await.unwrap();
+            create_campaign_db(&pool, "c1", "My Campaign", "SR4").await.unwrap();
             pool.close().await;
         }
 
@@ -2547,7 +2556,7 @@ mod tests {
         use personafix_core::model::skills::Skill;
 
         let pool = setup_test_db().await;
-        create_campaign_db(&pool, "c1", "Campaign").await.unwrap();
+        create_campaign_db(&pool, "c1", "Campaign", "SR4").await.unwrap();
         create_character_db(&pool, "ch1", "c1", &Edition::SR5, "Razor", &Metatype::Elf)
             .await
             .unwrap();
